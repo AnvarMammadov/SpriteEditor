@@ -77,72 +77,79 @@ namespace SpriteEditor.Services
         /// <returns>Nəticənin PNG byte massivi</returns>
         public byte[] RemoveBackground(string imagePath, int startX, int startY, float tolerancePercent)
         {
-            using (Image<Rgba32> image = Image.Load<Rgba32>(imagePath))
+            // Orijinal şəkli yükləyirik (tipini Rgba32 məcbur etmədən)
+            using (Image originalImage = Image.Load(imagePath))
             {
-                // 1. Başlanğıc rəngi (hədəf rəng) kliklənən nöqtədən götürürük
-                Rgba32 targetColor = image[startX, startY];
-
-                // 2. Həssaslıq dərəcəsini hesablayırıq (Euclidean)
-                float maxDistance = (float)Math.Sqrt(Math.Pow(255, 2) * 3);
-                float toleranceDistance = maxDistance * (tolerancePercent / 100f);
-
-                // 3. Əməliyyat üçün strukturlar yaradırıq
-                var pixelsToProcess = new Queue<Point>(); // Yoxlanılacaq piksellər
-                var visitedPixels = new HashSet<Point>(); // Artıq yoxlanılmışlar (sonsuz döngü üçün)
-
-                // 4. Başlanğıc nöqtəni əlavə edirik
-                pixelsToProcess.Enqueue(new Point(startX, startY));
-
-                // 5. "Sel" (Flood) başlayır
-                while (pixelsToProcess.Count > 0)
+                // === YENİ DÜZƏLİŞ: ===
+                // 1. Tamamilə yeni, boş və şəffaf bir Rgba32 kətan (canvas) yaradırıq
+                using (Image<Rgba32> image = new Image<Rgba32>(originalImage.Width, originalImage.Height))
                 {
-                    Point currentPoint = pixelsToProcess.Dequeue();
-                    int x = currentPoint.X;
-                    int y = currentPoint.Y;
+                    // 2. Orijinal şəkli bu yeni kətanın üzərinə çəkirik
+                    image.Mutate(ctx => ctx.DrawImage(originalImage, 1f));
 
-                    // A. Sərhədləri yoxla
-                    if (x < 0 || x >= image.Width || y < 0 || y >= image.Height)
-                        continue;
+                    // Artıq 100% əminik ki, "image" dəyişdirilə bilən Rgba32 formatındadır
 
-                    // B. Artıq yoxlanılıbsa, davam etmə
-                    if (visitedPixels.Contains(currentPoint))
-                        continue;
+                    // 3. Başlanğıc rəngi bu yeni kətandan götürürük
+                    Rgba32 targetColor = image[startX, startY];
 
-                    // C. Yoxlanıldı olaraq işarələ
-                    visitedPixels.Add(currentPoint);
+                    // 4. Həssaslıq
+                    float maxDistance = (float)Math.Sqrt(Math.Pow(255, 2) * 3);
+                    float toleranceDistance = maxDistance * (tolerancePercent / 100f);
 
-                    // D. Hazırkı pikselin rəngini al
-                    Rgba32 currentColor = image[x, y];
+                    // 5. Strukturlar
+                    var pixelsToProcess = new Queue<Point>();
+                    var visitedPixels = new HashSet<Point>();
 
-                    // E. Rəng fərqini hesabla
-                    double distance = Math.Sqrt(
-                        Math.Pow(currentColor.R - targetColor.R, 2) +
-                        Math.Pow(currentColor.G - targetColor.G, 2) +
-                        Math.Pow(currentColor.B - targetColor.B, 2)
-                    );
+                    // 6. Başlanğıc nöqtə
+                    pixelsToProcess.Enqueue(new Point(startX, startY));
 
-                    // F. Əgər rəng həssaslıq daxilindədirsə (fona aiddirsə)...
-                    if (distance <= toleranceDistance)
+                    // 7. "Sel" (Flood)
+                    while (pixelsToProcess.Count > 0)
                     {
-                        // Rəngi şəffaf et
-                        // (Struct olduğu üçün birbaşa .A = 0 etmək əvəzinə yenidən təyin edirik)
-                        image[x, y] = new Rgba32(currentColor.R, currentColor.G, currentColor.B, 0);
+                        Point currentPoint = pixelsToProcess.Dequeue();
+                        int x = currentPoint.X;
+                        int y = currentPoint.Y;
 
-                        // Qonşuları yoxlama siyahısına əlavə et
-                        pixelsToProcess.Enqueue(new Point(x + 1, y)); // Sağ
-                        pixelsToProcess.Enqueue(new Point(x - 1, y)); // Sol
-                        pixelsToProcess.Enqueue(new Point(x, y + 1)); // Aşağı
-                        pixelsToProcess.Enqueue(new Point(x, y - 1)); // Yuxarı
+                        // A. Sərhəd yoxlaması
+                        if (x < 0 || x >= image.Width || y < 0 || y >= image.Height)
+                            continue;
+
+                        // B. Ziyarət yoxlaması
+                        if (visitedPixels.Contains(currentPoint))
+                            continue;
+
+                        visitedPixels.Add(currentPoint);
+
+                        // D. Rəng al
+                        Rgba32 currentColor = image[x, y];
+
+                        // E. Fərqi hesabla
+                        double distance = Math.Sqrt(
+                            Math.Pow(currentColor.R - targetColor.R, 2) +
+                            Math.Pow(currentColor.G - targetColor.G, 2) +
+                            Math.Pow(currentColor.B - targetColor.B, 2)
+                        );
+
+                        // F. Əgər rəng həssaslıq daxilindədirsə...
+                        if (distance <= toleranceDistance)
+                        {
+                            // Rəngi şəffaf et
+                            image[x, y] = new Rgba32(currentColor.R, currentColor.G, currentColor.B, 0);
+
+                            // Qonşuları əlavə et
+                            pixelsToProcess.Enqueue(new Point(x + 1, y));
+                            pixelsToProcess.Enqueue(new Point(x - 1, y));
+                            pixelsToProcess.Enqueue(new Point(x, y + 1));
+                            pixelsToProcess.Enqueue(new Point(x, y - 1));
+                        }
                     }
-                    // Əgər rəng fərqlidirsə (məs. personajın köynəyi), heçnə etmirik
-                    // və "sel" burada dayanır.
-                }
 
-                // 6. Nəticəni yaddaşa yaz
-                using (var ms = new MemoryStream())
-                {
-                    image.Save(ms, new PngEncoder());
-                    return ms.ToArray();
+                    // 8. Nəticəni yaddaşa yaz
+                    using (var ms = new MemoryStream())
+                    {
+                        image.Save(ms, new PngEncoder());
+                        return ms.ToArray();
+                    }
                 }
             }
         }

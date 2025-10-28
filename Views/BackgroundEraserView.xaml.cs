@@ -71,6 +71,12 @@ namespace SpriteEditor.Views
             // 4. Oxunan rəngi ViewModel-dəki TargetColor xassəsinə ötür
             // Qeyd: WPF baytları B-G-R-A ardıcıllığında saxlayır
             _viewModel.TargetColor = Color.FromArgb(pixels[3], pixels[2], pixels[1], pixels[0]);
+
+            // === YENİ KOD ===
+            // 5. Kliklənən nöqtəni də ViewModel-ə ötür
+            _viewModel.StartPixelX = pixelX;
+            _viewModel.StartPixelY = pixelY;
+            // =================
         }
     }
 }

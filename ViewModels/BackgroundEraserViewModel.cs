@@ -19,6 +19,13 @@ namespace SpriteEditor.ViewModels
     {
         private readonly ImageService _imageService;
 
+        // === YENİ XASSƏLƏR ===
+        // Pipet alətinin başladığı nöqtəni yadda saxlamaq üçün
+        public int StartPixelX { get; set; }
+        public int StartPixelY { get; set; }
+        // =======================
+
+
         // === Şəkil Yükləmə Xassələri (SpriteSlicerViewModel-dən kopyalanıb) ===
         [ObservableProperty]
         private BitmapImage _loadedImageSource; // Orijinal şəkil
@@ -96,14 +103,19 @@ namespace SpriteEditor.ViewModels
                             $"Həssaslıq: {Tolerance}%",
                             "Diaqnostika");
 
-                // WPF Rəngini ImageSharp Rənginə çevir
-                var wpfColor = TargetColor; // Bu sətri əlavə edib-etmədiyinizi yoxlayın
-                var sharpColor = new Rgba32(wpfColor.R, wpfColor.G, wpfColor.B, wpfColor.A);
+                //// WPF Rəngini ImageSharp Rənginə çevir
+                //var wpfColor = TargetColor; // Bu sətri əlavə edib-etmədiyinizi yoxlayın
+                //var sharpColor = new Rgba32(wpfColor.R, wpfColor.G, wpfColor.B, wpfColor.A);
 
                 // Servisi arxa fonda çağır
                 byte[] pngData = await Task.Run(() =>
-                    _imageService.RemoveBackground(_loadedImagePath, sharpColor, (float)Tolerance)
-                );
+                     _imageService.RemoveBackground(
+                         _loadedImagePath,
+                         StartPixelX,  // Kliklənən X koordinatı
+                         StartPixelY,  // Kliklənən Y koordinatı
+                         (float)Tolerance
+                     )
+                 );
 
                 // Nəticəni (byte massivi) BitmapImage-ə çevir
                 var previewBitmap = new BitmapImage();

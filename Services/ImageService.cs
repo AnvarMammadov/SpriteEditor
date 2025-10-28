@@ -68,59 +68,86 @@ namespace SpriteEditor.Services
 
 
         /// <summary>
-        /// Şəkildən verilmiş rəngi və ona yaxın rəngləri şəffaf edir.
-        /// (Daha dəqiq Euclidean alqoritmi ilə)
+        /// "Flood Fill" (Magic Wand) alqoritmi ilə arxa fonu şəffaf edir.
         /// </summary>
-        public byte[] RemoveBackground(string imagePath, Rgba32 targetColor, float tolerancePercent)
+        /// <param name="imagePath">Şəklin yolu</param>
+        /// <param name="startX">Kliklənən pikselin X koordinatı</param>
+        /// <param name="startY">Kliklənən pikselin Y koordinatı</param>
+        /// <param name="tolerancePercent">Həssaslıq (0-100)</param>
+        /// <returns>Nəticənin PNG byte massivi</returns>
+        public byte[] RemoveBackground(string imagePath, int startX, int startY, float tolerancePercent)
         {
-            // 1. Həssaslığı (tolerance) 0-100% aralığından 0-442 aralığına çeviririk
-            // RGB rənglər arasındakı maksimum "Euclidean" məsafə: sqrt(255^2 + 255^2 + 255^2) ≈ 441.67
-            float maxDistance = (float)Math.Sqrt(Math.Pow(255, 2) * 3);
-            float toleranceDistance = maxDistance * (tolerancePercent / 100f);
-
             using (Image<Rgba32> image = Image.Load<Rgba32>(imagePath))
             {
-                image.ProcessPixelRows(accessor =>
+                // 1. Başlanğıc rəngi (hədəf rəng) kliklənən nöqtədən götürürük
+                Rgba32 targetColor = image[startX, startY];
+
+                // 2. Həssaslıq dərəcəsini hesablayırıq (Euclidean)
+                float maxDistance = (float)Math.Sqrt(Math.Pow(255, 2) * 3);
+                float toleranceDistance = maxDistance * (tolerancePercent / 100f);
+
+                // 3. Əməliyyat üçün strukturlar yaradırıq
+                var pixelsToProcess = new Queue<Point>(); // Yoxlanılacaq piksellər
+                var visitedPixels = new HashSet<Point>(); // Artıq yoxlanılmışlar (sonsuz döngü üçün)
+
+                // 4. Başlanğıc nöqtəni əlavə edirik
+                pixelsToProcess.Enqueue(new Point(startX, startY));
+
+                // 5. "Sel" (Flood) başlayır
+                while (pixelsToProcess.Count > 0)
                 {
-                    for (int y = 0; y < accessor.Height; y++)
+                    Point currentPoint = pixelsToProcess.Dequeue();
+                    int x = currentPoint.X;
+                    int y = currentPoint.Y;
+
+                    // A. Sərhədləri yoxla
+                    if (x < 0 || x >= image.Width || y < 0 || y >= image.Height)
+                        continue;
+
+                    // B. Artıq yoxlanılıbsa, davam etmə
+                    if (visitedPixels.Contains(currentPoint))
+                        continue;
+
+                    // C. Yoxlanıldı olaraq işarələ
+                    visitedPixels.Add(currentPoint);
+
+                    // D. Hazırkı pikselin rəngini al
+                    Rgba32 currentColor = image[x, y];
+
+                    // E. Rəng fərqini hesabla
+                    double distance = Math.Sqrt(
+                        Math.Pow(currentColor.R - targetColor.R, 2) +
+                        Math.Pow(currentColor.G - targetColor.G, 2) +
+                        Math.Pow(currentColor.B - targetColor.B, 2)
+                    );
+
+                    // F. Əgər rəng həssaslıq daxilindədirsə (fona aiddirsə)...
+                    if (distance <= toleranceDistance)
                     {
-                        Span<Rgba32> pixelRow = accessor.GetRowSpan(y);
-                        foreach (ref Rgba32 pixel in pixelRow)
-                        {
-                            // 2. Rənglər arasındakı "Euclidean" məsafəni hesablayırıq
-                            // Bu, rəng oxşarlığını daha dəqiq tapır
-                            double distance = Math.Sqrt(
-                                Math.Pow(pixel.R - targetColor.R, 2) +
-                                Math.Pow(pixel.G - targetColor.G, 2) +
-                                Math.Pow(pixel.B - targetColor.B, 2)
-                            );
+                        // Rəngi şəffaf et
+                        // (Struct olduğu üçün birbaşa .A = 0 etmək əvəzinə yenidən təyin edirik)
+                        image[x, y] = new Rgba32(currentColor.R, currentColor.G, currentColor.B, 0);
 
-                            // 3. Əgər məsafə bizim həssaslıq dərəcəmizdən azdırsa...
-                            if (distance <= toleranceDistance)
-                            {
-                                // 4. Və piksel onsuz da şəffaf deyilsə, onu şəffaf et
-                                if (pixel.A > 0)
-                                {
-                                    pixel.A = 0;
-                                }
-                            }
-                        }
+                        // Qonşuları yoxlama siyahısına əlavə et
+                        pixelsToProcess.Enqueue(new Point(x + 1, y)); // Sağ
+                        pixelsToProcess.Enqueue(new Point(x - 1, y)); // Sol
+                        pixelsToProcess.Enqueue(new Point(x, y + 1)); // Aşağı
+                        pixelsToProcess.Enqueue(new Point(x, y - 1)); // Yuxarı
                     }
-                });
+                    // Əgər rəng fərqlidirsə (məs. personajın köynəyi), heçnə etmirik
+                    // və "sel" burada dayanır.
+                }
 
-                // 5. Nəticəni yaddaşa yaz
+                // 6. Nəticəni yaddaşa yaz
                 using (var ms = new MemoryStream())
                 {
                     image.Save(ms, new PngEncoder());
                     return ms.ToArray();
                 }
             }
-
-
-
         }
 
-
+        #region Diagnostika Testi
         /// <summary>
         /// === DİAQNOSTİKA TESTİ #2 ===
         /// ImageSharp-ın "Mutate" API-ı ilə şəffaflığı dəyişməyə çalışır.
@@ -146,5 +173,6 @@ namespace SpriteEditor.Services
         //        }
         //    }
         //}
+        #endregion
     }
 }

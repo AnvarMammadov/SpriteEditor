@@ -12,7 +12,7 @@ namespace SpriteEditor.Views
     /// </summary>
     public partial class SpriteSlicerView : UserControl
     {
-        private MainViewModel _viewModel;
+        private SpriteSlicerViewModel _viewModel;
         private const double ThumbSize = 10.0; // Stilimizdə (Style) təyin etdiyimiz ölçü
         private const double MinSlicerSize = 10.0; // Slicer Box-un minimum eni/hündürlüyü
 
@@ -34,7 +34,7 @@ namespace SpriteEditor.Views
             }
 
             // Yeni ViewModel-i referans olaraq götür
-            _viewModel = e.NewValue as MainViewModel;
+            _viewModel = e.NewValue as SpriteSlicerViewModel;
 
             // Yeni ViewModel-in "Slicer..." xassələri dəyişdikdə...
             if (_viewModel != null)

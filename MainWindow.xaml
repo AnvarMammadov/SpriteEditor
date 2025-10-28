@@ -8,6 +8,74 @@
         Title="Sprite Editor" Height="600" Width="900"
         WindowStartupLocation="CenterScreen">
 
-    <ContentControl Content="{Binding}" />
+    <Window.Resources>
+        <SolidColorBrush x:Key="BgPrimary" Color="#FF2D2D30"/>
+        <SolidColorBrush x:Key="BgSecondary" Color="#FF3F3F46"/>
+        <SolidColorBrush x:Key="AccentBlue" Color="#FF007ACC"/>
+        <SolidColorBrush x:Key="AccentBlueHover" Color="#FF009AFF"/>
 
+        <Style x:Key="NavButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#FFE1E1E1"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="10,0,0,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="3">
+                            <ContentPresenter VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource AccentBlueHover}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Column="0" Background="{StaticResource BgSecondary}">
+            <TextBlock Text="Sprite Editor" FontSize="18" FontWeight="Bold" 
+                       Foreground="White" Margin="10,10,10,20"/>
+
+            <Button Content="Ana Səhifə" 
+                    Command="{Binding GoToHomeCommand}" 
+                    Style="{StaticResource NavButton}"/>
+
+            <TextBlock Text="ALƏTLƏR" FontSize="11" Foreground="Gray" Margin="10,15,0,5"/>
+            <Button Content="Avtomatik Kəsmə (Grid)" 
+                    Command="{Binding GoToSpriteSlicerCommand}" 
+                    Style="{StaticResource NavButton}"/>
+
+            <Button Content="Manual Crop (Tezliklə)" 
+                    IsEnabled="False" 
+                    Style="{StaticResource NavButton}"/>
+
+            <Button Content="Background Eraser (Tezliklə)" 
+                    IsEnabled="False" 
+                    Style="{StaticResource NavButton}"/>
+
+            <Button Content="Rigging (Tezliklə)" 
+                    IsEnabled="False" 
+                    Style="{StaticResource NavButton}"/>
+
+        </StackPanel>
+
+        <ContentControl Grid.Column="1" 
+                        Content="{Binding CurrentViewModel}"
+                        Background="{StaticResource BgPrimary}"/>
+    </Grid>
 </Window>

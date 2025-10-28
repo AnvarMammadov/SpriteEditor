@@ -15,5 +15,9 @@
             <view:SpriteSlicerView />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type viewmodels:BackgroundEraserViewModel}">
+            <view:BackgroundEraserView />
+        </DataTemplate>
+
     </Application.Resources>
 </Application>

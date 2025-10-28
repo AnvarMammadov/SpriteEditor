@@ -59,15 +59,12 @@
             <Button Content="Avtomatik Kəsmə (Grid)" 
                     Command="{Binding GoToSpriteSlicerCommand}" 
                     Style="{StaticResource NavButton}"/>
-
+            <Button Content="Background Eraser" 
+                   Command="{Binding GoToBackgroundEraserCommand}" 
+                   Style="{StaticResource NavButton}"/>
             <Button Content="Manual Crop (Tezliklə)" 
                     IsEnabled="False" 
                     Style="{StaticResource NavButton}"/>
-
-            <Button Content="Background Eraser (Tezliklə)" 
-                    IsEnabled="False" 
-                    Style="{StaticResource NavButton}"/>
-
             <Button Content="Rigging (Tezliklə)" 
                     IsEnabled="False" 
                     Style="{StaticResource NavButton}"/>

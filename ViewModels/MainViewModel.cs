@@ -18,12 +18,14 @@ namespace SpriteEditor.ViewModels
         private readonly HomeViewModel _homeViewModel;
         private readonly SpriteSlicerViewModel _spriteSlicerViewModel;
         // Gələcəkdə: private readonly ManualCropViewModel _manualCropViewModel;
+        private readonly BackgroundEraserViewModel _backgroundEraserViewModel;
 
         public MainViewModel()
         {
             // Bütün səhifələri yaddaşda yaradırıq
             _homeViewModel = new HomeViewModel();
             _spriteSlicerViewModel = new SpriteSlicerViewModel();
+            _backgroundEraserViewModel = new BackgroundEraserViewModel();
 
             // Proqram açıldıqda "Home" səhifəsini göstər
             _currentViewModel = _homeViewModel;
@@ -41,6 +43,13 @@ namespace SpriteEditor.ViewModels
         {
             CurrentViewModel = _spriteSlicerViewModel;
         }
+
+        [RelayCommand] // YENİ
+        private void GoToBackgroundEraser()
+        {
+            CurrentViewModel = _backgroundEraserViewModel;
+        }
+
 
         // Gələcəkdə bura yeni əmrlər əlavə edəcəksiniz:
         // [RelayCommand]

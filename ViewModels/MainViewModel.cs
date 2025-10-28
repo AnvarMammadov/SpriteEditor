@@ -1,12 +1,12 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using Microsoft.Win32;
-using System.Windows.Media.Imaging;
-using SpriteEditor.Services; // Service-i əlavə edirik
-using System.Collections.ObjectModel; // ObservableCollection üçün
-using SpriteEditor.ViewModels; // GridLineViewModel üçün
+﻿using System.Collections.ObjectModel; // ObservableCollection üçün
 using System.IO; // Path üçün
 using System.Threading.Tasks; // Asinxron əməliyyatlar üçün (Task)
+using System.Windows.Media.Imaging;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
+using SpriteEditor.Services; // Service-i əlavə edirik
+using SpriteEditor.ViewModels; // GridLineViewModel üçün
 
 namespace SpriteEditor.ViewModels
 {
@@ -20,8 +20,25 @@ namespace SpriteEditor.ViewModels
         private BitmapImage _loadedImageSource;
 
         private string _loadedImagePath; // Kəsmək üçün fayl yolunu yadda saxlamalıyıq
-        private int _imagePixelWidth;    // Xətləri çəkmək üçün şəklin orijinal eni
-        private int _imagePixelHeight;   // Xətləri çəkmək üçün şəklin orijinal hündürlüyü
+
+        [ObservableProperty]
+        private int _imagePixelWidth;
+
+        [ObservableProperty]
+        private int _imagePixelHeight;
+
+        // === Slicer Box Parametrləri ===
+        [ObservableProperty]
+        private double _slicerX;
+
+        [ObservableProperty]
+        private double _slicerY;
+
+        [ObservableProperty]
+        private double _slicerWidth;
+
+        [ObservableProperty]
+        private double _slicerHeight;
 
         // === UI Xassələri (Properties) ===
         [ObservableProperty]
@@ -74,37 +91,53 @@ namespace SpriteEditor.ViewModels
                 IsImageLoaded = true;
 
                 // Şəklin orijinal ölçülərini götür (Xətlər üçün vacibdir)
-                _imagePixelWidth = bitmap.PixelWidth;
-                _imagePixelHeight = bitmap.PixelHeight;
+                // İNDİ həm də [ObservableProperty] xassələrini yeniləyirik
+                ImagePixelWidth = bitmap.PixelWidth;
+                ImagePixelHeight = bitmap.PixelHeight;
 
                 // Xətləri yenilə
                 UpdateGridLines();
+
+                // === YENİ KOD: Slicer Box-u sıfırla ===
+                // Başlanğıcda Slicer Box bütün şəkli əhatə etsin
+                SlicerX = 0;
+                SlicerY = 0;
+                SlicerWidth = bitmap.PixelWidth;
+                SlicerHeight = bitmap.PixelHeight;
+                // ======================================
             }
         }
 
         /// <summary>
-        /// UI-da göstərilən kəsmə xətlərini yeniləyir.
+        /// UI-da göstərilən kəsmə xətlərini Slicer Box-a uyğun yeniləyir.
         /// </summary>
         private void UpdateGridLines()
         {
             GridLines.Clear(); // Köhnə xətləri təmizlə
             if (!IsImageLoaded) return; // Şəkil yoxdursa, heç nə etmə
 
-            double cellWidth = (double)_imagePixelWidth / Columns;
-            double cellHeight = (double)_imagePixelHeight / Rows;
+            // Hücrə eni/hündürlüyünü şəklin yox, Slicer Box-un ölçüsünə görə hesablayırıq
+            double cellWidth = (double)SlicerWidth / Columns;
+            double cellHeight = (double)SlicerHeight / Rows;
 
             // 1. Şaquli (Vertical) Xətləri çək
             for (int i = 1; i < Columns; i++)
             {
-                double x = i * cellWidth;
-                GridLines.Add(new GridLineViewModel { X1 = x, Y1 = 0, X2 = x, Y2 = _imagePixelHeight });
+                // Xəttin X koordinatı SlicerX-dən başlayaraq hesablanır
+                double x = SlicerX + (i * cellWidth);
+
+                // Xətt SlicerY-dən başlayır və SlicerY + SlicerHeight-də bitir
+                GridLines.Add(new GridLineViewModel { X1 = x, Y1 = SlicerY, X2 = x, Y2 = SlicerY + SlicerHeight });
             }
 
             // 2. Üfüqi (Horizontal) Xətləri çək
             for (int i = 1; i < Rows; i++)
             {
-                double y = i * cellHeight;
-                GridLines.Add(new GridLineViewModel { X1 = 0, Y1 = y, X2 = _imagePixelWidth, Y2 = y });
+                // Xəttin Y koordinatı SlicerY-dən başlayaraq hesablanır
+                double y = SlicerY + (i * cellHeight);
+
+                // Xətt SlicerX-dən başlayır və SlicerX + SlicerWidth-də bitir
+                GridLines.Add(new GridLineViewModel { X1 = SlicerX, Y1 = y, X2 = SlicerX + SlicerWidth, Y2 = y });
             }
         }
 
@@ -132,7 +165,16 @@ namespace SpriteEditor.ViewModels
                     // 2. Əsas işi (UI-ı dondura biləcək) arxa planda (Task.Run) icra et
                     await Task.Run(() =>
                     {
-                        _imageService.SliceSpriteSheet(_loadedImagePath, Columns, Rows, outputDirectory);
+                        _imageService.SliceSpriteSheet(
+                            _loadedImagePath,
+                            Columns,
+                            Rows,
+                            (int)SlicerX,
+                            (int)SlicerY,
+                            (int)SlicerWidth,
+                            (int)SlicerHeight,
+                            outputDirectory
+                        );
                     });
 
                     // 3. Bitəndə məlumat ver
@@ -167,5 +209,11 @@ namespace SpriteEditor.ViewModels
         // Sütun/Sətr dəyişəndə avtomatik çağırılacaq (NotifyPropertyChangedFor sayəsində)
         partial void OnColumnsChanged(int value) => UpdateGridLines();
         partial void OnRowsChanged(int value) => UpdateGridLines();
+
+        // YENİ KOD: Slicer Box dəyişəndə avtomatik çağırılacaq
+        partial void OnSlicerXChanged(double value) => UpdateGridLines();
+        partial void OnSlicerYChanged(double value) => UpdateGridLines();
+        partial void OnSlicerWidthChanged(double value) => UpdateGridLines();
+        partial void OnSlicerHeightChanged(double value) => UpdateGridLines();
     }
 }

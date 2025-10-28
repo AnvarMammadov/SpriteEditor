@@ -19,6 +19,7 @@
         <SolidColorBrush x:Key="AccentBlue" Color="#FF007ACC"/>
         <SolidColorBrush x:Key="AccentBlueHover" Color="#FF009AFF"/>
         <SolidColorBrush x:Key="TextPrimary" Color="#FFE1E1E1"/>
+        <SolidColorBrush x:Key="SlicerBrush" Color="LimeGreen"/>
 
         <Style TargetType="Button">
             <Setter Property="Background" Value="{StaticResource AccentBlue}"/>
@@ -66,6 +67,24 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Margin" Value="5,0,0,0"/>
         </Style>
+
+        <Style x:Key="ResizeThumbStyle" TargetType="Thumb">
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="Height" Value="10"/>
+            <Setter Property="Background" Value="{StaticResource SlicerBrush}"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Rectangle Fill="{TemplateBinding Background}"
+                                   Stroke="{TemplateBinding BorderBrush}"
+                                   StrokeThickness="{TemplateBinding BorderThickness}"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
 
     </UserControl.Resources>
 
@@ -144,6 +163,39 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    
+                    <Canvas x:Name="SlicerCanvas">
+
+                        <Border x:Name="SlicerBorder"
+                                Canvas.Left="{Binding SlicerX}"
+                                Canvas.Top="{Binding SlicerY}"
+                                Width="{Binding SlicerWidth}"
+                                Height="{Binding SlicerHeight}"
+                                BorderBrush="{StaticResource SlicerBrush}"
+                                BorderThickness="2"
+                                Background="#3300FF00" 
+                                IsHitTestVisible="False"/>
+                        <Thumb x:Name="ThumbMove"
+                               Canvas.Left="{Binding SlicerX}"
+                               Canvas.Top="{Binding SlicerY}"
+                               Width="{Binding SlicerWidth}"
+                               Height="{Binding SlicerHeight}"
+                               Cursor="SizeAll"
+                               Opacity="0"
+                               DragDelta="ThumbMove_DragDelta" />
+
+                        <Thumb x:Name="ThumbTopLeft" Cursor="SizeNWSE" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                        <Thumb x:Name="ThumbTopRight" Cursor="SizeNESW" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                        <Thumb x:Name="ThumbBottomLeft" Cursor="SizeNESW" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                        <Thumb x:Name="ThumbBottomRight" Cursor="SizeNWSE" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+
+                        <Thumb x:Name="ThumbTop" Cursor="SizeNS" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                        <Thumb x:Name="ThumbBottom" Cursor="SizeNS" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                        <Thumb x:Name="ThumbLeft" Cursor="SizeWE" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                        <Thumb x:Name="ThumbRight" Cursor="SizeWE" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+
+                    </Canvas>
+
                 </Grid>
             </Viewbox>
         </Border>

@@ -7,11 +7,24 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using SpriteEditor.Services; // Service-i əlavə edirik
 using SpriteEditor.ViewModels; // GridLineViewModel üçün
+using System.Runtime.InteropServices;
 
 namespace SpriteEditor.ViewModels
 {
     public partial class SpriteSlicerViewModel : ObservableObject
     {
+
+        // === Windows Shell Notifier (P/Invoke) ===
+        [DllImport("shell32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern void SHChangeNotify(int wEventId, int uFlags, IntPtr dwItem1, IntPtr dwItem2);
+
+        // 2. BU BLOKU ƏLAVƏ EDİN
+        // Slicer çoxlu fayl yaratdığı üçün birbaşa qovluğa xəbərdarlıq edirik
+        private const int SHCNE_UPDATEDIR = 0x00001000; // Qovluq məzmunu dəyişdi
+        private const int SHCNF_PATH = 0x0001;          // dwItem1 bir yoldur
+        // ==========================================
+
+
         // === Servislər ===
         private readonly ImageService _imageService;
 
@@ -176,6 +189,8 @@ namespace SpriteEditor.ViewModels
                             outputDirectory
                         );
                     });
+
+                    SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH, Marshal.StringToHGlobalAuto(outputDirectory), IntPtr.Zero);
 
                     // 3. Bitəndə məlumat ver
                     System.Windows.MessageBox.Show(

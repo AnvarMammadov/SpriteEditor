@@ -11,12 +11,23 @@ using Microsoft.Win32;
 using SpriteEditor.Services;
 using System.Windows.Media;
 using SixLabors.ImageSharp.PixelFormats;
+using System.Runtime.InteropServices;
 using WpfColor = System.Windows.Media.Color;
 
 namespace SpriteEditor.ViewModels
 {
     public partial class BackgroundEraserViewModel : ObservableObject
     {
+
+        // === Windows Shell Notifier (P/Invoke) ===
+        // Bu, OpenFileDialog-un dərhal yenilənməsi üçün lazımdır
+        [DllImport("shell32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern void SHChangeNotify(int wEventId, int uFlags, IntPtr dwItem1, IntPtr dwItem2);
+
+        private const int SHCNE_CREATE = 0x00000002; // 2. BU BLOKU ƏLAVƏ EDİN (Fayl yaradıldı)
+        private const int SHCNF_PATH = 0x0001;       //    (dwItem1 bir yoldur)
+        // ==========================================
+
         private readonly ImageService _imageService;
 
         // === YENİ XASSƏLƏR ===
@@ -153,6 +164,7 @@ namespace SpriteEditor.ViewModels
                 try
                 {
                     File.WriteAllBytes(saveDialog.FileName, LastProcessedData);
+                    SHChangeNotify(SHCNE_CREATE, SHCNF_PATH, Marshal.StringToHGlobalAuto(saveDialog.FileName), IntPtr.Zero);
                     System.Windows.MessageBox.Show("Şəkil uğurla yadda saxlandı!", "Uğurlu");
                 }
                 catch (Exception ex)

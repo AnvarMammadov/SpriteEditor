@@ -53,10 +53,12 @@
                 MouseLeave="SKCanvasView_MouseLeave"
                 MouseDown="SKCanvasView_MouseDown"
                 MouseUp="SKCanvasView_MouseUp"
+                MouseRightButtonDown="SKCanvasView_MouseRightButtonDown"
                 PreviewMouseWheel="SKCanvasView_PreviewMouseWheel"
                 
                 >
             <skia:SKElement x:Name="SKCanvasView"
+                            IgnorePixelScaling="True"
                             PaintSurface="SKCanvasView_PaintSurface"
                             SizeChanged="SKCanvasView_SizeChanged"
                             />

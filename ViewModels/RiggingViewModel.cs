@@ -13,18 +13,15 @@ using SkiaSharp;
 
 namespace SpriteEditor.ViewModels
 {
-
-    // 1. Alət rejimlərini təyin edən Enum
     public enum RiggingToolMode
     {
         None,
-        CreateJoint // Oynaq (sümük) yaratma
+        CreateJoint
     }
+
     public partial class RiggingViewModel : ObservableObject
     {
-        // View-a "Yenidən çək" siqnalı göndərmək üçün hadisə (event)
         public event EventHandler RequestRedraw;
-
         public event EventHandler RequestCenterCamera;
 
         [ObservableProperty]
@@ -32,37 +29,28 @@ namespace SpriteEditor.ViewModels
         private bool _isImageLoaded = false;
 
         [ObservableProperty]
-        private SKBitmap _loadedBitmap; // Şəkli BitmapImage yox, SKBitmap olaraq saxlayacağıq
-
-
-        // === YENİ XASSƏLƏR (PROPERTIES) ===
+        private SKBitmap _loadedBitmap;
 
         [ObservableProperty]
-        private RiggingToolMode _currentTool = RiggingToolMode.None; // Hazırkı aktiv alət
+        private RiggingToolMode _currentTool = RiggingToolMode.None;
 
-        // Bütün yaradılmış oynaql (joint) siyahısı
         public ObservableCollection<JointModel> Joints { get; } = new ObservableCollection<JointModel>();
 
         [ObservableProperty]
-        private JointModel _selectedJoint; // Kliklə seçilən son oynaq (yeni sümüyün başlanğıcı)
-
+        private JointModel _selectedJoint;
 
         [ObservableProperty]
-        private SKPoint _currentMousePosition; // Siçanın kətan üzərindəki yeri (önizləmə üçün)
+        private SKPoint _currentMousePosition;
 
-        private int _jointIdCounter = 0; // Oynaqlara unikal ID vermək üçün
+        private int _jointIdCounter = 0;
 
-        // === YENİ: KAMERA VƏZİYYƏTİ (STATE) ===
-
-        // Kameranın sürüşməsi (offseti)
+        // === KAMERA VƏZİYYƏTİ ((P*S)+O MODELİ) ===
+        // Bu modeldə CameraOffset EKRAN fəzasındadır (Screen-Space)
         public SKPoint CameraOffset { get; private set; } = SKPoint.Empty;
-        // Kameranın miqyası (yaxınlaşdırma)
         public float CameraScale { get; private set; } = 1.0f;
 
-        // Sürüşdürmə (Pan) üçün köməkçi dəyişənlər
         private bool _isPanning = false;
         private SKPoint _lastPanPosition;
-
         // ======================================
 
 
@@ -78,11 +66,9 @@ namespace SpriteEditor.ViewModels
             {
                 try
                 {
-                    // Cache probleminin qarşısını almaq üçün byte massivi olaraq oxuyuruq
                     byte[] fileBytes = File.ReadAllBytes(openDialog.FileName);
                     using (var ms = new MemoryStream(fileBytes))
                     {
-                        // SkiaSharp-ın daxili metodu ilə şəkli decode edirik
                         LoadedBitmap = SKBitmap.Decode(ms);
                     }
 
@@ -92,11 +78,9 @@ namespace SpriteEditor.ViewModels
                     }
 
                     IsImageLoaded = true;
-                    // View-a xəbər veririk ki, şəkil yükləndi, kətanı yeniləsin
                     ClearRiggingData();
                     ResetCamera();
                     RequestCenterCamera?.Invoke(this, EventArgs.Empty);
-                    RequestRedraw?.Invoke(this, EventArgs.Empty);
                 }
                 catch (Exception ex)
                 {
@@ -109,11 +93,6 @@ namespace SpriteEditor.ViewModels
             }
         }
 
-
-
-        /// <summary>
-        /// Kameranı başlanğıc vəziyyətinə qaytarır və yenidən çəkir.
-        /// </summary>
         public void ResetCamera()
         {
             CameraOffset = SKPoint.Empty;
@@ -121,18 +100,15 @@ namespace SpriteEditor.ViewModels
         }
 
         /// <summary>
-        /// DÜZƏLDİLMİŞ: Şəkli kətanın mərkəzinə çəkmək üçün ofseti hesablayır.
+        /// (P*S)+O MODELİ: Şəkli kətanın mərkəzinə çəkmək üçün EKRAN ofsetini hesablayır.
         /// </summary>
         public void CenterCamera(float canvasWidth, float canvasHeight, bool forceRecenter = false)
         {
             if (LoadedBitmap == null) return;
 
-            // Nə vaxt mərkəzləşdirməli:
-            // 1. forceRecenter = true (yəni LoadImage məcbur edir)
-            // 2. VƏ YA hələ heç bir dəyişiklik edilməyibsə (ilkin yükləmə)
             if (forceRecenter || (CameraScale == 1.0f && CameraOffset == SKPoint.Empty))
             {
-                // DÜZƏLİŞ BURADADIR: Miqyası (Scale) nəzərə alırıq
+                // Ekran ofseti:
                 float offsetX = (canvasWidth - (LoadedBitmap.Width * CameraScale)) / 2;
                 float offsetY = (canvasHeight - (LoadedBitmap.Height * CameraScale)) / 2;
 
@@ -141,10 +117,9 @@ namespace SpriteEditor.ViewModels
             }
         }
 
-        // === YENİ: Koordinat Çevirmə (Transform) Metodları ===
-
         /// <summary>
-        /// Siçanın kliklədiyi "Ekran" (Screen) koordinatını "Dünya" (World) koordinatına çevirir.
+        /// (P*S)+O MODELİ: Ekran koordinatını Dünya koordinatına çevirir.
+        /// Riyaziyyat: World = (Screen - ScreenOffset) / Scale
         /// </summary>
         public SKPoint ScreenToWorld(SKPoint screenPoint)
         {
@@ -155,8 +130,8 @@ namespace SpriteEditor.ViewModels
         }
 
         /// <summary>
-        /// "Dünya" (World) koordinatını "Ekran" (Screen) koordinatına çevirir.
-        /// (Gələcəkdə UI elementləri üçün lazım ola bilər)
+        /// (P*S)+O MODELİ: Dünya koordinatını Ekran koordinatına çevirir.
+        /// Riyaziyyat: Screen = (World * Scale) + ScreenOffset
         /// </summary>
         public SKPoint WorldToScreen(SKPoint worldPoint)
         {
@@ -165,8 +140,6 @@ namespace SpriteEditor.ViewModels
                 (worldPoint.Y * CameraScale) + CameraOffset.Y
             );
         }
-
-        // === YENİ: Siçan İdarəetmə Metodları (View tərəfindən çağırılacaq) ===
 
         public void StartPan(SKPoint screenPos)
         {
@@ -180,7 +153,7 @@ namespace SpriteEditor.ViewModels
         }
 
         /// <summary>
-        /// DÜZƏLDİLMİŞ: Siçanın olduğu yerə yaxınlaşdırma (Zoom to Mouse) məntiqi
+        /// (P*S)+O MODELİ: "Zoom to Mouse" məntiqi
         /// </summary>
         public void HandleZoom(SKPoint screenPos, int delta)
         {
@@ -192,7 +165,6 @@ namespace SpriteEditor.ViewModels
             else
                 newScale = CameraScale / zoomFactor; // Uzaqlaşdır
 
-            // Zoom limitləri
             newScale = Math.Max(0.1f, Math.Min(newScale, 10.0f));
 
             if (Math.Abs(newScale - CameraScale) < 0.001f) return;
@@ -202,10 +174,6 @@ namespace SpriteEditor.ViewModels
 
             // Miqyası yenilə
             CameraScale = newScale;
-
-            // Miqyas dəyişdikdən sonra siçanın "Ekran" mövqeyinin altındakı YENİ "Dünya" mövqeyini tap
-            // DÜZƏLİŞ: Bu hesablama artıq birbaşa ofset dəyişikliyində edilməlidir.
-            // SKPoint worldPosAfter = ScreenToWorld(screenPos); // Buna ehtiyac yoxdur
 
             // Kameranı elə sürüşdürürük ki, siçanın altındakı "dünya" nöqtəsi eyni qalsın
             // Riyazi izahı: newOffset = screenPos - (worldPos * newScale)
@@ -217,34 +185,62 @@ namespace SpriteEditor.ViewModels
             RequestRedraw?.Invoke(this, EventArgs.Empty);
         }
 
-
-
-
-        // DÜZƏLDİLMİŞ: OnCanvasLeftClicked (artıq if silindi)
-        /// <summary>
-        /// Kətan üzərinə klikləndikdə View (code-behind) tərəfindən çağırılacaq.
-        /// </summary>
         public void OnCanvasLeftClicked(SKPoint screenPos)
         {
             SKPoint worldPos = ScreenToWorld(screenPos);
 
             if (CurrentTool == RiggingToolMode.CreateJoint)
             {
+                // === "SÜMÜK YARAT" REJİMİ ===
+                // Bu kod olduğu kimi qalır
                 var newJoint = new JointModel(_jointIdCounter++, worldPos, SelectedJoint);
                 Joints.Add(newJoint);
                 SelectedJoint = newJoint;
                 RequestRedraw?.Invoke(this, EventArgs.Empty);
             }
+            else if (CurrentTool == RiggingToolMode.None)
+            {
+                // === YENİ KOD: "SEÇİM" REJİMİ ===
+
+                // Kliklənən nöqtəyə ən yaxın oynağı tapmaq
+                JointModel closestJoint = null;
+                float minDistanceSq = float.MaxValue; // Kvadrat məsafə (daha sürətli hesablama üçün)
+
+                // Ekranda 10 piksellik bir sahəni "klik sahəsi" kimi götürək
+                // Bunu Dünya koordinatlarına çeviririk ki, zoom zamanı da düz işləsin
+                float clickRadiusScreen = 10f;
+                float clickRadiusWorld = clickRadiusScreen / CameraScale;
+                float clickRadiusSq = clickRadiusWorld * clickRadiusWorld; // Kvadratı
+
+                foreach (var joint in Joints)
+                {
+                    // Nöqtələr arasındakı məsafənin kvadratını tapırıq (Math.Sqrt daha yavaşdır)
+                    float dx = worldPos.X - joint.Position.X;
+                    float dy = worldPos.Y - joint.Position.Y;
+                    float distanceSq = (dx * dx) + (dy * dy);
+
+                    // Əgər bu oynaq klik radiusu daxilindədirsə VƏ indiyə qədər tapdığımızdan daha yaxındırsa
+                    if (distanceSq < clickRadiusSq && distanceSq < minDistanceSq)
+                    {
+                        minDistanceSq = distanceSq;
+                        closestJoint = joint;
+                    }
+                }
+
+                // Ən yaxın oynağı seçilmiş edirik (əgər heç nə tapılmayıbsa, null olacaq)
+                if (SelectedJoint != closestJoint)
+                {
+                    SelectedJoint = closestJoint;
+                    RequestRedraw?.Invoke(this, EventArgs.Empty); // View-u yenilə
+                }
+            }
         }
 
-        /// <summary>
-        /// Siçan tərpəndikcə View (code-behind) tərəfindən çağırılacaq.
-        /// </summary>
-        public void OnCanvasMouseMoved(SKPoint screenPos) // Dəyişdirildi: screenPos
+        public void OnCanvasMouseMoved(SKPoint screenPos)
         {
-            // Əgər Pan ediriksə, kameranı hərəkət etdir
             if (_isPanning)
             {
+                // Pan əməliyyatı EKRAN fəzasında baş verir
                 SKPoint delta = new SKPoint(screenPos.X - _lastPanPosition.X, screenPos.Y - _lastPanPosition.Y);
                 CameraOffset = new SKPoint(CameraOffset.X + delta.X, CameraOffset.Y + delta.Y);
                 _lastPanPosition = screenPos;
@@ -263,8 +259,19 @@ namespace SpriteEditor.ViewModels
         }
 
         /// <summary>
-        /// Bütün sümük/oynaq məlumatlarını sıfırlayır
+        /// Sümük yaratma zəncirini ləğv edir (seçimi sıfırlayır).
+        /// View (code-behind) tərəfindən (Sağ Klik ilə) çağırılacaq.
         /// </summary>
+        public void DeselectCurrentJoint()
+        {
+            // Yalnız o zaman yenidən çəkək ki, həqiqətən nəsə seçilmişdi
+            if (SelectedJoint != null)
+            {
+                SelectedJoint = null;
+                RequestRedraw?.Invoke(this, EventArgs.Empty); // View-a xəbər ver ki, preview xəttini gizlətsin
+            }
+        }
+
         private void ClearRiggingData()
         {
             Joints.Clear();
@@ -272,14 +279,12 @@ namespace SpriteEditor.ViewModels
             _jointIdCounter = 0;
         }
 
-        // Partial metod: Alət dəyişəndə (UI-dan) xəbərimiz olsun
         partial void OnCurrentToolChanged(RiggingToolMode value)
         {
-            // Əgər "Sümük Yarat" alətindən çıxırıqsa, seçilmiş oynağı sıfırla
             if (value != RiggingToolMode.CreateJoint)
             {
                 SelectedJoint = null;
-                RequestRedraw?.Invoke(this, EventArgs.Empty); // Seçim halqasını gizlət
+                RequestRedraw?.Invoke(this, EventArgs.Empty);
             }
         }
     }

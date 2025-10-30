@@ -53,9 +53,8 @@ namespace SpriteEditor.Views
         public RiggingView()
         {
             InitializeComponent();
-            CanvasBorder.MouseDown += SKCanvasView_MouseDown;
-            CanvasBorder.MouseUp += SKCanvasView_MouseUp;
 
+            // Hadisələr XAML-da CanvasBorder-ə bağlıdır
             this.DataContextChanged += RiggingView_DataContextChanged;
         }
 
@@ -65,7 +64,7 @@ namespace SpriteEditor.Views
             if (_viewModel != null)
             {
                 _viewModel.RequestRedraw -= ViewModel_RequestRedraw;
-                _viewModel.RequestCenterCamera -= ViewModel_RequestCenterCamera; // YENİ
+                _viewModel.RequestCenterCamera -= ViewModel_RequestCenterCamera;
             }
 
             _viewModel = e.NewValue as RiggingViewModel;
@@ -74,47 +73,47 @@ namespace SpriteEditor.Views
             if (_viewModel != null)
             {
                 _viewModel.RequestRedraw += ViewModel_RequestRedraw;
-                _viewModel.RequestCenterCamera += ViewModel_RequestCenterCamera; // YENİ
+                _viewModel.RequestCenterCamera += ViewModel_RequestCenterCamera;
             }
         }
 
-
-        // YENİ METOD: ViewModel mərkəzləmə istədikdə işə düşür
         private void ViewModel_RequestCenterCamera(object sender, System.EventArgs e)
         {
             if (_viewModel == null) return;
-
-            // ViewModel-ə mərkəzləmə əmri veririk (forceRecenter: true)
             _viewModel.CenterCamera((float)SKCanvasView.ActualWidth, (float)SKCanvasView.ActualHeight, true);
         }
 
-        // ViewModel "Yenidən çək" dedikdə, SKElement-ə xəbər veririk
         private void ViewModel_RequestRedraw(object sender, System.EventArgs e)
         {
-            // Bu metod SKElement-i "PaintSurface" hadisəsini yenidən işə salmağa məcbur edir
             SKCanvasView.InvalidateVisual();
         }
 
         // ƏSAS RENDER MƏNTİQİ:
-        // SKElement hər dəfə yenilənməli olduqda (məs. ölçü dəyişəndə, InvalidateVisual çağırılanda) bu metod işə düşür
         private void SKCanvasView_PaintSurface(object sender, SKPaintSurfaceEventArgs e)
         {
-            // 'e' bizə hazır kətan (canvas) və səth (surface) verir
             SKSurface surface = e.Surface;
             SKCanvas canvas = surface.Canvas;
-            canvas.Clear(SKColors.DarkGray); // Fonu təmizlə
+            canvas.Clear(SKColors.DarkGray);
 
 
             if (_viewModel == null) return;
 
             // === 1. KAMERA TRANSFORMUNU TƏTBİQ ET ===
-            canvas.Save(); // Hazırkı vəziyyəti yadda saxla
+            canvas.Save();
 
-            // Kameranın ofsetinə görə kətanı sürüşdür
-            canvas.Translate(_viewModel.CameraOffset);
+            // === QƏTİ DÜZƏLİŞ: (P*S)+O MODELİ ===
+            // ViewModel-dəki (World * Scale) + Offset riyaziyyatına uyğun gələn
+            // SkiaSharp render sırası ƏVVƏLCƏ Scale, SONRA Translate olmalıdır.
 
-            // Kameranın miqyasına görə kətanı böyüt/kiçilt
+            // 1. Kameranın miqyasına görə kətanı böyüt/kiçilt
             canvas.Scale(_viewModel.CameraScale);
+
+            // 2. Kameranın EKRAN ofsetinə görə kətanı sürüşdür
+            // DÜZƏLİŞ: SkiaSharp-da Translate() əmri cari transformasiyaya (yəni Scale-ə)
+            // məruz qalmış fəzada işləyir. EKRAN ofsetini tətbiq etmək üçün
+            // onu Miqyasa bölməliyik.
+            canvas.Translate(_viewModel.CameraOffset.X / _viewModel.CameraScale,
+                             _viewModel.CameraOffset.Y / _viewModel.CameraScale);
             // ==========================================
 
 
@@ -122,19 +121,16 @@ namespace SpriteEditor.Views
             SKBitmap bitmap = _viewModel.LoadedBitmap;
             if (bitmap != null)
             {
-                // Şəkli (0, 0) koordinatından başlayaraq çəkirik
+                // Şəkli DÜNYA koordinatının başlanğıcında (0, 0) çəkirik
                 canvas.DrawBitmap(bitmap, 0, 0);
             }
 
-            // === YENİ: Sümükləri və Oynaqları çək ===
-
             // 2. Bütün oynaql (Joints) və sümükləri (Bones) çək
+            // Oynaqların mövqeyi (Joint.Position) DÜNYA koordinatındadır
             foreach (var joint in _viewModel.Joints)
             {
-                // Oynağın özünü (nöqtə) çək
                 canvas.DrawCircle(joint.Position, 5f, _jointPaint);
 
-                // Əgər bu oynağın atası (parent) varsa, sümüyü (xətti) çək
                 if (joint.Parent != null)
                 {
                     canvas.DrawLine(joint.Parent.Position, joint.Position, _bonePaint);
@@ -150,21 +146,19 @@ namespace SpriteEditor.Views
             // 4. Sümük yaratma önizləməsini (Preview) çək
             if (_viewModel.CurrentTool == RiggingToolMode.CreateJoint && _viewModel.SelectedJoint != null)
             {
-                // Seçilmiş oynağdan siçanın hazırkı yerinə xətt çək
                 canvas.DrawLine(_viewModel.SelectedJoint.Position, _viewModel.CurrentMousePosition, _bonePaint);
             }
-            // === 3. KAMERA TRANSFORMUNU LƏĞV ET ===
-            canvas.Restore(); // Kətanı (0,0) və (1.0) vəziyyətinə qaytar
-            // ======================================
 
-            // Gələcəkdə bura HUD (məsələn, koordinatlar, "Zoom: 150%") çəkə bilərik
-            // Bu elementlər kameradan təsirlənməyəcək.
+            // === 3. KAMERA TRANSFORMUNU LƏĞV ET ===
+            canvas.Restore();
+            // ======================================
         }
 
-        private SKPoint GetSkiaScreenPos(object sender, MouseEventArgs e)
+        // === DÜZƏLİŞ: Siçan koordinatlarını birbaşa SKCanvasView-dən alaq ===
+        private SKPoint GetSkiaScreenPos(MouseEventArgs e)
         {
-            // İndi 'sender' bu kontekstdə mövcuddur
-            Point wpfPos = e.GetPosition(sender as IInputElement);
+            // Koordinatları `Border`-dən yox, `SKCanvasView`-in özündən alırıq
+            Point wpfPos = e.GetPosition(SKCanvasView);
             return new SKPoint((float)wpfPos.X, (float)wpfPos.Y);
         }
 
@@ -172,14 +166,10 @@ namespace SpriteEditor.Views
         private void SKCanvasView_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (_viewModel == null) return;
-            // Siçanı tuturuq ki, kənara çıxsa da "Up" hadisəsini tuta bilək
             (sender as UIElement)?.CaptureMouse();
-            _viewModel.OnCanvasLeftClicked(GetSkiaScreenPos(sender, e));
+            _viewModel.OnCanvasLeftClicked(GetSkiaScreenPos(e));
         }
 
-        /// <summary>
-        /// Sol düymə buraxıldıqda siçan "girovluğunu" dayandırır.
-        /// </summary>
         private void SKCanvasView_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (_viewModel == null) return;
@@ -189,60 +179,43 @@ namespace SpriteEditor.Views
         private void SKCanvasView_MouseMove(object sender, MouseEventArgs e)
         {
             if (_viewModel == null) return;
-            _viewModel.OnCanvasMouseMoved(GetSkiaScreenPos(sender, e));
+            _viewModel.OnCanvasMouseMoved(GetSkiaScreenPos(e));
         }
 
         private void SKCanvasView_MouseLeave(object sender, MouseEventArgs e)
         {
             if (_viewModel == null) return;
-            _viewModel.OnCanvasMouseMoved(new SKPoint(-1000, -1000)); // Önizləməni gizlət
-            _viewModel.StopPan(); // Pan edirdisə dayandır
+            _viewModel.OnCanvasMouseMoved(new SKPoint(-1000, -1000));
+            _viewModel.StopPan();
         }
 
-        // === YENİ HADİSƏ HANDLER-LƏRİ ===
 
         private void SKCanvasView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (_viewModel == null || Keyboard.Modifiers != ModifierKeys.Control)
             {
-                // Yalnız Ctrl basılı olduqda zoom et
-                // Əks halda, gələcəkdə normal ScrollViewer (əgər əlavə etsək) işləsin
                 return;
             }
 
-            e.Handled = true; // Bu hadisənin başqa elementə getməsinin qarşısını al
-            _viewModel.HandleZoom(GetSkiaScreenPos(sender, e), e.Delta);
+            e.Handled = true;
+            _viewModel.HandleZoom(GetSkiaScreenPos(e), e.Delta);
         }
 
-
-
-
-        /// <summary>
-        /// Bütün düymə basılmalarını idarə edən ümumi metod.
-        /// </summary>
         private void SKCanvasView_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (_viewModel == null) return;
 
-            // Yalnız ORTA düymə (Middle) basılıbsa "Pan" (sürüşdürmə) rejimini başlat
             if (e.ChangedButton == MouseButton.Middle)
             {
                 (sender as UIElement)?.CaptureMouse();
-                _viewModel.StartPan(GetSkiaScreenPos(sender, e));
+                _viewModel.StartPan(GetSkiaScreenPos(e));
             }
-
-            // (Sol düymə artıq "SKCanvasView_MouseLeftButtonDown" tərəfindən idarə olunur,
-            // ona görə burada ona ehtiyac yoxdur)
         }
 
-        /// <summary>
-        /// Bütün düymə buraxılmalarını idarə edən ümumi metod.
-        /// </summary>
         private void SKCanvasView_MouseUp(object sender, MouseButtonEventArgs e)
         {
             if (_viewModel == null) return;
 
-            // Yalnız ORTA düymə (Middle) buraxılıbsa "Pan" (sürüşdürmə) rejimini dayandır
             if (e.ChangedButton == MouseButton.Middle)
             {
                 (sender as UIElement)?.ReleaseMouseCapture();
@@ -250,15 +223,23 @@ namespace SpriteEditor.Views
             }
         }
 
-        // DÜZƏLDİLMİŞ: SizeChanged metodu
-        private void SKCanvasView_SizeChanged(object sender, SizeChangedEventArgs e)
+
+        // === YENİ METOD: Sağ Klik Hadisəsi ===
+        private void SKCanvasView_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (_viewModel == null) return;
 
-            // Pəncərə ölçüsü dəyişəndə mərkəzləməyə cəhd edirik (forceRecenter: false)
-            _viewModel.CenterCamera((float)e.NewSize.Width, (float)e.NewSize.Height, false);
+            // ViewModel-ə xəbər ver ki, seçimi ləğv etsin
+            _viewModel.DeselectCurrentJoint();
+
+            // Sağ klik menyusunun (context menu) açılmasının qarşısını al
+            e.Handled = true;
         }
 
-
+        private void SKCanvasView_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (_viewModel == null) return;
+            _viewModel.CenterCamera((float)e.NewSize.Width, (float)e.NewSize.Height, false);
+        }
     }
 }

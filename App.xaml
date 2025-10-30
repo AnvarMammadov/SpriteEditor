@@ -19,5 +19,9 @@
             <view:BackgroundEraserView />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type viewmodels:RiggingViewModel}">
+            <view:RiggingView />
+        </DataTemplate>
+
     </Application.Resources>
 </Application>

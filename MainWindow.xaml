@@ -65,8 +65,9 @@
             <Button Content="Manual Crop (Tezliklə)" 
                     IsEnabled="False" 
                     Style="{StaticResource NavButton}"/>
-            <Button Content="Rigging (Tezliklə)" 
-                    IsEnabled="False" 
+            <Button Content="Rigging"
+                    IsEnabled="True"
+                    Command="{Binding GoToRiggingCommand}" 
                     Style="{StaticResource NavButton}"/>
 
         </StackPanel>

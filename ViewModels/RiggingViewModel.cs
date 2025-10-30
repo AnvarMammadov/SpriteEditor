@@ -111,7 +111,7 @@ namespace SpriteEditor.ViewModels
         }
 
 
-        // === Skeleti Yüklə (DÜZƏLİŞLİ) ===
+        // === Skeleti Yüklə (PLAN 2 - ADLANDIRMA ƏLAVƏ EDİLDİ) ===
         [RelayCommand(CanExecute = nameof(CanLoadRig))]
         private async Task LoadRigAsync()
         {
@@ -158,7 +158,18 @@ namespace SpriteEditor.ViewModels
                         {
                             BoneLength = jointData.BoneLength,
                             Rotation = jointData.Rotation
+                            // Qeyd: Name hələ təyin edilmir, konstruktordakı default adı ("Joint_1") alır
                         };
+
+                        // === YENİ (PLAN 2): Adı təyin et ===
+                        // Əgər faylda ad yoxdursa (köhnə fayl) və ya boşdursa,
+                        // konstruktorda təyin edilmiş default adı qoru.
+                        if (!string.IsNullOrEmpty(jointData.Name))
+                        {
+                            newJoint.Name = jointData.Name;
+                        }
+                        // ===================================
+
                         Joints.Add(newJoint);
                         jointMap.Add(newJoint.Id, newJoint);
                     }
@@ -209,7 +220,7 @@ namespace SpriteEditor.ViewModels
 
 
 
-        // === Skeleti Yadda Saxla (Dəyişməyib) ===
+        // === Skeleti Yadda Saxla (PLAN 2 - ADLANDIRMA ƏLAVƏ EDİLDİ) ===
         [RelayCommand(CanExecute = nameof(CanSaveRig))]
         private async Task SaveRigAsync()
         {
@@ -228,7 +239,8 @@ namespace SpriteEditor.ViewModels
                     Position = joint.Position,
                     ParentId = joint.Parent?.Id ?? -1,
                     BoneLength = joint.BoneLength,
-                    Rotation = joint.Rotation
+                    Rotation = joint.Rotation,
+                    Name = joint.Name // <-- === YENİ (PLAN 2) ===
                 });
             }
 

@@ -6,14 +6,41 @@
              xmlns:local="clr-namespace:SpriteEditor.Views"
              xmlns:skia="clr-namespace:SkiaSharp.Views.WPF;assembly=SkiaSharp.Views.WPF"
              
-             xmlns:vm="clr-namespace:SpriteEditor.ViewModels" xmlns:converters="clr-namespace:SpriteEditor.Converters" mc:Ignorable="d" 
+             xmlns:vm="clr-namespace:SpriteEditor.ViewModels" 
+             xmlns:converters="clr-namespace:SpriteEditor.Converters" 
+             mc:Ignorable="d" 
+             
              d:DesignHeight="550" d:DesignWidth="880" Background="#FF2D2D30"
              Foreground="#FFE1E1E1">
 
     <UserControl.Resources>
         <SolidColorBrush x:Key="BgSecondary" Color="#FF3F3F46"/>
-
         <converters:EnumToBooleanConverter x:Key="EnumToBooleanConverter"/>
+
+        <SolidColorBrush x:Key="AccentBlue" Color="#FF007ACC"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#FFE1E1E1"/>
+        <SolidColorBrush x:Key="BgPrimary" Color="#FF2D2D30"/>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="HeaderTextBlock" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,15,0,5"/>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource BgPrimary}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
     </UserControl.Resources>
 
     <Grid Margin="10">
@@ -24,12 +51,12 @@
 
         <Border Grid.Column="0" Background="{StaticResource BgSecondary}" CornerRadius="5" Padding="10">
             <StackPanel>
-                <TextBlock Text="1. Fayl" FontSize="14" FontWeight="SemiBold"/>
+                <TextBlock Text="1. Fayl" Style="{StaticResource HeaderTextBlock}"/>
                 <Button Content="Görüntü Yüklə..." 
                         Command="{Binding LoadImageCommand}"
                         Margin="5"/>
 
-                <TextBlock Text="2. Alətlər" FontSize="14" FontWeight="SemiBold" Margin="0,15,0,5"/>
+                <TextBlock Text="2. Alətlər" Style="{StaticResource HeaderTextBlock}"/>
 
                 <RadioButton Content="Redaktə (Edit)" 
                              GroupName="ToolMode" 
@@ -46,7 +73,7 @@
                              IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.Pose}}"
                              Foreground="White" Margin="5"/>
 
-                <TextBlock Text="3. Əməliyyatlar" FontSize="14" FontWeight="SemiBold" Margin="0,15,0,5"/>
+                <TextBlock Text="3. Əməliyyatlar" Style="{StaticResource HeaderTextBlock}"/>
                 <Button Content="Skeleti Yüklə"
                         Command="{Binding LoadRigCommand}"
                         Margin="5,5,5,0"/>
@@ -54,6 +81,23 @@
                         Command="{Binding SaveRigCommand}"
                         Margin="5,5,5,5"/>
 
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedJoint}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+
+                    <TextBlock Text="4. Seçilmiş Oynaq" Style="{StaticResource HeaderTextBlock}"/>
+                    <TextBlock Text="Ad:" Margin="5,0"/>
+                    <TextBox Text="{Binding SelectedJoint.Name, UpdateSourceTrigger=PropertyChanged}" 
+                             Margin="5"/>
+                </StackPanel>
             </StackPanel>
         </Border>
 

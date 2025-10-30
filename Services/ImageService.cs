@@ -154,6 +154,93 @@ namespace SpriteEditor.Services
             }
         }
 
+        /// <summary>
+        /// "Flood Fill" (Magic Wand) alqoritmi ilə arxa fonu şəffaf edir (Byte massivindən).
+        /// </summary>
+        /// <param name="imageData">Şəklin byte massivi</param>
+        /// <param name="startX">Kliklənən pikselin X koordinatı</param>
+        /// <param name="startY">Kliklənən pikselin Y koordinatı</param>
+        /// <param name="tolerancePercent">Həssaslıq (0-100)</param>
+        /// <returns>Nəticənin PNG byte massivi</returns>
+        public byte[] RemoveBackground(byte[] imageData, int startX, int startY, float tolerancePercent)
+        {
+            // Orijinal şəkli fayldan yox, MemoryStream-dən yükləyirik
+            using (Image originalImage = Image.Load(new MemoryStream(imageData)))
+            {
+                // === YENİ DÜZƏLİŞ: ===
+                // 1. Tamamilə yeni, boş və şəffaf bir Rgba32 kətan (canvas) yaradırıq
+                using (Image<Rgba32> image = new Image<Rgba32>(originalImage.Width, originalImage.Height))
+                {
+                    // 2. Orijinal şəkli bu yeni kətanın üzərinə çəkirik
+                    image.Mutate(ctx => ctx.DrawImage(originalImage, 1f));
+
+                    // Artıq 100% əminik ki, "image" dəyişdirilə bilən Rgba32 formatındadır
+
+                    // 3. Başlanğıc rəngi bu yeni kətandan götürürük
+                    Rgba32 targetColor = image[startX, startY];
+
+                    // 4. Həssaslıq
+                    float maxDistance = (float)Math.Sqrt(Math.Pow(255, 2) * 3);
+                    float toleranceDistance = maxDistance * (tolerancePercent / 100f);
+
+                    // 5. Strukturlar
+                    var pixelsToProcess = new Queue<Point>();
+                    var visitedPixels = new HashSet<Point>();
+
+                    // 6. Başlanğıc nöqtə
+                    pixelsToProcess.Enqueue(new Point(startX, startY));
+
+                    // 7. "Sel" (Flood)
+                    while (pixelsToProcess.Count > 0)
+                    {
+                        Point currentPoint = pixelsToProcess.Dequeue();
+                        int x = currentPoint.X;
+                        int y = currentPoint.Y;
+
+                        // A. Sərhəd yoxlaması
+                        if (x < 0 || x >= image.Width || y < 0 || y >= image.Height)
+                            continue;
+
+                        // B. Ziyarət yoxlaması
+                        if (visitedPixels.Contains(currentPoint))
+                            continue;
+
+                        visitedPixels.Add(currentPoint);
+
+                        // D. Rəng al
+                        Rgba32 currentColor = image[x, y];
+
+                        // E. Fərqi hesabla
+                        double distance = Math.Sqrt(
+                            Math.Pow(currentColor.R - targetColor.R, 2) +
+                            Math.Pow(currentColor.G - targetColor.G, 2) +
+                            Math.Pow(currentColor.B - targetColor.B, 2)
+                        );
+
+                        // F. Əgər rəng həssaslıq daxilindədirsə...
+                        if (distance <= toleranceDistance)
+                        {
+                            // Rəngi şəffaf et
+                            image[x, y] = new Rgba32(currentColor.R, currentColor.G, currentColor.B, 0);
+
+                            // Qonşuları əlavə et
+                            pixelsToProcess.Enqueue(new Point(x + 1, y));
+                            pixelsToProcess.Enqueue(new Point(x - 1, y));
+                            pixelsToProcess.Enqueue(new Point(x, y + 1));
+                            pixelsToProcess.Enqueue(new Point(x, y - 1));
+                        }
+                    }
+
+                    // 8. Nəticəni yaddaşa yaz
+                    using (var ms = new MemoryStream())
+                    {
+                        image.Save(ms, new PngEncoder());
+                        return ms.ToArray();
+                    }
+                }
+            }
+        }
+
         #region Diagnostika Testi
         /// <summary>
         /// === DİAQNOSTİKA TESTİ #2 ===

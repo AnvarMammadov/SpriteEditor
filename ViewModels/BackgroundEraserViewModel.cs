@@ -16,6 +16,16 @@ using WpfColor = System.Windows.Media.Color;
 
 namespace SpriteEditor.ViewModels
 {
+
+    // === YENİ ===
+    // Hansı alətin aktiv olduğunu təyin etmək üçün
+    public enum EraserToolMode
+    {
+        Pipet,
+        ManualEraser
+    }
+    // ============
+
     public partial class BackgroundEraserViewModel : ObservableObject
     {
 
@@ -39,17 +49,19 @@ namespace SpriteEditor.ViewModels
 
         // === Şəkil Yükləmə Xassələri (SpriteSlicerViewModel-dən kopyalanıb) ===
         [ObservableProperty]
-        private BitmapImage _loadedImageSource; // Orijinal şəkil
+        private WriteableBitmap _loadedImageSource;
 
         private string _loadedImagePath;
 
         [ObservableProperty]
-        [NotifyCanExecuteChangedFor("GeneratePreviewCommand")]// <-- "Async" əlavə edin
+        [NotifyCanExecuteChangedFor("GeneratePreviewCommand")]
+        [NotifyCanExecuteChangedFor("RefreshImageCommand")]
         private bool _isImageLoaded = false;
 
         [ObservableProperty]
-        [NotifyCanExecuteChangedFor("GeneratePreviewCommand")] // <-- "Async" əlavə edin
+        [NotifyCanExecuteChangedFor("GeneratePreviewCommand")] 
         [NotifyCanExecuteChangedFor("SaveImageCommand")]
+        [NotifyCanExecuteChangedFor("RefreshImageCommand")]
         private bool _isProcessing = false;
 
         // === Bu Alətə Aid Xassələr ===
@@ -65,6 +77,16 @@ namespace SpriteEditor.ViewModels
         [ObservableProperty]
         [NotifyCanExecuteChangedFor("SaveImageCommand")]
         private byte[] _lastProcessedData; // Yadda saxlamaq üçün son nəticəni saxla
+
+
+        // === YENİ XASSƏLƏR ===
+        [ObservableProperty]
+        private EraserToolMode _currentToolMode = EraserToolMode.Pipet; // Başlanğıcda pipet aktiv olsun
+
+        [ObservableProperty]
+        private int _brushSize = 20; // Manual silgi üçün fırça ölçüsü
+        // ======================
+
 
         public BackgroundEraserViewModel()
         {
@@ -82,22 +104,94 @@ namespace SpriteEditor.ViewModels
             {
                 _loadedImagePath = openDialog.FileName;
 
-                BitmapImage bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.UriSource = new System.Uri(_loadedImagePath);
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
+                // === DƏYİŞİKLİK: WriteableBitmap Yükləməsi ===
+                BitmapImage tempBitmap = new BitmapImage();
+                try
+                {
+                    // Cache problemini həll etmək üçün StreamSource istifadə edirik
+                    byte[] fileBytes = File.ReadAllBytes(_loadedImagePath);
+                    using (var ms = new MemoryStream(fileBytes))
+                    {
+                        tempBitmap.BeginInit();
+                        tempBitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        tempBitmap.StreamSource = ms;
+                        tempBitmap.EndInit();
+                    }
+                    tempBitmap.Freeze();
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Şəkli yükləyərkən xəta baş verdi: {ex.Message}", "Xəta");
+                    return;
+                }
 
-                LoadedImageSource = bitmap;
-                PreviewImageSource = null; // Köhnə preview-u təmizlə
+                // Şəkli redaktə üçün BGRA32 formatına çeviririk (Şəffaflıq üçün vacibdir)
+                FormatConvertedBitmap formattedBitmap = new FormatConvertedBitmap(
+                    tempBitmap,
+                    PixelFormats.Bgra32, // Alfa kanalı olan format
+                    null,
+                    0);
+
+                // Nəhayət, WriteableBitmap yaradırıq
+                WriteableBitmap wb = new WriteableBitmap(formattedBitmap);
+
+                LoadedImageSource = wb; // <-- Əsas xassəyə mənimsədirik
+
+                PreviewImageSource = null;
                 _lastProcessedData = null;
                 IsImageLoaded = true;
             }
         }
 
+        [RelayCommand(CanExecute = nameof(CanRefreshImage))]
+        private void RefreshImage()
+        {
+            // ... (Bu metod da WriteableBitmap qaytarmalıdır) ...
+            try
+            {
+                // Eynilə LoadImage kimi...
+                BitmapImage tempBitmap = new BitmapImage();
+                byte[] fileBytes = File.ReadAllBytes(_loadedImagePath);
+                using (var ms = new MemoryStream(fileBytes))
+                {
+                    tempBitmap.BeginInit();
+                    tempBitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    tempBitmap.StreamSource = ms;
+                    tempBitmap.EndInit();
+                }
+                tempBitmap.Freeze();
+
+                FormatConvertedBitmap formattedBitmap = new FormatConvertedBitmap(tempBitmap, PixelFormats.Bgra32, null, 0);
+                WriteableBitmap wb = new WriteableBitmap(formattedBitmap);
+
+                LoadedImageSource = wb; // Yeniləndi
+
+                PreviewImageSource = null;
+                _lastProcessedData = null;
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Şəkli yenidən yükləyərkən xəta baş verdi: {ex.Message}", "Xəta");
+                IsImageLoaded = false;
+                LoadedImageSource = null;
+                _loadedImagePath = null;
+            }
+        }
+
+        // ... (ReloadImageFromFilePath metodunu silə bilərsiniz, artıq RefreshImage özü edir) ...
+        // ... (CanRefreshImage metodu olduğu kimi qalır) ...
+        // === DÜZƏLİŞ: Bu metod əskik idi ===
+        private bool CanRefreshImage()
+        {
+            // Yalnız bir şəkil yüklənibsə VƏ emal prosesi getmirsə
+            return IsImageLoaded && !IsProcessing;
+        }
+        // ==================================
+
+
         // === Yeni Əmrlər ===
 
+        // === PREVIEW ƏMRİ (DÜZƏLDİLMİŞ) ===
         [RelayCommand(CanExecute = nameof(CanProcess))]
         public async Task GeneratePreviewAsync()
         {
@@ -114,19 +208,22 @@ namespace SpriteEditor.ViewModels
                             $"Həssaslıq: {Tolerance}%",
                             "Diaqnostika");
 
-                //// WPF Rəngini ImageSharp Rənginə çevir
-                //var wpfColor = TargetColor; // Bu sətri əlavə edib-etmədiyinizi yoxlayın
-                //var sharpColor = new Rgba32(wpfColor.R, wpfColor.G, wpfColor.B, wpfColor.A);
+                // === DÜZƏLİŞ: Mənbəni WriteableBitmap-dən al ===
+                // Hazırkı redaktə edilmiş şəkli PNG byte massivinə çevir
+                byte[] currentImageData = GetPngBytesFromWriteableBitmap(LoadedImageSource);
+                if (currentImageData == null)
+                    throw new Exception("Redaktə edilən şəklin məlumatı əldə edilə bilmədi.");
 
-                // Servisi arxa fonda çağır
+                // 2. Servisə _loadedImagePath YOX, bu YENİ byte[] massivini göndər
                 byte[] pngData = await Task.Run(() =>
                      _imageService.RemoveBackground(
-                         _loadedImagePath,
-                         StartPixelX,  // Kliklənən X koordinatı
-                         StartPixelY,  // Kliklənən Y koordinatı
+                         currentImageData, // <-- DƏYİŞİKLİK
+                         StartPixelX,
+                         StartPixelY,
                          (float)Tolerance
                      )
                  );
+                // === KODUN SONU ===
 
                 // Nəticəni (byte massivi) BitmapImage-ə çevir
                 var previewBitmap = new BitmapImage();
@@ -173,6 +270,29 @@ namespace SpriteEditor.ViewModels
                 }
             }
         }
+
+        // === YENİ KÖMƏKÇİ METOD ===
+        // WriteableBitmap-in hazırkı vəziyyətini PNG formatında byte[] kimi qaytarır
+        private byte[] GetPngBytesFromWriteableBitmap(WriteableBitmap wb)
+        {
+            if (wb == null) return null;
+
+            try
+            {
+                PngBitmapEncoder encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(wb));
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    encoder.Save(ms);
+                    return ms.ToArray();
+                }
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
 
         public bool CanProcess() => IsImageLoaded && !IsProcessing;
         public bool CanSave() => LastProcessedData != null && !IsProcessing;

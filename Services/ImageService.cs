@@ -31,6 +31,14 @@ namespace SpriteEditor.Services
             // 1. Orijinal şəkli ImageSharp ilə yükləyirik
             using (Image sourceImage = Image.Load(imagePath))
             {
+                // === YENİ DÜZƏLİŞ: Fayl adını təmizləyək ===
+                string sanitizedBaseFileName = Path.GetFileNameWithoutExtension(imagePath);
+                foreach (char c in Path.GetInvalidFileNameChars())
+                {
+                    // Qadağan olunmuş simvolları (məsələn, ':', '/', '?') alt xətlə əvəz edirik
+                    sanitizedBaseFileName = sanitizedBaseFileName.Replace(c, '_');
+                }
+                // ==========================================
                 // 2. Hər bir spritın enini və hündürlüyünü Slicer Box-a görə hesablayırıq
                 int cellWidth = cropWidth / columns;
                 int cellHeight = cropHeight / rows;
@@ -52,7 +60,7 @@ namespace SpriteEditor.Services
                         using (Image sprite = sourceImage.Clone(ctx => ctx.Crop(cropRectangle)))
                         {
                             // 6. Yeni faylın adını yaradırıq (məs: sprite_sətir_1_sütun_0.png)
-                            string outputFileName = $"sprite_{y}_{x}.png";
+                            string outputFileName = $"{sanitizedBaseFileName}_{y}_{x}.png";
                             string outputPath = Path.Combine(outputDirectory, outputFileName);
 
                             // 7. Kəsilən spritı PNG formatında yaddaşa yazırıq

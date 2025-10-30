@@ -41,6 +41,14 @@
                              IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.CreateJoint}}"
                              Foreground="White" Margin="5"/>
 
+                <TextBlock Text="3. Əməliyyatlar" FontSize="14" FontWeight="SemiBold" Margin="0,15,0,5"/>
+                <Button Content="Skeleti Yüklə"
+                        Command="{Binding LoadRigCommand}"
+                        Margin="5,5,5,0"/>
+                <Button Content="Skeleti Yadda Saxla"
+                        Command="{Binding SaveRigCommand}"
+                        Margin="5,5,5,5"/>
+
             </StackPanel>
         </Border>
 
@@ -55,6 +63,9 @@
                 MouseUp="SKCanvasView_MouseUp"
                 MouseRightButtonDown="SKCanvasView_MouseRightButtonDown"
                 PreviewMouseWheel="SKCanvasView_PreviewMouseWheel"
+                
+                Focusable="True" 
+                KeyDown="CanvasBorder_KeyDown"
                 
                 >
             <skia:SKElement x:Name="SKCanvasView"

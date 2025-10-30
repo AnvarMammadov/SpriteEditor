@@ -166,14 +166,36 @@ namespace SpriteEditor.Views
         private void SKCanvasView_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (_viewModel == null) return;
+            // YENİ ƏLAVƏ: Border-in fokusu almasını təmin edirik ki, KeyDown işləsin
+            (sender as UIElement)?.Focus();
+            // ===================================================================
+
             (sender as UIElement)?.CaptureMouse();
             _viewModel.OnCanvasLeftClicked(GetSkiaScreenPos(e));
         }
+
+
+        // === YENİ METOD: Klaviatura Hadisəsi ===
+        private void CanvasBorder_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (_viewModel == null) return;
+
+            // Əgər "Delete" düyməsi basılıbsa
+            if (e.Key == Key.Delete)
+            {
+                // ViewModel-ə silmə əmrini göndər
+                _viewModel.DeleteSelectedJoint();
+                // Hadisəni "icra edilmiş" kimi işarələ ki, başqa elementlər reaksiya verməsin
+                e.Handled = true;
+            }
+        }
+
 
         private void SKCanvasView_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (_viewModel == null) return;
             (sender as UIElement)?.ReleaseMouseCapture();
+            _viewModel.OnCanvasLeftReleased();
         }
 
         private void SKCanvasView_MouseMove(object sender, MouseEventArgs e)

@@ -10,6 +10,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using SkiaSharp;
+using SpriteEditor.Data; // Yaratdığımız Data modelləri üçün
+using System.Text.Json; // JSON Serializasiyası üçün
+
+
 
 namespace SpriteEditor.ViewModels
 {
@@ -26,6 +30,8 @@ namespace SpriteEditor.ViewModels
 
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(LoadImageCommand))]
+        [NotifyCanExecuteChangedFor(nameof(SaveRigCommand))]
+        [NotifyCanExecuteChangedFor(nameof(LoadRigCommand))]
         private bool _isImageLoaded = false;
 
         [ObservableProperty]
@@ -43,14 +49,17 @@ namespace SpriteEditor.ViewModels
         private SKPoint _currentMousePosition;
 
         private int _jointIdCounter = 0;
+        private string _loadedImagePath;
 
         // === KAMERA VƏZİYYƏTİ ((P*S)+O MODELİ) ===
-        // Bu modeldə CameraOffset EKRAN fəzasındadır (Screen-Space)
         public SKPoint CameraOffset { get; private set; } = SKPoint.Empty;
         public float CameraScale { get; private set; } = 1.0f;
 
         private bool _isPanning = false;
         private SKPoint _lastPanPosition;
+
+        // === YENİ ƏLAVƏ: Oynaq sürükləmə vəziyyəti ===
+        private bool _isDraggingJoint = false;
         // ======================================
 
 
@@ -66,7 +75,10 @@ namespace SpriteEditor.ViewModels
             {
                 try
                 {
-                    byte[] fileBytes = File.ReadAllBytes(openDialog.FileName);
+
+                    _loadedImagePath = openDialog.FileName;
+
+                    byte[] fileBytes = File.ReadAllBytes(_loadedImagePath);
                     using (var ms = new MemoryStream(fileBytes))
                     {
                         LoadedBitmap = SKBitmap.Decode(ms);
@@ -87,11 +99,182 @@ namespace SpriteEditor.ViewModels
                     MessageBox.Show($"Şəkli yükləyərkən xəta baş verdi: {ex.Message}", "Xəta");
                     IsImageLoaded = false;
                     LoadedBitmap = null;
+                    _loadedImagePath = null;
                     ClearRiggingData();
                     ResetCamera();
                 }
             }
         }
+
+
+        // === YENİ ƏMR: Skeleti Yüklə ===
+        [RelayCommand(CanExecute = nameof(CanLoadRig))]
+        private async Task LoadRigAsync()
+        {
+            if (!CanLoadRig()) return;
+
+            OpenFileDialog openDialog = new OpenFileDialog
+            {
+                Filter = "Rig JSON Faylı (*.rig.json)|*.rig.json|Bütün Fayllar (*.*)|*.*",
+                Title = "Skelet Məlumatını Yüklə"
+            };
+
+            if (openDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    // 1. Faylı oxu
+                    string jsonString = await File.ReadAllTextAsync(openDialog.FileName);
+
+                    // 2. JSON-u RigData obyektinə çevir (Deserializasiya)
+                    var rigData = JsonSerializer.Deserialize<RigData>(jsonString);
+
+                    if (rigData == null || rigData.Joints == null)
+                    {
+                        throw new Exception("JSON faylının strukturu düzgün deyil.");
+                    }
+
+                    // 3. (İstəyə bağlı) Yoxlama: JSON-dakı şəkil adı ilə mövcud şəkil adını yoxla
+                    string jsonImageName = rigData.ImageFileName;
+                    string currentImageName = Path.GetFileName(_loadedImagePath);
+                    if (jsonImageName != currentImageName)
+                    {
+                        var result = MessageBox.Show(
+                            $"Bu skelet faylı ('{jsonImageName}') yüklənmiş şəkildən ('{currentImageName}') fərqli bir şəkil üçün yaradılıb.\n\nDavam etmək istəyirsinizmi?",
+                            "Xəbərdarlıq", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+                        if (result == MessageBoxResult.No)
+                            return; // Ləğv et
+                    }
+
+                    // 4. Mövcud skeleti təmizlə
+                    ClearRiggingData();
+
+                    // === 5. İYERARXİYANIN BƏRPASI (Ən vacib hissə) ===
+
+                    // Köməkçi lüğət (dictionary) yaradırıq ki, ID-yə görə JointModel-i tez tapa bilək
+                    var jointMap = new Dictionary<int, JointModel>();
+
+                    // Birinci döngü (Pass 1): Bütün JointModel-ləri yarat, amma Parent-i təyin etmə
+                    foreach (var jointData in rigData.Joints)
+                    {
+                        var newJoint = new JointModel(jointData.Id, jointData.Position, null); // Parent hələlik null
+                        Joints.Add(newJoint);
+                        jointMap.Add(newJoint.Id, newJoint);
+                    }
+
+                    // İkinci döngü (Pass 2): İndi Parent referanslarını təyin et
+                    foreach (var jointData in rigData.Joints)
+                    {
+                        if (jointData.ParentId != -1) // Əgər bu "root" deyilsə
+                        {
+                            // Lüğətdən özünü və valideynini tap
+                            if (jointMap.TryGetValue(jointData.Id, out JointModel currentJoint) &&
+                                jointMap.TryGetValue(jointData.ParentId, out JointModel parentJoint))
+                            {
+                                // Referansı təyin et
+                                currentJoint.Parent = parentJoint;
+                            }
+                        }
+                    }
+
+                    // 6. ID sayğacını (counter) yenilə ki, yeni sümüklər köhnələrlə toqquşmasın
+                    // Ən böyük ID-ni tap və üzərinə 1 gəl
+                    if (Joints.Count > 0)
+                    {
+                        _jointIdCounter = Joints.Max(j => j.Id) + 1;
+                    }
+
+                    // 7. Ekrana yeniləmə və düymələri aktiv etmə
+                    RequestRedraw?.Invoke(this, EventArgs.Empty);
+                    SaveRigCommand.NotifyCanExecuteChanged();
+
+                    MessageBox.Show("Skelet uğurla yükləndi.", "Uğurlu");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Skeleti yükləyərkən xəta baş verdi: {ex.Message}", "Xəta");
+                    // Uğursuz olarsa, təmizlə
+                    ClearRiggingData();
+                    RequestRedraw?.Invoke(this, EventArgs.Empty);
+                }
+            }
+        }
+
+
+
+        // LoadRigCommand-ın nə vaxt aktiv olacağını bildirir
+        private bool CanLoadRig()
+        {
+            // Yalnız bir şəkil yüklənibsə, köhnə skeleti yükləmək olar
+            return IsImageLoaded;
+        }
+
+
+
+
+        [RelayCommand(CanExecute = nameof(CanSaveRig))]
+        private async Task SaveRigAsync()
+        {
+            if (!CanSaveRig()) return;
+
+            // 1. Saxlamaq üçün data strukturunu hazırla
+            var rigData = new RigData
+            {
+                // Şəklin adını (yol olmadan) JSON-a yaz
+                ImageFileName = Path.GetFileName(_loadedImagePath)
+            };
+
+            // 2. Mövcud JointModel-ləri JointData-ya çevir
+            foreach (var joint in Joints)
+            {
+                rigData.Joints.Add(new JointData
+                {
+                    Id = joint.Id,
+                    Position = joint.Position,
+                    // Valideyn varsa onun ID-sini, yoxdursa -1 yaz
+                    ParentId = joint.Parent?.Id ?? -1
+                });
+            }
+
+            // 3. SaveFileDialog göstər
+            SaveFileDialog saveDialog = new SaveFileDialog
+            {
+                // Defolt fayl adı təklif et (məs: "character.png" -> "character.rig.json")
+                FileName = $"{Path.GetFileNameWithoutExtension(_loadedImagePath)}.rig.json",
+                Filter = "Rig JSON Faylı (*.rig.json)|*.rig.json|Bütün Fayllar (*.*)|*.*",
+                Title = "Skelet Məlumatını Saxla"
+            };
+
+            if (saveDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    // 4. JSON-a çevirmə (Serializasiya)
+                    // "WriteIndented" JSON-un oxunaqlı (gözəl) formatda yazılmasını təmin edir
+                    var options = new JsonSerializerOptions { WriteIndented = true };
+                    string jsonString = JsonSerializer.Serialize(rigData, options);
+
+                    // 5. Fayla yaz (Asinxron)
+                    await File.WriteAllTextAsync(saveDialog.FileName, jsonString);
+
+                    MessageBox.Show("Skelet uğurla yadda saxlandı!", "Uğurlu");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Skeleti yadda saxlayarkən xəta baş verdi: {ex.Message}", "Xəta");
+                }
+            }
+        }
+
+
+        // SaveRigCommand-ın nə vaxt aktiv olacağını bildirir
+        private bool CanSaveRig()
+        {
+            // Yalnız şəkil yüklənibsə və ən az bir oynaq varsa saxlamaq olar
+            return IsImageLoaded && Joints.Count > 0;
+        }
+
 
         public void ResetCamera()
         {
@@ -99,16 +282,12 @@ namespace SpriteEditor.ViewModels
             CameraScale = 1.0f;
         }
 
-        /// <summary>
-        /// (P*S)+O MODELİ: Şəkli kətanın mərkəzinə çəkmək üçün EKRAN ofsetini hesablayır.
-        /// </summary>
         public void CenterCamera(float canvasWidth, float canvasHeight, bool forceRecenter = false)
         {
             if (LoadedBitmap == null) return;
 
             if (forceRecenter || (CameraScale == 1.0f && CameraOffset == SKPoint.Empty))
             {
-                // Ekran ofseti:
                 float offsetX = (canvasWidth - (LoadedBitmap.Width * CameraScale)) / 2;
                 float offsetY = (canvasHeight - (LoadedBitmap.Height * CameraScale)) / 2;
 
@@ -117,10 +296,6 @@ namespace SpriteEditor.ViewModels
             }
         }
 
-        /// <summary>
-        /// (P*S)+O MODELİ: Ekran koordinatını Dünya koordinatına çevirir.
-        /// Riyaziyyat: World = (Screen - ScreenOffset) / Scale
-        /// </summary>
         public SKPoint ScreenToWorld(SKPoint screenPoint)
         {
             return new SKPoint(
@@ -129,10 +304,6 @@ namespace SpriteEditor.ViewModels
             );
         }
 
-        /// <summary>
-        /// (P*S)+O MODELİ: Dünya koordinatını Ekran koordinatına çevirir.
-        /// Riyaziyyat: Screen = (World * Scale) + ScreenOffset
-        /// </summary>
         public SKPoint WorldToScreen(SKPoint worldPoint)
         {
             return new SKPoint(
@@ -152,9 +323,6 @@ namespace SpriteEditor.ViewModels
             _isPanning = false;
         }
 
-        /// <summary>
-        /// (P*S)+O MODELİ: "Zoom to Mouse" məntiqi
-        /// </summary>
         public void HandleZoom(SKPoint screenPos, int delta)
         {
             float zoomFactor = 1.1f;
@@ -169,14 +337,8 @@ namespace SpriteEditor.ViewModels
 
             if (Math.Abs(newScale - CameraScale) < 0.001f) return;
 
-            // Siçanın "Dünya"dakı mövqeyini tap
             SKPoint worldPosBefore = ScreenToWorld(screenPos);
-
-            // Miqyası yenilə
             CameraScale = newScale;
-
-            // Kameranı elə sürüşdürürük ki, siçanın altındakı "dünya" nöqtəsi eyni qalsın
-            // Riyazi izahı: newOffset = screenPos - (worldPos * newScale)
             CameraOffset = new SKPoint(
                 screenPos.X - (worldPosBefore.X * CameraScale),
                 screenPos.Y - (worldPosBefore.Y * CameraScale)
@@ -185,6 +347,7 @@ namespace SpriteEditor.ViewModels
             RequestRedraw?.Invoke(this, EventArgs.Empty);
         }
 
+        // === DƏYİŞİKLİK BURADA (OnCanvasLeftClicked) ===
         public void OnCanvasLeftClicked(SKPoint screenPos)
         {
             SKPoint worldPos = ScreenToWorld(screenPos);
@@ -192,34 +355,29 @@ namespace SpriteEditor.ViewModels
             if (CurrentTool == RiggingToolMode.CreateJoint)
             {
                 // === "SÜMÜK YARAT" REJİMİ ===
-                // Bu kod olduğu kimi qalır
                 var newJoint = new JointModel(_jointIdCounter++, worldPos, SelectedJoint);
                 Joints.Add(newJoint);
                 SelectedJoint = newJoint;
                 RequestRedraw?.Invoke(this, EventArgs.Empty);
+
+                SaveRigCommand.NotifyCanExecuteChanged();
             }
             else if (CurrentTool == RiggingToolMode.None)
             {
-                // === YENİ KOD: "SEÇİM" REJİMİ ===
+                // === "SEÇİM" REJİMİ ===
 
-                // Kliklənən nöqtəyə ən yaxın oynağı tapmaq
                 JointModel closestJoint = null;
-                float minDistanceSq = float.MaxValue; // Kvadrat məsafə (daha sürətli hesablama üçün)
-
-                // Ekranda 10 piksellik bir sahəni "klik sahəsi" kimi götürək
-                // Bunu Dünya koordinatlarına çeviririk ki, zoom zamanı da düz işləsin
+                float minDistanceSq = float.MaxValue;
                 float clickRadiusScreen = 10f;
                 float clickRadiusWorld = clickRadiusScreen / CameraScale;
-                float clickRadiusSq = clickRadiusWorld * clickRadiusWorld; // Kvadratı
+                float clickRadiusSq = clickRadiusWorld * clickRadiusWorld;
 
                 foreach (var joint in Joints)
                 {
-                    // Nöqtələr arasındakı məsafənin kvadratını tapırıq (Math.Sqrt daha yavaşdır)
                     float dx = worldPos.X - joint.Position.X;
                     float dy = worldPos.Y - joint.Position.Y;
                     float distanceSq = (dx * dx) + (dy * dy);
 
-                    // Əgər bu oynaq klik radiusu daxilindədirsə VƏ indiyə qədər tapdığımızdan daha yaxındırsa
                     if (distanceSq < clickRadiusSq && distanceSq < minDistanceSq)
                     {
                         minDistanceSq = distanceSq;
@@ -227,20 +385,23 @@ namespace SpriteEditor.ViewModels
                     }
                 }
 
-                // Ən yaxın oynağı seçilmiş edirik (əgər heç nə tapılmayıbsa, null olacaq)
-                if (SelectedJoint != closestJoint)
+                // Ən yaxın oynağı seçilmiş edirik
+                SelectedJoint = closestJoint;
+                RequestRedraw?.Invoke(this, EventArgs.Empty); // View-u yenilə
+
+                // YENİ ƏLAVƏ: Əgər bir oynaq tapdıqsa, sürükləməyə başla
+                if (SelectedJoint != null)
                 {
-                    SelectedJoint = closestJoint;
-                    RequestRedraw?.Invoke(this, EventArgs.Empty); // View-u yenilə
+                    _isDraggingJoint = true;
                 }
             }
         }
 
+        // === DƏYİŞİKLİK BURADA (OnCanvasMouseMoved) ===
         public void OnCanvasMouseMoved(SKPoint screenPos)
         {
             if (_isPanning)
             {
-                // Pan əməliyyatı EKRAN fəzasında baş verir
                 SKPoint delta = new SKPoint(screenPos.X - _lastPanPosition.X, screenPos.Y - _lastPanPosition.Y);
                 CameraOffset = new SKPoint(CameraOffset.X + delta.X, CameraOffset.Y + delta.Y);
                 _lastPanPosition = screenPos;
@@ -248,35 +409,86 @@ namespace SpriteEditor.ViewModels
                 return;
             }
 
-            // Pan etmiriksə, "Dünya" koordinatını hesablayıb önizləmə (preview) üçün istifadə et
             SKPoint worldPos = ScreenToWorld(screenPos);
-            CurrentMousePosition = worldPos;
+            CurrentMousePosition = worldPos; // Preview üçün həmişə yenilə
 
-            if (CurrentTool == RiggingToolMode.CreateJoint && SelectedJoint != null)
+            // === YENİ KOD: Sürükləmə (Dragging) ===
+            if (_isDraggingJoint && SelectedJoint != null && CurrentTool == RiggingToolMode.None)
             {
+                // Seçilmiş oynağın mövqeyini birbaşa yenilə
+                SelectedJoint.Position = worldPos;
+                RequestRedraw?.Invoke(this, EventArgs.Empty);
+            }
+            // ======================================
+            else if (CurrentTool == RiggingToolMode.CreateJoint && SelectedJoint != null) // 'else if' etdik
+            {
+                // Sümük yaratma preview-u
                 RequestRedraw?.Invoke(this, EventArgs.Empty);
             }
         }
 
+        // === YENİ METOD (OnCanvasLeftReleased) ===
         /// <summary>
-        /// Sümük yaratma zəncirini ləğv edir (seçimi sıfırlayır).
-        /// View (code-behind) tərəfindən (Sağ Klik ilə) çağırılacaq.
+        /// Sol siçan düyməsi buraxıldıqda (View tərəfindən çağırılır)
         /// </summary>
+        public void OnCanvasLeftReleased()
+        {
+            _isDraggingJoint = false;
+        }
+        // ========================================
+
         public void DeselectCurrentJoint()
         {
-            // Yalnız o zaman yenidən çəkək ki, həqiqətən nəsə seçilmişdi
             if (SelectedJoint != null)
             {
                 SelectedJoint = null;
-                RequestRedraw?.Invoke(this, EventArgs.Empty); // View-a xəbər ver ki, preview xəttini gizlətsin
+                RequestRedraw?.Invoke(this, EventArgs.Empty);
             }
         }
+
+
+        /// <summary>
+        /// YENİ METOD: Seçilmiş oynağı silir.
+        /// </summary>
+        public void DeleteSelectedJoint()
+        {
+            if (SelectedJoint == null)
+                return; // Silinəcək bir şey seçilməyib
+
+            var jointToRemove = SelectedJoint;
+
+            // 1. Seçimi ləğv et
+            SelectedJoint = null;
+            _isDraggingJoint = false; // Sürükləməni də dayandır
+
+            // 2. Oynağı siyahıdan sil
+            Joints.Remove(jointToRemove);
+
+            // 3. Digər oynaqları yoxla və "yetim" qalanların valideynini (Parent) null et
+            // Bu, kaskadlı silmənin qarşısını alır və uşaqları "root" oynaqlara çevirir.
+            foreach (var joint in Joints)
+            {
+                if (joint.Parent == jointToRemove)
+                {
+                    joint.Parent = null; // Bu oynaq artıq bir "root" oynağıdır
+                }
+            }
+
+            // 4. Ekrana yeniləmə tələbi göndər
+            RequestRedraw?.Invoke(this, EventArgs.Empty);
+
+            SaveRigCommand.NotifyCanExecuteChanged();
+        }
+
+
+
 
         private void ClearRiggingData()
         {
             Joints.Clear();
             SelectedJoint = null;
             _jointIdCounter = 0;
+            SaveRigCommand?.NotifyCanExecuteChanged();
         }
 
         partial void OnCurrentToolChanged(RiggingToolMode value)
@@ -286,6 +498,8 @@ namespace SpriteEditor.ViewModels
                 SelectedJoint = null;
                 RequestRedraw?.Invoke(this, EventArgs.Empty);
             }
+            // Sürükləməni də ləğv edək (ehtiyat üçün)
+            _isDraggingJoint = false;
         }
     }
 }

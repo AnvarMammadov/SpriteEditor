@@ -19,8 +19,9 @@ namespace SpriteEditor.ViewModels
 {
     public enum RiggingToolMode
     {
-        None,
-        CreateJoint
+        Edit, // "None" adını "Edit" olaraq dəyişdirdik
+        CreateJoint,
+        Pose  // Yeni hərəkət etdirmə rejimimiz
     }
 
     public partial class RiggingViewModel : ObservableObject
@@ -38,7 +39,7 @@ namespace SpriteEditor.ViewModels
         private SKBitmap _loadedBitmap;
 
         [ObservableProperty]
-        private RiggingToolMode _currentTool = RiggingToolMode.None;
+        private RiggingToolMode _currentTool = RiggingToolMode.Edit;
 
         public ObservableCollection<JointModel> Joints { get; } = new ObservableCollection<JointModel>();
 
@@ -60,6 +61,7 @@ namespace SpriteEditor.ViewModels
 
         // === YENİ ƏLAVƏ: Oynaq sürükləmə vəziyyəti ===
         private bool _isDraggingJoint = false;
+        private SKPoint _dragOffset;
         // ======================================
 
 
@@ -362,10 +364,9 @@ namespace SpriteEditor.ViewModels
 
                 SaveRigCommand.NotifyCanExecuteChanged();
             }
-            else if (CurrentTool == RiggingToolMode.None)
+            // Həm "Edit", həm də "Pose" rejimi seçim ilə başlayır
+            else if (CurrentTool == RiggingToolMode.Edit || CurrentTool == RiggingToolMode.Pose)
             {
-                // === "SEÇİM" REJİMİ ===
-
                 JointModel closestJoint = null;
                 float minDistanceSq = float.MaxValue;
                 float clickRadiusScreen = 10f;
@@ -385,14 +386,14 @@ namespace SpriteEditor.ViewModels
                     }
                 }
 
-                // Ən yaxın oynağı seçilmiş edirik
                 SelectedJoint = closestJoint;
-                RequestRedraw?.Invoke(this, EventArgs.Empty); // View-u yenilə
+                RequestRedraw?.Invoke(this, EventArgs.Empty);
 
-                // YENİ ƏLAVƏ: Əgər bir oynaq tapdıqsa, sürükləməyə başla
                 if (SelectedJoint != null)
                 {
                     _isDraggingJoint = true;
+                    // Sürükləmə üçün "fərqi" (offset) yadda saxla
+                    _dragOffset = SelectedJoint.Position - worldPos;
                 }
             }
         }
@@ -413,19 +414,61 @@ namespace SpriteEditor.ViewModels
             CurrentMousePosition = worldPos; // Preview üçün həmişə yenilə
 
             // === YENİ KOD: Sürükləmə (Dragging) ===
-            if (_isDraggingJoint && SelectedJoint != null && CurrentTool == RiggingToolMode.None)
+            if (_isDraggingJoint && SelectedJoint != null)
             {
-                // Seçilmiş oynağın mövqeyini birbaşa yenilə
-                SelectedJoint.Position = worldPos;
+                // Siçanın yeni mövqeyinə uyğun oynağın olmalı olduğu yeri tap
+                SKPoint newJointPos = worldPos + _dragOffset;
+
+                // Hərəkət fərqini (delta) tap
+                SKPoint delta = newJointPos - SelectedJoint.Position;
+
+                // Rejimə görə hərəkət etdir
+                if (CurrentTool == RiggingToolMode.Edit)
+                {
+                    // EDIT REJİMİ: Yalnız seçilmiş oynağı tərpət
+                    SelectedJoint.Position = newJointPos;
+                }
+                else if (CurrentTool == RiggingToolMode.Pose)
+                {
+                    // POSE REJİMİ: Özünü VƏ bütün övladlarını rekursiv tərpət
+                    ApplyRecursiveMove(SelectedJoint, delta);
+                }
+
                 RequestRedraw?.Invoke(this, EventArgs.Empty);
             }
-            // ======================================
-            else if (CurrentTool == RiggingToolMode.CreateJoint && SelectedJoint != null) // 'else if' etdik
+            else if (CurrentTool == RiggingToolMode.CreateJoint && SelectedJoint != null)
             {
-                // Sümük yaratma preview-u
                 RequestRedraw?.Invoke(this, EventArgs.Empty);
             }
         }
+
+
+
+        /// <summary>
+        /// YENİ METOD: Hərəkət fərqini (delta) bu oynağa və bütün övladlarına tətbiq edir.
+        /// </summary>
+        private void ApplyRecursiveMove(JointModel joint, SKPoint delta)
+        {
+            if (joint == null) return;
+
+            // 1. Öz mövqeyini dəyiş
+            joint.Position += delta;
+
+            // 2. Bütün övladlarını tap
+            // (JointModel-də 'Children' siyahısı olmadığı üçün bütün kolleksiyanı yoxlamalıyıq)
+            foreach (var child in Joints)
+            {
+                if (child.Parent == joint)
+                {
+                    // 3. Eyni hərəkəti övladına da tətbiq et (rekursiya)
+                    ApplyRecursiveMove(child, delta);
+                }
+            }
+        }
+
+
+
+
 
         // === YENİ METOD (OnCanvasLeftReleased) ===
         /// <summary>
@@ -493,12 +536,12 @@ namespace SpriteEditor.ViewModels
 
         partial void OnCurrentToolChanged(RiggingToolMode value)
         {
-            if (value != RiggingToolMode.CreateJoint)
+            // Sümük yaratma rejimi xaricində digər rejimlərə keçəndə seçimi ləğv et
+            if (value == RiggingToolMode.Edit || value == RiggingToolMode.Pose)
             {
                 SelectedJoint = null;
                 RequestRedraw?.Invoke(this, EventArgs.Empty);
             }
-            // Sürükləməni də ləğv edək (ehtiyat üçün)
             _isDraggingJoint = false;
         }
     }

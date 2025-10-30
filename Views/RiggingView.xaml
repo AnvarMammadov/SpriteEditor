@@ -31,14 +31,19 @@
 
                 <TextBlock Text="2. Alətlər" FontSize="14" FontWeight="SemiBold" Margin="0,15,0,5"/>
 
-                <RadioButton Content="Seçim" 
+                <RadioButton Content="Redaktə (Edit)" 
                              GroupName="ToolMode" 
-                             IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.None}}"
+                             IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.Edit}}"
                              Foreground="White" Margin="5"/>
 
                 <RadioButton Content="Sümük Yarat" 
                              GroupName="ToolMode" 
                              IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.CreateJoint}}"
+                             Foreground="White" Margin="5"/>
+
+                <RadioButton Content="Hərəkət (Pose)" 
+                             GroupName="ToolMode" 
+                             IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.Pose}}"
                              Foreground="White" Margin="5"/>
 
                 <TextBlock Text="3. Əməliyyatlar" FontSize="14" FontWeight="SemiBold" Margin="0,15,0,5"/>

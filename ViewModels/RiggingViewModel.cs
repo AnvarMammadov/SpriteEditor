@@ -59,10 +59,12 @@ namespace SpriteEditor.ViewModels
         private bool _isPanning = false;
         private SKPoint _lastPanPosition;
 
-        // === YENİ ƏLAVƏ: Oynaq sürükləmə vəziyyəti ===
+        // === Oynaq sürükləmə vəziyyəti ===
         private bool _isDraggingJoint = false;
         private SKPoint _dragOffset;
-        // ======================================
+
+        // === YENİ: Stabillik üçün Epsilon ===
+        private const float EPS = 1e-4f;
 
 
         [RelayCommand]
@@ -109,7 +111,7 @@ namespace SpriteEditor.ViewModels
         }
 
 
-        // === YENİ ƏMR: Skeleti Yüklə ===
+        // === Skeleti Yüklə (DÜZƏLİŞLİ) ===
         [RelayCommand(CanExecute = nameof(CanLoadRig))]
         private async Task LoadRigAsync()
         {
@@ -125,10 +127,7 @@ namespace SpriteEditor.ViewModels
             {
                 try
                 {
-                    // 1. Faylı oxu
                     string jsonString = await File.ReadAllTextAsync(openDialog.FileName);
-
-                    // 2. JSON-u RigData obyektinə çevir (Deserializasiya)
                     var rigData = JsonSerializer.Deserialize<RigData>(jsonString);
 
                     if (rigData == null || rigData.Joints == null)
@@ -136,7 +135,6 @@ namespace SpriteEditor.ViewModels
                         throw new Exception("JSON faylının strukturu düzgün deyil.");
                     }
 
-                    // 3. (İstəyə bağlı) Yoxlama: JSON-dakı şəkil adı ilə mövcud şəkil adını yoxla
                     string jsonImageName = rigData.ImageFileName;
                     string currentImageName = Path.GetFileName(_loadedImagePath);
                     if (jsonImageName != currentImageName)
@@ -146,48 +144,47 @@ namespace SpriteEditor.ViewModels
                             "Xəbərdarlıq", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
                         if (result == MessageBoxResult.No)
-                            return; // Ləğv et
+                            return;
                     }
 
-                    // 4. Mövcud skeleti təmizlə
                     ClearRiggingData();
-
-                    // === 5. İYERARXİYANIN BƏRPASI (Ən vacib hissə) ===
-
-                    // Köməkçi lüğət (dictionary) yaradırıq ki, ID-yə görə JointModel-i tez tapa bilək
                     var jointMap = new Dictionary<int, JointModel>();
 
-                    // Birinci döngü (Pass 1): Bütün JointModel-ləri yarat, amma Parent-i təyin etmə
+                    // Pass 1: Bütün JointModel-ləri yarat
                     foreach (var jointData in rigData.Joints)
                     {
-                        var newJoint = new JointModel(jointData.Id, jointData.Position, null); // Parent hələlik null
+                        // BoneLength və Rotation da yüklənir
+                        var newJoint = new JointModel(jointData.Id, jointData.Position, null)
+                        {
+                            BoneLength = jointData.BoneLength,
+                            Rotation = jointData.Rotation
+                        };
                         Joints.Add(newJoint);
                         jointMap.Add(newJoint.Id, newJoint);
                     }
 
-                    // İkinci döngü (Pass 2): İndi Parent referanslarını təyin et
+                    // Pass 2: Parent referanslarını təyin et
                     foreach (var jointData in rigData.Joints)
                     {
-                        if (jointData.ParentId != -1) // Əgər bu "root" deyilsə
+                        if (jointData.ParentId != -1)
                         {
-                            // Lüğətdən özünü və valideynini tap
                             if (jointMap.TryGetValue(jointData.Id, out JointModel currentJoint) &&
                                 jointMap.TryGetValue(jointData.ParentId, out JointModel parentJoint))
                             {
-                                // Referansı təyin et
                                 currentJoint.Parent = parentJoint;
                             }
                         }
                     }
 
-                    // 6. ID sayğacını (counter) yenilə ki, yeni sümüklər köhnələrlə toqquşmasın
-                    // Ən böyük ID-ni tap və üzərinə 1 gəl
                     if (Joints.Count > 0)
                     {
                         _jointIdCounter = Joints.Max(j => j.Id) + 1;
                     }
 
-                    // 7. Ekrana yeniləmə və düymələri aktiv etmə
+                    // === YENİ (HƏLL A): Parametrləri mövqelərə görə yenidən sinxronlaşdır ===
+                    RecomputeBoneParamsFromPositions();
+                    // ===================================================================
+
                     RequestRedraw?.Invoke(this, EventArgs.Empty);
                     SaveRigCommand.NotifyCanExecuteChanged();
 
@@ -196,7 +193,6 @@ namespace SpriteEditor.ViewModels
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Skeleti yükləyərkən xəta baş verdi: {ex.Message}", "Xəta");
-                    // Uğursuz olarsa, təmizlə
                     ClearRiggingData();
                     RequestRedraw?.Invoke(this, EventArgs.Empty);
                 }
@@ -205,44 +201,39 @@ namespace SpriteEditor.ViewModels
 
 
 
-        // LoadRigCommand-ın nə vaxt aktiv olacağını bildirir
         private bool CanLoadRig()
         {
-            // Yalnız bir şəkil yüklənibsə, köhnə skeleti yükləmək olar
             return IsImageLoaded;
         }
 
 
 
 
+        // === Skeleti Yadda Saxla (Dəyişməyib) ===
         [RelayCommand(CanExecute = nameof(CanSaveRig))]
         private async Task SaveRigAsync()
         {
             if (!CanSaveRig()) return;
 
-            // 1. Saxlamaq üçün data strukturunu hazırla
             var rigData = new RigData
             {
-                // Şəklin adını (yol olmadan) JSON-a yaz
                 ImageFileName = Path.GetFileName(_loadedImagePath)
             };
 
-            // 2. Mövcud JointModel-ləri JointData-ya çevir
             foreach (var joint in Joints)
             {
                 rigData.Joints.Add(new JointData
                 {
                     Id = joint.Id,
                     Position = joint.Position,
-                    // Valideyn varsa onun ID-sini, yoxdursa -1 yaz
-                    ParentId = joint.Parent?.Id ?? -1
+                    ParentId = joint.Parent?.Id ?? -1,
+                    BoneLength = joint.BoneLength,
+                    Rotation = joint.Rotation
                 });
             }
 
-            // 3. SaveFileDialog göstər
             SaveFileDialog saveDialog = new SaveFileDialog
             {
-                // Defolt fayl adı təklif et (məs: "character.png" -> "character.rig.json")
                 FileName = $"{Path.GetFileNameWithoutExtension(_loadedImagePath)}.rig.json",
                 Filter = "Rig JSON Faylı (*.rig.json)|*.rig.json|Bütün Fayllar (*.*)|*.*",
                 Title = "Skelet Məlumatını Saxla"
@@ -252,14 +243,9 @@ namespace SpriteEditor.ViewModels
             {
                 try
                 {
-                    // 4. JSON-a çevirmə (Serializasiya)
-                    // "WriteIndented" JSON-un oxunaqlı (gözəl) formatda yazılmasını təmin edir
                     var options = new JsonSerializerOptions { WriteIndented = true };
                     string jsonString = JsonSerializer.Serialize(rigData, options);
-
-                    // 5. Fayla yaz (Asinxron)
                     await File.WriteAllTextAsync(saveDialog.FileName, jsonString);
-
                     MessageBox.Show("Skelet uğurla yadda saxlandı!", "Uğurlu");
                 }
                 catch (Exception ex)
@@ -270,14 +256,13 @@ namespace SpriteEditor.ViewModels
         }
 
 
-        // SaveRigCommand-ın nə vaxt aktiv olacağını bildirir
         private bool CanSaveRig()
         {
-            // Yalnız şəkil yüklənibsə və ən az bir oynaq varsa saxlamaq olar
             return IsImageLoaded && Joints.Count > 0;
         }
 
-
+        // === Kamera Metodları (Dəyişməyib) ===
+        #region Camera Controls
         public void ResetCamera()
         {
             CameraOffset = SKPoint.Empty;
@@ -331,9 +316,9 @@ namespace SpriteEditor.ViewModels
             float newScale;
 
             if (delta > 0)
-                newScale = CameraScale * zoomFactor; // Yaxınlaşdır
+                newScale = CameraScale * zoomFactor;
             else
-                newScale = CameraScale / zoomFactor; // Uzaqlaşdır
+                newScale = CameraScale / zoomFactor;
 
             newScale = Math.Max(0.1f, Math.Min(newScale, 10.0f));
 
@@ -348,23 +333,34 @@ namespace SpriteEditor.ViewModels
 
             RequestRedraw?.Invoke(this, EventArgs.Empty);
         }
+        #endregion
 
-        // === DƏYİŞİKLİK BURADA (OnCanvasLeftClicked) ===
+        // === OnCanvasLeftClicked (Dəyişməyib) ===
         public void OnCanvasLeftClicked(SKPoint screenPos)
         {
             SKPoint worldPos = ScreenToWorld(screenPos);
 
             if (CurrentTool == RiggingToolMode.CreateJoint)
             {
-                // === "SÜMÜK YARAT" REJİMİ ===
                 var newJoint = new JointModel(_jointIdCounter++, worldPos, SelectedJoint);
+
+                // Sümük uzunluğunu və bucağını dərhal hesabla
+                if (newJoint.Parent != null)
+                {
+                    float dx = newJoint.Position.X - newJoint.Parent.Position.X;
+                    float dy = newJoint.Position.Y - newJoint.Parent.Position.Y;
+
+                    float len = MathF.Sqrt(dx * dx + dy * dy);
+                    newJoint.BoneLength = (len < EPS) ? 0f : len;
+                    newJoint.Rotation = (len < EPS) ? 0f : MathF.Atan2(dy, dx);
+                }
+
                 Joints.Add(newJoint);
                 SelectedJoint = newJoint;
                 RequestRedraw?.Invoke(this, EventArgs.Empty);
 
                 SaveRigCommand.NotifyCanExecuteChanged();
             }
-            // Həm "Edit", həm də "Pose" rejimi seçim ilə başlayır
             else if (CurrentTool == RiggingToolMode.Edit || CurrentTool == RiggingToolMode.Pose)
             {
                 JointModel closestJoint = null;
@@ -392,13 +388,12 @@ namespace SpriteEditor.ViewModels
                 if (SelectedJoint != null)
                 {
                     _isDraggingJoint = true;
-                    // Sürükləmə üçün "fərqi" (offset) yadda saxla
                     _dragOffset = SelectedJoint.Position - worldPos;
                 }
             }
         }
 
-        // === DƏYİŞİKLİK BURADA (OnCanvasMouseMoved) ===
+        // === OnCanvasMouseMoved (DÜZƏLİŞLİ) ===
         public void OnCanvasMouseMoved(SKPoint screenPos)
         {
             if (_isPanning)
@@ -411,27 +406,48 @@ namespace SpriteEditor.ViewModels
             }
 
             SKPoint worldPos = ScreenToWorld(screenPos);
-            CurrentMousePosition = worldPos; // Preview üçün həmişə yenilə
+            CurrentMousePosition = worldPos;
 
-            // === YENİ KOD: Sürükləmə (Dragging) ===
             if (_isDraggingJoint && SelectedJoint != null)
             {
-                // Siçanın yeni mövqeyinə uyğun oynağın olmalı olduğu yeri tap
-                SKPoint newJointPos = worldPos + _dragOffset;
-
-                // Hərəkət fərqini (delta) tap
-                SKPoint delta = newJointPos - SelectedJoint.Position;
-
-                // Rejimə görə hərəkət etdir
                 if (CurrentTool == RiggingToolMode.Edit)
                 {
                     // EDIT REJİMİ: Yalnız seçilmiş oynağı tərpət
-                    SelectedJoint.Position = newJointPos;
+                    SelectedJoint.Position = worldPos + _dragOffset;
+
+                    // Edit rejimində sümüklərin parametrlərini də yeniləyək
+                    RecomputeBoneParamsFromPositions();
                 }
                 else if (CurrentTool == RiggingToolMode.Pose)
                 {
-                    // POSE REJİMİ: Özünü VƏ bütün övladlarını rekursiv tərpət
-                    ApplyRecursiveMove(SelectedJoint, delta);
+                    if (SelectedJoint.Parent == null)
+                    {
+                        // 1. ROOT sümüyüdür (sürüşdürmə)
+                        SKPoint newJointPos = worldPos + _dragOffset;
+                        SKPoint delta = newJointPos - SelectedJoint.Position;
+                        ApplyRecursiveMove(SelectedJoint, delta);
+                    }
+                    else
+                    {
+                        // 2. ÖVLAD sümüyüdür (fırlatma)
+
+                        // === YENİ (HƏLL B): Fırlatmazdan öncə alt zənciri sinxronlaşdır ===
+                        // Yalnız bütün ağacı yox, ana sümükdən başlayan zənciri yeniləyirik
+                        RecomputeSubtree(SelectedJoint.Parent);
+                        // =============================================================
+
+                        SKPoint parentPos = SelectedJoint.Parent.Position;
+
+                        // === YENİ (HƏLL B): Atan2 DÜZƏLİŞİ (X, Y yox, Y, X olmalıdır) ===
+                        // Səhv: MathF.Atan2(worldPos.Y - parentPos.Y, worldPos.X - parentPos.Y);
+                        // Düzgün:
+                        float newRotation = MathF.Atan2(worldPos.Y - parentPos.Y, worldPos.X - parentPos.X);
+                        // =============================================================
+
+                        float rotationDelta = newRotation - SelectedJoint.Rotation;
+
+                        UpdatePoseHierarchy(SelectedJoint, rotationDelta);
+                    }
                 }
 
                 RequestRedraw?.Invoke(this, EventArgs.Empty);
@@ -442,35 +458,113 @@ namespace SpriteEditor.ViewModels
             }
         }
 
-
+        // === YENİ: Köməkçi metodlar (HƏLL A, B) ===
+        #region Rigging Helpers
 
         /// <summary>
-        /// YENİ METOD: Hərəkət fərqini (delta) bu oynağa və bütün övladlarına tətbiq edir.
+        /// (HƏLL A) Skeletin bütün sümük parametrlərini (Uzunluq/Bucaq)
+        /// mövcud mövqelərinə görə yenidən hesablayır.
+        /// </summary>
+        public void RecomputeBoneParamsFromPositions()
+        {
+            foreach (var j in Joints)
+            {
+                if (j.Parent == null)
+                {
+                    j.BoneLength = 0f;
+                    j.Rotation = 0f;
+                    continue;
+                }
+
+                float dx = j.Position.X - j.Parent.Position.X;
+                float dy = j.Position.Y - j.Parent.Position.Y;
+
+                float len = MathF.Sqrt(dx * dx + dy * dy);
+                j.BoneLength = (len < EPS) ? 0f : len;   // sıfıra yaxınsa 0 qəbul et
+                j.Rotation = (len < EPS) ? 0f : MathF.Atan2(dy, dx);
+            }
+        }
+
+        /// <summary>
+        /// Verilən oynağın bütün övladlarını qaytarır
+        /// </summary>
+        private IEnumerable<JointModel> ChildrenOf(JointModel p)
+            => Joints.Where(j => j.Parent == p);
+
+        /// <summary>
+        /// (HƏLL B) Verilmiş oynağın alt zəncirini rekursiv olaraq yenidən hesablayır.
+        /// </summary>
+        private void RecomputeSubtree(JointModel root)
+        {
+            foreach (var child in ChildrenOf(root).ToList())
+            {
+                float dx = child.Position.X - root.Position.X;
+                float dy = child.Position.Y - root.Position.Y;
+                float len = MathF.Sqrt(dx * dx + dy * dy);
+
+                child.BoneLength = (len < EPS) ? 0f : len;
+                child.Rotation = (len < EPS) ? 0f : MathF.Atan2(dy, dx);
+
+                RecomputeSubtree(child);
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// (KÖHNƏ) Hərəkət fərqini (delta) bu oynağa və bütün övladlarına tətbiq edir.
+        /// (ROOT oynağı "Pose" rejimində tərpətmək üçün saxlanılır)
         /// </summary>
         private void ApplyRecursiveMove(JointModel joint, SKPoint delta)
         {
             if (joint == null) return;
-
-            // 1. Öz mövqeyini dəyiş
             joint.Position += delta;
 
-            // 2. Bütün övladlarını tap
-            // (JointModel-də 'Children' siyahısı olmadığı üçün bütün kolleksiyanı yoxlamalıyıq)
-            foreach (var child in Joints)
+            foreach (var child in Joints.Where(j => j.Parent == joint).ToList())
             {
-                if (child.Parent == joint)
-                {
-                    // 3. Eyni hərəkəti övladına da tətbiq et (rekursiya)
-                    ApplyRecursiveMove(child, delta);
-                }
+                ApplyRecursiveMove(child, delta);
             }
         }
 
 
+        /// <summary>
+        /// YENİ METOD (DÜZƏLİŞLİ - HƏLL C): Fırlanma fərqini (delta) bu oynağa tətbiq edir
+        /// və sümük uzunluğunu qoruyaraq bütün övladlarını yeniləyir.
+        /// </summary>
+        private void UpdatePoseHierarchy(JointModel joint, float rotationDelta)
+        {
+            if (joint == null) return;
+
+            // 1. Öz mütləq bucağını yenilə
+            joint.Rotation += rotationDelta;
+
+            // 2. Valideyni varsa, bucaq və sümük uzunluğuna görə yeni mövqeyini hesabla
+            if (joint.Parent != null)
+            {
+                // === YENİ (HƏLL C): Sıfır uzunluqlu sümükləri fırlatma ===
+                if (joint.BoneLength > EPS)
+                {
+                    joint.Position = new SKPoint(
+                        joint.Parent.Position.X + MathF.Cos(joint.Rotation) * joint.BoneLength,
+                        joint.Parent.Position.Y + MathF.Sin(joint.Rotation) * joint.BoneLength
+                    );
+                }
+                else
+                {
+                    // Uzunluq sıfırsa parent üstündə qalır
+                    joint.Position = joint.Parent.Position;
+                }
+                // =======================================================
+            }
+
+            // 3. Bütün övladlarını tap və eyni fırlanma fərqini onlara da tətbiq et
+            foreach (var child in Joints.Where(j => j.Parent == joint).ToList())
+            {
+                UpdatePoseHierarchy(child, rotationDelta);
+            }
+        }
 
 
-
-        // === YENİ METOD (OnCanvasLeftReleased) ===
         /// <summary>
         /// Sol siçan düyməsi buraxıldıqda (View tərəfindən çağırılır)
         /// </summary>
@@ -478,7 +572,6 @@ namespace SpriteEditor.ViewModels
         {
             _isDraggingJoint = false;
         }
-        // ========================================
 
         public void DeselectCurrentJoint()
         {
@@ -491,35 +584,32 @@ namespace SpriteEditor.ViewModels
 
 
         /// <summary>
-        /// YENİ METOD: Seçilmiş oynağı silir.
+        /// Seçilmiş oynağı silir. (Dəyişməyib)
         /// </summary>
         public void DeleteSelectedJoint()
         {
             if (SelectedJoint == null)
-                return; // Silinəcək bir şey seçilməyib
+                return;
 
             var jointToRemove = SelectedJoint;
-
-            // 1. Seçimi ləğv et
             SelectedJoint = null;
-            _isDraggingJoint = false; // Sürükləməni də dayandır
+            _isDraggingJoint = false;
 
-            // 2. Oynağı siyahıdan sil
             Joints.Remove(jointToRemove);
 
-            // 3. Digər oynaqları yoxla və "yetim" qalanların valideynini (Parent) null et
-            // Bu, kaskadlı silmənin qarşısını alır və uşaqları "root" oynaqlara çevirir.
-            foreach (var joint in Joints)
+            foreach (var joint in Joints.ToList())
             {
                 if (joint.Parent == jointToRemove)
                 {
-                    joint.Parent = null; // Bu oynaq artıq bir "root" oynağıdır
+                    joint.Parent = null;
+
+                    // Valideyni silindiyi üçün sümük uzunluğunu/bucağını sıfırla
+                    joint.BoneLength = 0;
+                    joint.Rotation = 0;
                 }
             }
 
-            // 4. Ekrana yeniləmə tələbi göndər
             RequestRedraw?.Invoke(this, EventArgs.Empty);
-
             SaveRigCommand.NotifyCanExecuteChanged();
         }
 
@@ -534,14 +624,23 @@ namespace SpriteEditor.ViewModels
             SaveRigCommand?.NotifyCanExecuteChanged();
         }
 
+        // === OnCurrentToolChanged (DÜZƏLİŞLİ) ===
         partial void OnCurrentToolChanged(RiggingToolMode value)
         {
-            // Sümük yaratma rejimi xaricində digər rejimlərə keçəndə seçimi ləğv et
+            // Edit və ya Pose rejiminə keçəndə seçimi ləğv et
             if (value == RiggingToolMode.Edit || value == RiggingToolMode.Pose)
             {
                 SelectedJoint = null;
                 RequestRedraw?.Invoke(this, EventArgs.Empty);
             }
+
+            // === YENİ (HƏLL A): Pose rejiminə keçəndə kalibr et ===
+            if (value == RiggingToolMode.Pose)
+            {
+                RecomputeBoneParamsFromPositions();
+            }
+            // ====================================================
+
             _isDraggingJoint = false;
         }
     }

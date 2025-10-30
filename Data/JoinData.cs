@@ -22,5 +22,16 @@ namespace SpriteEditor.Data
         // SKPoint-in X və Y xassələrini JSON-a yazmaq üçün
         [JsonInclude]
         public SKPoint Position { get; set; }
+
+        // === Plan 1 Xassələri ===
+        public float BoneLength { get; set; }
+        public float Rotation { get; set; }
+
+        // === YENİ XASSƏ (PLAN 2) ===
+        /// <summary>
+        /// Oynağın istifadəçi tərəfindən təyin edilmiş adı (məsələn, "head", "left_hand")
+        /// </summary>
+        public string Name { get; set; }
+        // ==============================
     }
 }

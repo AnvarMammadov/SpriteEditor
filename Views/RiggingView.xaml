@@ -16,22 +16,18 @@
     <UserControl.Resources>
         <SolidColorBrush x:Key="BgSecondary" Color="#FF3F3F46"/>
         <converters:EnumToBooleanConverter x:Key="EnumToBooleanConverter"/>
-
         <SolidColorBrush x:Key="AccentBlue" Color="#FF007ACC"/>
         <SolidColorBrush x:Key="TextPrimary" Color="#FFE1E1E1"/>
         <SolidColorBrush x:Key="BgPrimary" Color="#FF2D2D30"/>
-
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
-
         <Style x:Key="HeaderTextBlock" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,15,0,5"/>
         </Style>
-
         <Style TargetType="TextBox">
             <Setter Property="Background" Value="{StaticResource BgPrimary}"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
@@ -56,24 +52,31 @@
                         Command="{Binding LoadImageCommand}"
                         Margin="5"/>
 
-                <TextBlock Text="2. Alətlər" Style="{StaticResource HeaderTextBlock}"/>
-
+                <TextBlock Text="2. Skelet Alətləri" Style="{StaticResource HeaderTextBlock}"/>
                 <RadioButton Content="Redaktə (Edit)" 
                              GroupName="ToolMode" 
                              IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.Edit}}"
                              Foreground="White" Margin="5"/>
-
                 <RadioButton Content="Sümük Yarat" 
                              GroupName="ToolMode" 
                              IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.CreateJoint}}"
                              Foreground="White" Margin="5"/>
-
                 <RadioButton Content="Hərəkət (Pose)" 
                              GroupName="ToolMode" 
                              IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.Pose}}"
                              Foreground="White" Margin="5"/>
 
-                <TextBlock Text="3. Əməliyyatlar" Style="{StaticResource HeaderTextBlock}"/>
+                <TextBlock Text="3. Mesh Alətləri" Style="{StaticResource HeaderTextBlock}"/>
+
+                <RadioButton Content="Mesh Redaktə" 
+                             GroupName="ToolMode" 
+                             IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.EditMesh}}"
+                             Foreground="White" Margin="5"/>
+
+                <Button Content="Avto Ağırlıq Hesabla"
+                        Command="{Binding AutoWeightCommand}"
+                        Margin="5"/>
+                <TextBlock Text="4. Əməliyyatlar" Style="{StaticResource HeaderTextBlock}"/>
                 <Button Content="Skeleti Yüklə"
                         Command="{Binding LoadRigCommand}"
                         Margin="5,5,5,0"/>
@@ -92,18 +95,17 @@
                             </Style.Triggers>
                         </Style>
                     </StackPanel.Style>
-
-                    <TextBlock Text="4. Seçilmiş Oynaq" Style="{StaticResource HeaderTextBlock}"/>
+                    <TextBlock Text="5. Seçilmiş Oynaq" Style="{StaticResource HeaderTextBlock}"/>
                     <TextBlock Text="Ad:" Margin="5,0"/>
                     <TextBox Text="{Binding SelectedJoint.Name, UpdateSourceTrigger=PropertyChanged}" 
                              Margin="5"/>
                 </StackPanel>
+
             </StackPanel>
         </Border>
 
         <Border x:Name="CanvasBorder" 
                 Grid.Column="1" Background="#FF1E1E1E" CornerRadius="5" Margin="10,0,0,0" ClipToBounds="True"
-        
                 MouseLeftButtonDown="SKCanvasView_MouseLeftButtonDown"
                 MouseLeftButtonUp="SKCanvasView_MouseLeftButtonUp"
                 MouseMove="SKCanvasView_MouseMove"
@@ -112,11 +114,8 @@
                 MouseUp="SKCanvasView_MouseUp"
                 MouseRightButtonDown="SKCanvasView_MouseRightButtonDown"
                 PreviewMouseWheel="SKCanvasView_PreviewMouseWheel"
-                
                 Focusable="True" 
-                KeyDown="CanvasBorder_KeyDown"
-                
-                >
+                KeyDown="CanvasBorder_KeyDown">
             <skia:SKElement x:Name="SKCanvasView"
                             IgnorePixelScaling="True"
                             PaintSurface="SKCanvasView_PaintSurface"

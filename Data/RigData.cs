@@ -14,9 +14,18 @@ namespace SpriteEditor.Data
         public string ImageFileName { get; set; } // Hansı şəkil üçün olduğunu bilmək
         public List<JointData> Joints { get; set; }
 
+        // === YENİ (PLAN 3) ===
+        /// <summary>
+        /// Şəkilə tətbiq edilmiş deformasiya toru (mesh)
+        /// </summary>
+        public MeshData Mesh { get; set; }
+        // =====================
+
         public RigData()
         {
             Joints = new List<JointData>();
+            // Mesh-i də dərhal yaradırıq ki, null olmasın
+            Mesh = new MeshData();
         }
     }
 }

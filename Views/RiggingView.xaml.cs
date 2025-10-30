@@ -50,6 +50,36 @@ namespace SpriteEditor.Views
         };
         // ====================================================
 
+        // === YENİ (PLAN 3): Mesh çəkmək üçün stillər ===
+        private readonly SKPaint _meshLinePaint = new SKPaint
+        {
+            Style = SKPaintStyle.Stroke,
+            Color = new SKColor(255, 0, 255, 100), // Şəffaf magenta
+            StrokeWidth = 1,
+            IsAntialias = true
+        };
+        private readonly SKPaint _vertexPaint = new SKPaint
+        {
+            Style = SKPaintStyle.Fill,
+            Color = SKColors.LawnGreen,
+            IsAntialias = true
+        };
+        // YENİ: Üçbucaq seçimi üçün
+        private readonly SKPaint _pendingVertexPaint = new SKPaint
+        {
+            Style = SKPaintStyle.Fill,
+            Color = SKColors.Orange, // Müvəqqəti seçilmiş
+            IsAntialias = true
+        };
+        private readonly SKPaint _selectedVertexPaint = new SKPaint
+        {
+            Style = SKPaintStyle.Stroke,
+            Color = SKColors.Red,
+            StrokeWidth = 2,
+            IsAntialias = true
+        };
+        // ====================================================
+
         public RiggingView()
         {
             InitializeComponent();
@@ -88,7 +118,7 @@ namespace SpriteEditor.Views
             SKCanvasView.InvalidateVisual();
         }
 
-        // ƏSAS RENDER MƏNTİQİ:
+        // ƏSAS RENDER MƏNTİQİ (YENİLƏNMİŞ):
         private void SKCanvasView_PaintSurface(object sender, SKPaintSurfaceEventArgs e)
         {
             SKSurface surface = e.Surface;
@@ -100,37 +130,21 @@ namespace SpriteEditor.Views
 
             // === 1. KAMERA TRANSFORMUNU TƏTBİQ ET ===
             canvas.Save();
-
-            // === QƏTİ DÜZƏLİŞ: (P*S)+O MODELİ ===
-            // ViewModel-dəki (World * Scale) + Offset riyaziyyatına uyğun gələn
-            // SkiaSharp render sırası ƏVVƏLCƏ Scale, SONRA Translate olmalıdır.
-
-            // 1. Kameranın miqyasına görə kətanı böyüt/kiçilt
             canvas.Scale(_viewModel.CameraScale);
-
-            // 2. Kameranın EKRAN ofsetinə görə kətanı sürüşdür
-            // DÜZƏLİŞ: SkiaSharp-da Translate() əmri cari transformasiyaya (yəni Scale-ə)
-            // məruz qalmış fəzada işləyir. EKRAN ofsetini tətbiq etmək üçün
-            // onu Miqyasa bölməliyik.
             canvas.Translate(_viewModel.CameraOffset.X / _viewModel.CameraScale,
                              _viewModel.CameraOffset.Y / _viewModel.CameraScale);
-            // ==========================================
-
 
             // 1. Yüklənmiş Şəkli Çək
             SKBitmap bitmap = _viewModel.LoadedBitmap;
             if (bitmap != null)
             {
-                // Şəkli DÜNYA koordinatının başlanğıcında (0, 0) çəkirik
                 canvas.DrawBitmap(bitmap, 0, 0);
             }
 
             // 2. Bütün oynaql (Joints) və sümükləri (Bones) çək
-            // Oynaqların mövqeyi (Joint.Position) DÜNYA koordinatındadır
             foreach (var joint in _viewModel.Joints)
             {
                 canvas.DrawCircle(joint.Position, 5f, _jointPaint);
-
                 if (joint.Parent != null)
                 {
                     canvas.DrawLine(joint.Parent.Position, joint.Position, _bonePaint);
@@ -149,43 +163,76 @@ namespace SpriteEditor.Views
                 canvas.DrawLine(_viewModel.SelectedJoint.Position, _viewModel.CurrentMousePosition, _bonePaint);
             }
 
+            // === YENİ (PLAN 3): Mesh-i (Nöqtə və Üçbucaqlar) çək ===
+
+            // 5. Bütün Üçbucaqları (Triangles) çək
+            foreach (var triangle in _viewModel.Triangles)
+            {
+                canvas.DrawLine(triangle.V1.CurrentPosition, triangle.V2.CurrentPosition, _meshLinePaint);
+                canvas.DrawLine(triangle.V2.CurrentPosition, triangle.V3.CurrentPosition, _meshLinePaint);
+                canvas.DrawLine(triangle.V3.CurrentPosition, triangle.V1.CurrentPosition, _meshLinePaint);
+            }
+
+            // 6. Bütün Nöqtələri (Vertices) çək
+            foreach (var vertex in _viewModel.Vertices)
+            {
+                canvas.DrawCircle(vertex.CurrentPosition, 4f, _vertexPaint);
+            }
+
+            // 7. YENİ: Üçbucaq üçün gözləyən nöqtələri (Pending) çək
+            foreach (var vertex in _viewModel.VertexSelectionForTriangle)
+            {
+                // Bütün nöqtələrin (yaşıl) üstünə narıncı rəngdə çək
+                canvas.DrawCircle(vertex.CurrentPosition, 4f, _pendingVertexPaint);
+            }
+
+            // 8. Seçilmiş Nöqtəni (SelectedVertex) çək
+            if (_viewModel.SelectedVertex != null)
+            {
+                // Bu, həm də gözləyən nöqtələrin (narıncı) üstünə çəkiləcək (qırmızı halqa)
+                canvas.DrawCircle(_viewModel.SelectedVertex.CurrentPosition, 6f, _selectedVertexPaint);
+            }
+            // ========================================================
+
+
             // === 3. KAMERA TRANSFORMUNU LƏĞV ET ===
             canvas.Restore();
             // ======================================
         }
 
-        // === DÜZƏLİŞ: Siçan koordinatlarını birbaşa SKCanvasView-dən alaq ===
         private SKPoint GetSkiaScreenPos(MouseEventArgs e)
         {
-            // Koordinatları `Border`-dən yox, `SKCanvasView`-in özündən alırıq
             Point wpfPos = e.GetPosition(SKCanvasView);
             return new SKPoint((float)wpfPos.X, (float)wpfPos.Y);
         }
 
-
+        // === YENİLƏNMİŞ ===
         private void SKCanvasView_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (_viewModel == null) return;
-            // YENİ ƏLAVƏ: Border-in fokusu almasını təmin edirik ki, KeyDown işləsin
             (sender as UIElement)?.Focus();
-            // ===================================================================
-
             (sender as UIElement)?.CaptureMouse();
-            _viewModel.OnCanvasLeftClicked(GetSkiaScreenPos(e));
+
+            // YENİ: Ctrl düyməsinin vəziyyətini yoxla
+            bool isCtrlPressed = Keyboard.Modifiers == ModifierKeys.Control;
+            _viewModel.OnCanvasLeftClicked(GetSkiaScreenPos(e), isCtrlPressed);
         }
 
 
-        // === YENİ METOD: Klaviatura Hadisəsi ===
+        // === YENİLƏNMİŞ ===
         private void CanvasBorder_KeyDown(object sender, KeyEventArgs e)
         {
             if (_viewModel == null) return;
-
-            // Əgər "Delete" düyməsi basılıbsa
             if (e.Key == Key.Delete)
             {
-                // ViewModel-ə silmə əmrini göndər
-                _viewModel.DeleteSelectedJoint();
-                // Hadisəni "icra edilmiş" kimi işarələ ki, başqa elementlər reaksiya verməsin
+                if (_viewModel.SelectedVertex != null)
+                {
+                    _viewModel.DeleteSelectedVertex();
+                }
+                else if (_viewModel.SelectedJoint != null)
+                {
+                    _viewModel.DeleteSelectedJoint();
+                }
                 e.Handled = true;
             }
         }
@@ -198,16 +245,20 @@ namespace SpriteEditor.Views
             _viewModel.OnCanvasLeftReleased();
         }
 
+        // === YENİLƏNMİŞ ===
         private void SKCanvasView_MouseMove(object sender, MouseEventArgs e)
         {
             if (_viewModel == null) return;
-            _viewModel.OnCanvasMouseMoved(GetSkiaScreenPos(e));
+
+            // YENİ: Ctrl düyməsinin vəziyyətini yoxla
+            bool isCtrlPressed = Keyboard.Modifiers == ModifierKeys.Control;
+            _viewModel.OnCanvasMouseMoved(GetSkiaScreenPos(e), isCtrlPressed);
         }
 
         private void SKCanvasView_MouseLeave(object sender, MouseEventArgs e)
         {
             if (_viewModel == null) return;
-            _viewModel.OnCanvasMouseMoved(new SKPoint(-1000, -1000));
+            _viewModel.OnCanvasMouseMoved(new SKPoint(-1000, -1000), false); // Ctrl basılmır
             _viewModel.StopPan();
         }
 
@@ -218,7 +269,6 @@ namespace SpriteEditor.Views
             {
                 return;
             }
-
             e.Handled = true;
             _viewModel.HandleZoom(GetSkiaScreenPos(e), e.Delta);
         }
@@ -226,7 +276,6 @@ namespace SpriteEditor.Views
         private void SKCanvasView_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (_viewModel == null) return;
-
             if (e.ChangedButton == MouseButton.Middle)
             {
                 (sender as UIElement)?.CaptureMouse();
@@ -237,7 +286,6 @@ namespace SpriteEditor.Views
         private void SKCanvasView_MouseUp(object sender, MouseButtonEventArgs e)
         {
             if (_viewModel == null) return;
-
             if (e.ChangedButton == MouseButton.Middle)
             {
                 (sender as UIElement)?.ReleaseMouseCapture();
@@ -246,15 +294,12 @@ namespace SpriteEditor.Views
         }
 
 
-        // === YENİ METOD: Sağ Klik Hadisəsi ===
+        // === YENİLƏNMİŞ ===
         private void SKCanvasView_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (_viewModel == null) return;
-
-            // ViewModel-ə xəbər ver ki, seçimi ləğv etsin
             _viewModel.DeselectCurrentJoint();
-
-            // Sağ klik menyusunun (context menu) açılmasının qarşısını al
+            _viewModel.DeselectCurrentVertex(); // Bu metod hər iki vertex seçimini təmizləyir
             e.Handled = true;
         }
 

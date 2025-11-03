@@ -12,6 +12,9 @@ using Microsoft.Win32;
 using SkiaSharp;
 using SpriteEditor.Data; // Yaratdığımız Data modelləri üçün
 using System.Text.Json; // JSON Serializasiyası üçün
+using TriangleNet.Geometry; // Triangle.NET üçün
+using TriangleNet.Meshing;
+
 
 
 
@@ -938,6 +941,7 @@ namespace SpriteEditor.ViewModels
         {
             Vertices.Add(newVertex);
             AutoWeightCommand.NotifyCanExecuteChanged();
+            AutoTriangleCommand.NotifyCanExecuteChanged();
         }
         private void RemoveJoint(JointModel jointToRemove)
         {
@@ -948,6 +952,81 @@ namespace SpriteEditor.ViewModels
         {
             Vertices.Remove(vertexToRemove);
             AutoWeightCommand.NotifyCanExecuteChanged();
+            AutoTriangleCommand.NotifyCanExecuteChanged();
         }
+
+
+
+
+        // === YENİ (AVTO-TRİANGULATE - DÜZƏLDİLMİŞ) ===
+        [RelayCommand(CanExecute = nameof(CanAutoTriangle))]
+        private void AutoTriangle()
+        {
+            if (!CanAutoTriangle()) return;
+
+            // 1. Köhnə üçbucaqları təmizlə
+            Triangles.Clear();
+
+            // === DÜZƏLİŞ: Sizin təklifiniz əsasında InputGeometry-ni Polygon ilə əvəz edirik ===
+            // 2. Triangle.NET üçün bir "Polygon" yarat
+            var polygon = new TriangleNet.Geometry.Polygon();
+            // ==============================================================================
+
+            // 3. Bizim VertexModel-lərimizi Triangle.NET-in Vertex-ləri ilə
+            //    əlaqələndirmək üçün bir lüğət (map) yaradırıq. (Bu vacibdir)
+            var vertexMap = new Dictionary<TriangleNet.Geometry.Vertex, VertexModel>();
+
+            foreach (var vmVertex in Vertices)
+            {
+                // Bizim "BindPosition" (sakit vəziyyət) əsasında yeni nöqtə yaradırıq
+                var tnVertex = new TriangleNet.Geometry.Vertex(
+                    vmVertex.BindPosition.X,
+                    vmVertex.BindPosition.Y
+                );
+
+                // === DÜZƏLİŞ: geometry.AddPoint(tnVertex) -> polygon.Add(tnVertex) ===
+                polygon.Add(tnVertex);
+                // ===================================================================
+
+                vertexMap[tnVertex] = vmVertex; // Lüğətə əlavə et
+            }
+
+            // === DÜZƏLİŞ: geometry.Triangulate() -> polygon.Triangulate() ===
+            // 4. ƏSAS MƏRHƏLƏ: Triangulate!
+            var mesh = (TriangleNet.Mesh)polygon.Triangulate();
+            // =============================================================
+
+            // 5. Nəticəni (mesh.Triangles) bizim öz TriangleModel-lərimizə çeviririk
+            foreach (var tnTriangle in mesh.Triangles)
+            {
+                // Hər üçbucağın 3 nöqtəsini (Vertex) alırıq
+                var v0 = tnTriangle.GetVertex(0);
+                var v1 = tnTriangle.GetVertex(1);
+                var v2 = tnTriangle.GetVertex(2);
+
+                // Lüğətdən (map) istifadə edərək bizim VertexModel-ləri tapırıq
+                if (vertexMap.TryGetValue(v0, out var vmV0) &&
+                    vertexMap.TryGetValue(v1, out var vmV1) &&
+                    vertexMap.TryGetValue(v2, out var vmV2))
+                {
+                    // Yeni TriangleModel yaradıb siyahıya əlavə edirik
+                    Triangles.Add(new TriangleModel(vmV0, vmV1, vmV2));
+                }
+            }
+
+            // 6. UI-ı yenilə və yadda saxlama düyməsini aktiv et
+            RequestRedraw?.Invoke(this, EventArgs.Empty);
+            SaveRigCommand.NotifyCanExecuteChanged();
+            MessageBox.Show($"{mesh.Triangles.Count} üçbucaq avtomatik yaradıldı.", "Uğurlu");
+        }
+
+        private bool CanAutoTriangle()
+        {
+            // Yalnız ən azı 3 nöqtə varsa işləsin
+            return Vertices.Count >= 3;
+        }
+        // ==================================
+
+
     }
 }

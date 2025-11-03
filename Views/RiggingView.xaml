@@ -72,6 +72,9 @@
                              GroupName="ToolMode" 
                              IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.EditMesh}}"
                              Foreground="White" Margin="5"/>
+                <Button Content="Avto Üçbucaq Yarat"
+                        Command="{Binding AutoTriangleCommand}"
+                        Margin="5,0,5,5"/>
 
                 <Button Content="Avto Ağırlıq Hesabla"
                         Command="{Binding AutoWeightCommand}"

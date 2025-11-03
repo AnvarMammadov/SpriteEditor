@@ -138,7 +138,42 @@ namespace SpriteEditor.Views
             SKBitmap bitmap = _viewModel.LoadedBitmap;
             if (bitmap != null)
             {
-                canvas.DrawBitmap(bitmap, 0, 0);
+                // === FİNAL DÜZƏLİŞ (Alətə Görə Render) ===
+
+                // YALNIZ "Pose" rejimində deformasiya olunmuş textur-u çək
+                if (_viewModel.CurrentTool == RiggingToolMode.Pose &&
+                    _viewModel.Vertices.Any() &&
+                    _viewModel.Triangles.Any())
+                {
+                    // 1. Vertices (Deformasiya olunmuş mövqelər)
+                    var vertices = _viewModel.Vertices.Select(v => v.CurrentPosition).ToArray();
+                    // 2. Texs (Orijinal "sakit" mövqelər / UVs)
+                    var texs = _viewModel.Vertices.Select(v => v.BindPosition).ToArray();
+                    // 3. Indices (ushort formatında)
+                    var vertexMap = _viewModel.Vertices.Select((v, i) => new { Vertex = v, Index = i })
+                                                      .ToDictionary(pair => pair.Vertex, pair => pair.Index);
+                    var intIndices = _viewModel.Triangles.SelectMany(t => new[]
+                    {
+                        vertexMap.ContainsKey(t.V1) ? vertexMap[t.V1] : -1,
+                        vertexMap.ContainsKey(t.V2) ? vertexMap[t.V2] : -1,
+                        vertexMap.ContainsKey(t.V3) ? vertexMap[t.V3] : -1
+                    }).Where(idx => idx != -1).ToArray();
+                    var ushortIndices = intIndices.Select(i => (ushort)i).ToArray();
+
+                    // 4. Şəkli "Shader" olaraq təyin et
+                    using (var paint = new SKPaint { FilterQuality = SKFilterQuality.High })
+                    {
+                        paint.Shader = SKShader.CreateBitmap(bitmap, SKShaderTileMode.Clamp, SKShaderTileMode.Clamp);
+                        // 5. Deformasiya olunmuş mesh-i çək!
+                        canvas.DrawVertices(SKVertexMode.Triangles, vertices, texs, null, ushortIndices, paint);
+                    }
+                }
+                else // Bütün digər rejimlərdə (EditMesh, CreateJoint, etc.) sadəcə şəkli çək
+                {
+                    // Bu, imkan verəcək ki, magenta xətlər şəklin üstündə görünsün
+                    canvas.DrawBitmap(bitmap, 0, 0);
+                }
+                // === DÜZƏLİŞİN SONU ===
             }
 
             // 2. Bütün oynaql (Joints) və sümükləri (Bones) çək

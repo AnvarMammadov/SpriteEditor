@@ -72,6 +72,97 @@
                              GroupName="ToolMode" 
                              IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.EditMesh}}"
                              Foreground="White" Margin="5"/>
+                <!-- === AutoWeight Parametrləri === -->
+                <Expander Header="AutoWeight Parametrləri" Margin="5,0,5,5" IsExpanded="False">
+                    <StackPanel Margin="5">
+                        <!-- SigmaFactor -->
+                        <TextBlock Text="σ (Sümük qalınlığı faktoru)" />
+                        <DockPanel>
+                            <Slider Minimum="0.05" Maximum="0.40" SmallChange="0.01" TickFrequency="0.05" IsSnapToTickEnabled="False"
+                    Value="{Binding AwSigmaFactor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                    Width="150" Margin="0,0,5,0"/>
+                            <TextBox Width="60" Text="{Binding AwSigmaFactor, Mode=TwoWay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+
+                        <!-- RadialPower -->
+                        <TextBlock Text="Radial Güc" Margin="0,8,0,0"/>
+                        <DockPanel>
+                            <Slider Minimum="0.5" Maximum="2.0" SmallChange="0.1" TickFrequency="0.25"
+                    Value="{Binding AwRadialPower, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Width="150" Margin="0,0,5,0"/>
+                            <TextBox Width="60" Text="{Binding AwRadialPower, Mode=TwoWay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+
+                        <!-- LongPower -->
+                        <TextBlock Text="Uzunluq Boyu Güc (end-falloff)" Margin="0,8,0,0"/>
+                        <DockPanel>
+                            <Slider Minimum="0.2" Maximum="1.0" SmallChange="0.1" TickFrequency="0.2"
+                    Value="{Binding AwLongPower, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Width="150" Margin="0,0,5,0"/>
+                            <TextBox Width="60" Text="{Binding AwLongPower, Mode=TwoWay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+
+                        <!-- ParentBlend -->
+                        <TextBlock Text="Valideynə Pay (Parent Blend)" Margin="0,8,0,0"/>
+                        <DockPanel>
+                            <Slider Minimum="0.0" Maximum="0.5" SmallChange="0.05" TickFrequency="0.1"
+                    Value="{Binding AwParentBlend, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Width="150" Margin="0,0,5,0"/>
+                            <TextBox Width="60" Text="{Binding AwParentBlend, Mode=TwoWay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+
+                        <!-- AncestorDecay -->
+                        <TextBlock Text="Yuxarı Nəsil Sönümlənməsi (Ancestor Decay)" Margin="0,8,0,0"/>
+                        <DockPanel>
+                            <Slider Minimum="0.1" Maximum="0.9" SmallChange="0.05" TickFrequency="0.1"
+                    Value="{Binding AwAncestorDecay, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Width="150" Margin="0,0,5,0"/>
+                            <TextBox Width="60" Text="{Binding AwAncestorDecay, Mode=TwoWay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+
+                        <!-- TopK -->
+                        <TextBlock Text="Top-K (sümük sayı)" Margin="0,8,0,0"/>
+                        <DockPanel>
+                            <Slider Minimum="1" Maximum="6" SmallChange="1" TickFrequency="1" IsSnapToTickEnabled="True"
+                    Value="{Binding AwTopK, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Width="150" Margin="0,0,5,0"/>
+                            <TextBox Width="60" Text="{Binding AwTopK, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+
+                        <!-- MinKeep -->
+                        <TextBlock Text="Minimum Çəki (Threshold)" Margin="0,8,0,0"/>
+                        <DockPanel>
+                            <Slider Minimum="0.00" Maximum="0.10" SmallChange="0.01" TickFrequency="0.02"
+                    Value="{Binding AwMinKeep, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Width="150" Margin="0,0,5,0"/>
+                            <TextBox Width="60" Text="{Binding AwMinKeep, Mode=TwoWay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+
+                        <!-- Smoothing -->
+                        <TextBlock Text="Smoothing İterasiya" Margin="0,8,0,0"/>
+                        <DockPanel>
+                            <Slider Minimum="0" Maximum="6" SmallChange="1" TickFrequency="1" IsSnapToTickEnabled="True"
+                    Value="{Binding AwSmoothIters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Width="150" Margin="0,0,5,0"/>
+                            <TextBox Width="60" Text="{Binding AwSmoothIters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+
+                        <TextBlock Text="Smoothing Gücü (μ)" Margin="0,8,0,0"/>
+                        <DockPanel>
+                            <Slider Minimum="0.05" Maximum="0.6" SmallChange="0.05" TickFrequency="0.1"
+                    Value="{Binding AwSmoothMu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Width="150" Margin="0,0,5,0"/>
+                            <TextBox Width="60" Text="{Binding AwSmoothMu, Mode=TwoWay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+
+                        <Button Content="Default-a Qaytar" Command="{Binding ResetAutoWeightDefaultsCommand}" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Expander>
+                <!-- === /Parametrlər === -->
+
+                <Button Content="Auto Mesh (Nöqtələri Yarat)"
+                     Command="{Binding AutoGenerateVerticesCommand}"
+                        Margin="5,0,5,6"/>
                 <Button Content="Avto Üçbucaq Yarat"
                         Command="{Binding AutoTriangleCommand}"
                         Margin="5,0,5,5"/>

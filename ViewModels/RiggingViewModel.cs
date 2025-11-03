@@ -30,6 +30,34 @@ namespace SpriteEditor.ViewModels
 
     public partial class RiggingViewModel : ObservableObject
     {
+
+        // --- AutoWeight Parametrləri (UI-dan dəyişən) ---
+        [ObservableProperty] private float _awSigmaFactor = 0.20f;   // 0.15–0.25 tipik
+        [ObservableProperty] private float _awRadialPower = 1.0f;    // 0.8–1.2
+        [ObservableProperty] private float _awLongPower = 0.5f;    // 0.3–0.8
+        [ObservableProperty] private float _awMinKeep = 0.02f;   // 0.01–0.05
+        [ObservableProperty] private int _awTopK = 4;       // 3–4
+        [ObservableProperty] private float _awParentBlend = 0.25f;   // 0–0.5
+        [ObservableProperty] private float _awAncestorDecay = 0.40f; // 0.2–0.6
+        [ObservableProperty] private int _awSmoothIters = 3;       // 0–5
+        [ObservableProperty] private float _awSmoothMu = 0.30f;   // 0.1–0.5
+
+
+        // Default-a qaytarmaq üçün
+        [RelayCommand]
+        private void ResetAutoWeightDefaults()
+        {
+            AwSigmaFactor = 0.20f;
+            AwRadialPower = 1.0f;
+            AwLongPower = 0.5f;
+            AwMinKeep = 0.02f;
+            AwTopK = 4;
+            AwParentBlend = 0.5f;
+            AwAncestorDecay = 0.40f;
+            AwSmoothIters = 3;
+            AwSmoothMu = 0.55f;
+        }
+
         public event EventHandler RequestRedraw;
         public event EventHandler RequestCenterCamera;
 
@@ -37,6 +65,7 @@ namespace SpriteEditor.ViewModels
         [NotifyCanExecuteChangedFor(nameof(LoadImageCommand))]
         [NotifyCanExecuteChangedFor(nameof(SaveRigCommand))]
         [NotifyCanExecuteChangedFor(nameof(LoadRigCommand))]
+        [NotifyCanExecuteChangedFor(nameof(AutoGenerateVerticesCommand))]
         private bool _isImageLoaded = false;
 
         [ObservableProperty]
@@ -88,70 +117,303 @@ namespace SpriteEditor.ViewModels
         private const float EPS = 1e-4f;
 
 
+
+        public RiggingViewModel()
+        {
+            // (İstəyə bağlı) başlanğıc AutoWeight presetləri
+            // Bunları istəmirsənsə, silə bilərsən.
+            AwSigmaFactor = 0.20f;
+            AwRadialPower = 1.0f;
+            AwLongPower = 0.5f;
+            AwMinKeep = 0.02f;
+            AwTopK = 4;
+            AwParentBlend = 0.5f;
+            AwAncestorDecay = 0.40f;
+            AwSmoothIters = 3;
+            AwSmoothMu = 0.55f;
+            // Kolleksiya dəyişikliklərini izləyək ki, UI-dakı düymələr vaxtında aktivləşsin/deaktivləşsin
+            Joints.CollectionChanged += (_, __) =>
+            {
+                AutoGenerateVerticesCommand?.NotifyCanExecuteChanged();
+                AutoWeightCommand?.NotifyCanExecuteChanged();
+                AutoTriangleCommand?.NotifyCanExecuteChanged();
+                SaveRigCommand?.NotifyCanExecuteChanged();
+            };
+
+            Vertices.CollectionChanged += (_, __) =>
+            {
+                AutoWeightCommand?.NotifyCanExecuteChanged();
+                AutoTriangleCommand?.NotifyCanExecuteChanged();
+                SaveRigCommand?.NotifyCanExecuteChanged();
+            };
+
+            Triangles.CollectionChanged += (_, __) =>
+            {
+                SaveRigCommand?.NotifyCanExecuteChanged();
+            };
+
+            // İlk vəziyyət üçün (əgər VM yaradılan kimi UI binding artıq qurulubsa)
+            AutoGenerateVerticesCommand?.NotifyCanExecuteChanged();
+            AutoWeightCommand?.NotifyCanExecuteChanged();
+            AutoTriangleCommand?.NotifyCanExecuteChanged();
+            SaveRigCommand?.NotifyCanExecuteChanged();
+        }
+
+
+
+
+
         // === YENİ (PLAN 3): AVTO AĞIRLIQLANDIRMA ƏMRİ ===
         [RelayCommand(CanExecute = nameof(CanAutoWeight))]
         private void AutoWeight()
         {
+
+
+
             if (!CanAutoWeight()) return;
 
-            MessageBox.Show("Avtomatik ağırlıqlandırma başlayır...");
+            // Parametrlər (istəyə görə tənzimlə)
+            float sigmaFactor = AwSigmaFactor;          // σ = boneLength * sigmaFactor (0.15–0.25 yaxşıdır)
+            float radialPower = AwRadialPower;        // f_r ^ radialPower
+            float longPower = AwLongPower;      // f_l ^ longPower
+            float minKeep = AwMinKeep;        // çox kiçik çəkiləri at
+            int topK = AwTopK;           // hər vertex üçün ən çox N sümük
+            float parentBlend = AwParentBlend;    // valideynə pay (birinci ata)
+            float ancestorDecay = AwAncestorDecay;  // daha yuxarı ancestorlara eksponensial azalma
+            int smoothIters = AwSmoothIters;    // smoothing iterasiyası
+            float smoothMu = AwSmoothMu;       // smoothing qarışdırma əmsalı
 
-            // Hər bir nöqtə (vertex) üçün...
-            foreach (var vertex in Vertices)
+            // 1) Sümükləri (seqmentləri) hazırla (Bind pose-da işlədiyindən əmin ol)
+            var bones = BuildBoneSegments(Joints);
+            if (bones.Count == 0) return;
+
+            // 2) Hər vertex üçün raw çəkilər (bone->weight)
+            foreach (var v in Vertices)
             {
-                vertex.Weights.Clear();
-                var weights = new Dictionary<int, float>();
-                float totalInverseDistanceSquared = 0;
-
-                // Hər bir sümüyə (joint) olan məsafəni yoxla
-                foreach (var joint in Joints)
+                var raw = new Dictionary<int, float>(); // jointId -> weight (uşaq oynaq ID-si)
+                foreach (var b in bones)
                 {
-                    // Ağırlıqlandırma nöqtənin BindPosition-u (sakit) ilə
-                    // sümüyün Position-u (sakit) arasında hesablanmalıdır.
-                    float dx = vertex.BindPosition.X - joint.Position.X;
-                    float dy = vertex.BindPosition.Y - joint.Position.Y;
-                    float distanceSq = dx * dx + dy * dy;
+                    // Sümüyə (P->C) məsafəyə görə radial təsir + uzunluq boyu window
+                    float t, dist;
+                    ProjectToSegment(v.BindPosition, b.P, b.C, out t, out dist);
 
-                    // Əgər nöqtə sümüyün tam üstündədirsə
-                    if (distanceSq < EPS)
-                    {
-                        weights.Clear(); // Bütün digər təsirləri ləğv et
-                        weights.Add(joint.Id, 1.0f);
-                        totalInverseDistanceSquared = 1.0f;
-                        break; // Bu nöqtə üçün başqa sümük axtarma
-                    }
+                    // Radial gaussian təsir
+                    float len = Distance(b.P, b.C);
+                    float sigma = MathF.Max(1e-3f, len * sigmaFactor);
+                    float fr = 1.0f / (1.0f + (dist / sigma) * (dist / sigma)); // daha linear, daha yumşa
+                    fr = MathF.Pow(fr, radialPower);
 
-                    // Məsafənin tərs kvadratı (daha kəskin təsir)
-                    float inverseDistSq = 1.0f / distanceSq;
-                    weights.Add(joint.Id, inverseDistSq);
-                    totalInverseDistanceSquared += inverseDistSq;
+                    // Uzunluq boyu "window" – mərkəzdə bir az güclü (ucda yumşalır)
+                    // 0..1 aralığında cosine window: max t=0.5, min t≈0/1
+                    float fl = 0.5f * (1f + MathF.Cos(MathF.PI * MathF.Abs(2f * t - 1f)));
+                    fl = MathF.Pow(fl, longPower);
+
+                    float w = fr * fl;
+                    if (w <= 0f) continue;
+
+                    // Çəkini uşaq oynağın ID-sinə yazırıq (bone.ChildId)
+                    AddWeight(raw, b.ChildId, w);
                 }
 
-                // Nəticələri normallaşdır (cəmi 1.0 olsun)
-                if (totalInverseDistanceSquared > 0 && weights.Count > 0)
+                // 3) Zəncir paylanması (parent/ancestor-lara azca pay)
+                if (raw.Count > 0)
                 {
-                    foreach (var jointId in weights.Keys.ToList())
+                    var blended = new Dictionary<int, float>(raw);
+                    foreach (var kv in raw)
                     {
-                        float normalizedWeight = weights[jointId] / totalInverseDistanceSquared;
-
-                        // Çox kiçik təsirləri yadda saxlamamaq üçün filtr
-                        if (normalizedWeight > 0.01f)
+                        int jointId = kv.Key;
+                        float w = kv.Value;
+                        float carry = w * parentBlend;
+                        var cur = FindJointById(jointId);
+                        float factor = 1.0f;
+                        while (carry > 1e-5f && cur != null && cur.Parent != null)
                         {
-                            vertex.Weights[jointId] = normalizedWeight;
+                            cur = cur.Parent;
+                            factor *= ancestorDecay;
+                            float give = carry * factor;
+                            if (give <= 1e-5f) break;
+                            AddWeight(blended, cur.Id, give);
                         }
                     }
+                    v.Weights = blended;
+                }
+                else
+                {
+                    v.Weights.Clear();
+                }
+
+                // 4) Top-K, threshold və normalizasiya
+                PruneAndNormalize(v.Weights, topK, minKeep);
+            }
+
+            // 5) Mesh qonşuluğunda weight smoothing (Laplacian-vari)
+            if (Triangles.Count > 0 && Vertices.Count > 0)
+            {
+                var neighbors = BuildVertexNeighbors(Vertices, Triangles);
+                for (int it = 0; it < smoothIters; it++)
+                {
+                    SmoothWeightsOnce(Vertices, neighbors, smoothMu, topK, minKeep);
                 }
             }
 
-            // Nəticəni yadda saxlaya bilmək üçün
             SaveRigCommand.NotifyCanExecuteChanged();
-            MessageBox.Show("Avtomatik ağırlıqlandırma tamamlandı! Nəticəni yadda saxlaya bilərsiniz.");
+            MessageBox.Show("Avtomatik ağırlıqlandırma tamamlandı (segment-əsaslı)!", "Uğurlu");
         }
 
         private bool CanAutoWeight()
         {
-            // Yalnız həm sümük, həm də nöqtə varsa işləsin
-            return Joints.Count > 0 && Vertices.Count > 0;
+            return IsImageLoaded && Joints.Count > 0 && Vertices.Count > 0;
+        }
+
+        // ======================= Köməkçilər =======================
+
+        private sealed class BoneSeg
+        {
+            public int ChildId;
+            public SKPoint P; // parent position (bind)
+            public SKPoint C; // child position  (bind)
+        }
+
+        private static float Distance(in SKPoint a, in SKPoint b)
+        {
+            float dx = a.X - b.X; float dy = a.Y - b.Y;
+            return MathF.Sqrt(dx * dx + dy * dy);
+        }
+
+        private List<BoneSeg> BuildBoneSegments(IEnumerable<JointModel> joints)
+        {
+            // Bind pose-da olduğundan əmin ol: RecomputeBoneParamsFromPositions() çağırılıb
+            var list = new List<BoneSeg>();
+            foreach (var j in joints)
+            {
+                if (j.Parent == null) continue;
+                list.Add(new BoneSeg
+                {
+                    ChildId = j.Id,
+                    P = j.Parent.Position,
+                    C = j.Position
+                });
+            }
+            return list;
+        }
+
+        private JointModel FindJointById(int id)
+        {
+            // Joints çox böyük deyil; sadə axtarış kifayət edir
+            foreach (var j in Joints) if (j.Id == id) return j;
+            return null;
+        }
+
+        private static void ProjectToSegment(in SKPoint V, in SKPoint P, in SKPoint C, out float t, out float dist)
+        {
+            float vx = V.X - P.X, vy = V.Y - P.Y;
+            float cx = C.X - P.X, cy = C.Y - P.Y;
+            float denom = (cx * cx + cy * cy);
+            if (denom < 1e-8f)
+            {
+                t = 0f;
+                dist = MathF.Sqrt(vx * vx + vy * vy);
+                return;
+            }
+            float dot = vx * cx + vy * cy;
+            t = dot / denom;
+            if (t < 0f) t = 0f; else if (t > 1f) t = 1f;
+            float qx = P.X + t * cx, qy = P.Y + t * cy;
+            float dx = V.X - qx, dy = V.Y - qy;
+            dist = MathF.Sqrt(dx * dx + dy * dy);
+        }
+
+        private static void AddWeight(Dictionary<int, float> dict, int jointId, float w)
+        {
+            if (dict.TryGetValue(jointId, out var cur)) dict[jointId] = cur + w;
+            else dict[jointId] = w;
+        }
+
+        private static void PruneAndNormalize(Dictionary<int, float> weights, int topK, float minKeep)
+        {
+            if (weights.Count == 0) return;
+
+            // Sırala və Top-K saxla
+            var sorted = weights.OrderByDescending(kv => kv.Value).Take(topK)
+                                .Where(kv => kv.Value >= minKeep).ToList();
+
+            weights.Clear();
+            float sum = 0f;
+            foreach (var kv in sorted) { weights[kv.Key] = kv.Value; sum += kv.Value; }
+            if (sum < 1e-8f) { weights.Clear(); return; }
+            // Normalizasiya
+            var keys = weights.Keys.ToList();
+            foreach (var k in keys) weights[k] = weights[k] / sum;
+        }
+
+        private static Dictionary<VertexModel, HashSet<VertexModel>> BuildVertexNeighbors(
+            IEnumerable<VertexModel> verts,
+            IEnumerable<TriangleModel> tris)
+        {
+            var adj = new Dictionary<VertexModel, HashSet<VertexModel>>();
+            void link(VertexModel a, VertexModel b)
+            {
+                if (!adj.TryGetValue(a, out var set)) { set = new HashSet<VertexModel>(); adj[a] = set; }
+                set.Add(b);
+            }
+
+            foreach (var t in tris)
+            {
+                link(t.V1, t.V2); link(t.V2, t.V1);
+                link(t.V2, t.V3); link(t.V3, t.V2);
+                link(t.V3, t.V1); link(t.V1, t.V3);
+            }
+
+            // indisi olmayan vertexlər də boş set alsın
+            foreach (var v in verts) if (!adj.ContainsKey(v)) adj[v] = new HashSet<VertexModel>();
+            return adj;
+        }
+
+        private static void SmoothWeightsOnce(
+            IEnumerable<VertexModel> verts,
+            Dictionary<VertexModel, HashSet<VertexModel>> neighbors,
+            float mu, int topK, float minKeep)
+        {
+            // Yeni çəkilər üçün keçid buffer
+            var newWeights = new Dictionary<VertexModel, Dictionary<int, float>>();
+
+            foreach (var v in verts)
+            {
+                // Qonşu düyünlərin çəkilərini ortalaşdır
+                if (!neighbors.TryGetValue(v, out var nb) || nb.Count == 0)
+                {
+                    // Qonşu yoxdursa, eyni saxla
+                    newWeights[v] = new Dictionary<int, float>(v.Weights);
+                    continue;
+                }
+
+                // Qonşuların birlikdə istifadə etdiyi sümüklərin (jointId) birləşmiş dəsti
+                var unionJoints = new HashSet<int>(v.Weights.Keys);
+                foreach (var u in nb) foreach (var jid in u.Weights.Keys) unionJoints.Add(jid);
+
+                var averaged = new Dictionary<int, float>();
+                foreach (var jid in unionJoints)
+                {
+                    float sum = 0f; int cnt = 0;
+                    foreach (var u in nb)
+                    {
+                        if (u.Weights.TryGetValue(jid, out var wu)) { sum += wu; cnt++; }
+                    }
+                    float neighborAvg = (cnt > 0) ? (sum / cnt) : 0f;
+                    float self = v.Weights.TryGetValue(jid, out var ws) ? ws : 0f;
+                    float blended = (1f - mu) * self + mu * neighborAvg;
+                    if (blended > 0f) averaged[jid] = blended;
+                }
+
+                PruneAndNormalize(averaged, topK, minKeep);
+                newWeights[v] = averaged;
+            }
+
+            // Geri yaz
+            foreach (var v in verts)
+            {
+                v.Weights = newWeights[v];
+            }
         }
 
         // =======================================================
@@ -301,6 +563,9 @@ namespace SpriteEditor.ViewModels
                     RequestRedraw?.Invoke(this, EventArgs.Empty);
                     SaveRigCommand.NotifyCanExecuteChanged();
                     AutoWeightCommand.NotifyCanExecuteChanged();
+                    AutoTriangleCommand.NotifyCanExecuteChanged();
+                    AutoGenerateVerticesCommand.NotifyCanExecuteChanged();
+
                     MessageBox.Show("Skelet və Mesh uğurla yükləndi.", "Uğurlu");
                 }
                 catch (Exception ex)
@@ -936,6 +1201,8 @@ namespace SpriteEditor.ViewModels
         {
             Joints.Add(newJoint);
             AutoWeightCommand.NotifyCanExecuteChanged();
+            AutoTriangleCommand.NotifyCanExecuteChanged();
+            AutoGenerateVerticesCommand.NotifyCanExecuteChanged(); // <-- əlavə et
         }
         private void AddVertex(VertexModel newVertex)
         {
@@ -947,6 +1214,8 @@ namespace SpriteEditor.ViewModels
         {
             Joints.Remove(jointToRemove);
             AutoWeightCommand.NotifyCanExecuteChanged();
+            AutoTriangleCommand.NotifyCanExecuteChanged();
+            AutoGenerateVerticesCommand.NotifyCanExecuteChanged(); // <-- əlavə et
         }
         private void RemoveVertex(VertexModel vertexToRemove)
         {
@@ -958,74 +1227,346 @@ namespace SpriteEditor.ViewModels
 
 
 
-        // === YENİ (AVTO-TRİANGULATE - DÜZƏLDİLMİŞ) ===
+        //// === YENİ (AVTO-TRİANGULATE - DÜZƏLDİLMİŞ) ===
+        //[RelayCommand(CanExecute = nameof(CanAutoTriangle))]
+        //private void AutoTriangle()
+        //{
+        //    if (!CanAutoTriangle()) return;
+
+        //    // 1) Köhnə üçbucaqları təmizlə
+        //    Triangles.Clear();
+
+        //    // 2) Triangle.NET üçün Polygon hazırla
+        //    var polygon = new TriangleNet.Geometry.Polygon();
+
+        //    // 3) ID -> VertexModel xəritəsi (SABİT HƏLL)
+        //    var idToVm = new Dictionary<int, VertexModel>(Vertices.Count);
+
+        //    // NOTE: Triangle.NET-in Vertex.ID sahəsini mütləq bizim VertexModel.Id ilə eyniləşdiririk
+        //    foreach (var vmVertex in Vertices)
+        //    {
+        //        var tnVertex = new TriangleNet.Geometry.Vertex(vmVertex.BindPosition.X, vmVertex.BindPosition.Y)
+        //        {
+        //            ID = vmVertex.Id
+        //        };
+        //        polygon.Add(tnVertex);
+        //        idToVm[vmVertex.Id] = vmVertex;
+        //    }
+
+        //    // 4) Triangulate
+        //    var mesh = (TriangleNet.Mesh)polygon.Triangulate();
+
+        //    // 5) Triangle.NET nəticələrini öz TriangleModel-lərimizə çevir
+        //    //    Burada artıq referansla yox, ID ilə map edirik — stabil işləyir
+        //    int created = 0;
+        //    foreach (var tnTriangle in mesh.Triangles)
+        //    {
+        //        var v0 = tnTriangle.GetVertex(0);
+        //        var v1 = tnTriangle.GetVertex(1);
+        //        var v2 = tnTriangle.GetVertex(2);
+
+        //        // ID-lərdən bizim VertexModel-ləri götür
+        //        if (!idToVm.TryGetValue(v0.ID, out var vmV0)) continue;
+        //        if (!idToVm.TryGetValue(v1.ID, out var vmV1)) continue;
+        //        if (!idToVm.TryGetValue(v2.ID, out var vmV2)) continue;
+
+        //        // Mümkünsə təkrarı yoxla (opsional)
+        //        if (!TriangleExists(vmV0, vmV1, vmV2))
+        //        {
+        //            Triangles.Add(new TriangleModel(vmV0, vmV1, vmV2));
+        //            created++;
+        //        }
+        //    }
+
+        //    // 6) UI və command-ları yenilə
+        //    SaveRigCommand.NotifyCanExecuteChanged();
+        //    AutoTriangleCommand.NotifyCanExecuteChanged();
+        //    RequestRedraw?.Invoke(this, EventArgs.Empty);
+
+        //    MessageBox.Show($"{created} üçbucaq avtomatik yaradıldı.", "Uğurlu");
+        //}
+
+
+        // Fayl: ViewModels/RiggingViewModel.cs
+
         [RelayCommand(CanExecute = nameof(CanAutoTriangle))]
         private void AutoTriangle()
         {
             if (!CanAutoTriangle()) return;
 
-            // 1. Köhnə üçbucaqları təmizlə
             Triangles.Clear();
 
-            // === DÜZƏLİŞ: Sizin təklifiniz əsasında InputGeometry-ni Polygon ilə əvəz edirik ===
-            // 2. Triangle.NET üçün bir "Polygon" yarat
+            // 1) TN vertex-lərini yarat (ID TƏYİN ETMƏ)
+            var tnByVm = new Dictionary<VertexModel, TriangleNet.Geometry.Vertex>(Vertices.Count);
+            foreach (var vm in Vertices)
+                tnByVm[vm] = new TriangleNet.Geometry.Vertex(vm.BindPosition.X, vm.BindPosition.Y);
+
+            // 2) Kənar silueti HULL ilə qur (yalnız hull nöqtələri contour-a düşür)
+            var hull = ComputeConvexHull(Vertices); // VertexModel-lərin hull sırası
+
             var polygon = new TriangleNet.Geometry.Polygon();
-            // ==============================================================================
 
-            // 3. Bizim VertexModel-lərimizi Triangle.NET-in Vertex-ləri ilə
-            //    əlaqələndirmək üçün bir lüğət (map) yaradırıq. (Bu vacibdir)
-            var vertexMap = new Dictionary<TriangleNet.Geometry.Vertex, VertexModel>();
-
-            foreach (var vmVertex in Vertices)
+            if (hull.Count >= 3)
             {
-                // Bizim "BindPosition" (sakit vəziyyət) əsasında yeni nöqtə yaradırıq
-                var tnVertex = new TriangleNet.Geometry.Vertex(
-                    vmVertex.BindPosition.X,
-                    vmVertex.BindPosition.Y
-                );
+                // Hull-dakı TN vertex instansları ilə contour qur
+                var contour = new TriangleNet.Geometry.Contour(hull.Select(vm => tnByVm[vm]));
+                polygon.Add(contour);
 
-                // === DÜZƏLİŞ: geometry.AddPoint(tnVertex) -> polygon.Add(tnVertex) ===
-                polygon.Add(tnVertex);
-                // ===================================================================
-
-                vertexMap[tnVertex] = vmVertex; // Lüğətə əlavə et
+                // DAXİLİ nöqtələri ayrıca əlavə et (hull-da olmayanlar)
+                foreach (var vm in Vertices)
+                    if (!hull.Contains(vm))
+                        polygon.Add(tnByVm[vm]);
+            }
+            else
+            {
+                // Hull alınmadısa: sadə fallback – bütün nöqtələri point set kimi əlavə et
+                foreach (var vm in Vertices) polygon.Add(tnByVm[vm]);
             }
 
-            // === DÜZƏLİŞ: geometry.Triangulate() -> polygon.Triangulate() ===
-            // 4. ƏSAS MƏRHƏLƏ: Triangulate!
-            var mesh = (TriangleNet.Mesh)polygon.Triangulate();
-            // =============================================================
+            // 3) Triangulate (keyfiyyət)
+            var copt = new TriangleNet.Meshing.ConstraintOptions { ConformingDelaunay = true };
+            var qopt = new TriangleNet.Meshing.QualityOptions { MinimumAngle = 28.0 };
+            var mesh = (TriangleNet.Mesh)polygon.Triangulate(copt, qopt);
 
-            // 5. Nəticəni (mesh.Triangles) bizim öz TriangleModel-lərimizə çeviririk
-            foreach (var tnTriangle in mesh.Triangles)
+            // 4) Post-filter: çox uzun kənarlı üçbucaqları at + fallback
+            float cap = ComputeEdgeCapFromNearestNeighbors(Vertices, 3.0f, 20f);
+            int created = TransferTrianglesWithEdgeCap_ByRef(mesh, tnByVm, cap);
+
+            if (created == 0)
             {
-                // Hər üçbucağın 3 nöqtəsini (Vertex) alırıq
-                var v0 = tnTriangle.GetVertex(0);
-                var v1 = tnTriangle.GetVertex(1);
-                var v2 = tnTriangle.GetVertex(2);
+                // Çox sərt olmuşuq – limiti yumşalt və yenə köçür
+                Triangles.Clear();
+                created = TransferTrianglesWithEdgeCap_ByRef(mesh, tnByVm, cap * 2.0f);
+            }
 
-                // Lüğətdən (map) istifadə edərək bizim VertexModel-ləri tapırıq
-                if (vertexMap.TryGetValue(v0, out var vmV0) &&
-                    vertexMap.TryGetValue(v1, out var vmV1) &&
-                    vertexMap.TryGetValue(v2, out var vmV2))
+            SaveRigCommand.NotifyCanExecuteChanged();
+            RequestRedraw?.Invoke(this, EventArgs.Empty);
+
+            MessageBox.Show($"Triangle.NET: {mesh.Triangles.Count} | Əlavə olunan: {created}", "Avto Üçbucaq");
+        }
+
+        private bool CanAutoTriangle() => Vertices.Count >= 3;
+
+        // =============== HELPERS ===============
+
+        // Monotone chain (O(n log n)) – VertexModel üzrə konveks hull qaytarır
+        private static List<VertexModel> ComputeConvexHull(IList<VertexModel> verts)
+        {
+            var pts = verts
+                .Select(v => (vm: v, x: v.BindPosition.X, y: v.BindPosition.Y))
+                .OrderBy(t => t.x).ThenBy(t => t.y)
+                .ToList();
+
+            float Cross((VertexModel vm, float x, float y) o, (VertexModel vm, float x, float y) a, (VertexModel vm, float x, float y) b)
+                => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+
+            var lower = new List<(VertexModel vm, float x, float y)>();
+            foreach (var p in pts)
+            {
+                while (lower.Count >= 2 && Cross(lower[^2], lower[^1], p) <= 0) lower.RemoveAt(lower.Count - 1);
+                lower.Add(p);
+            }
+
+            var upper = new List<(VertexModel vm, float x, float y)>();
+            for (int i = pts.Count - 1; i >= 0; i--)
+            {
+                var p = pts[i];
+                while (upper.Count >= 2 && Cross(upper[^2], upper[^1], p) <= 0) upper.RemoveAt(upper.Count - 1);
+                upper.Add(p);
+            }
+
+            // son elementlər təkrardır, at
+            lower.RemoveAt(lower.Count - 1);
+            upper.RemoveAt(upper.Count - 1);
+
+            return lower.Concat(upper).Select(t => t.vm).ToList();
+        }
+
+        // TN vertex → VM map ilə köçürür, uzun kənarlı üçbucaqları atır
+        private int TransferTrianglesWithEdgeCap_ByRef(
+            TriangleNet.Mesh mesh,
+            Dictionary<VertexModel, TriangleNet.Geometry.Vertex> vmToTn, // tərs map lazımdır
+            float cap)
+        {
+            // tərs xəritə: TN → VM
+            var tnToVm = vmToTn.ToDictionary(kv => kv.Value, kv => kv.Key);
+
+            int created = 0;
+            foreach (var t in mesh.Triangles)
+            {
+                var v0 = t.GetVertex(0);
+                var v1 = t.GetVertex(1);
+                var v2 = t.GetVertex(2);
+                if (v0 == null || v1 == null || v2 == null) continue;
+
+                if (!tnToVm.TryGetValue(v0, out var a) ||
+                    !tnToVm.TryGetValue(v1, out var b) ||
+                    !tnToVm.TryGetValue(v2, out var c)) continue;
+
+                if (HasEdgeLongerThan(a, b, c, cap)) continue;
+
+                if (!TriangleExists(a, b, c))
                 {
-                    // Yeni TriangleModel yaradıb siyahıya əlavə edirik
-                    Triangles.Add(new TriangleModel(vmV0, vmV1, vmV2));
+                    Triangles.Add(new TriangleModel(a, b, c));
+                    created++;
+                }
+            }
+            return created;
+        }
+
+        private static float ComputeEdgeCapFromNearestNeighbors(
+            IList<VertexModel> verts, float multiplier = 3.0f, float minCap = 20f)
+        {
+            if (verts == null || verts.Count < 2) return float.MaxValue;
+
+            var nn = new List<float>(verts.Count);
+            for (int i = 0; i < verts.Count; i++)
+            {
+                var vi = verts[i].BindPosition;
+                float best = float.MaxValue;
+                for (int j = 0; j < verts.Count; j++)
+                {
+                    if (i == j) continue;
+                    var vj = verts[j].BindPosition;
+                    float dx = vi.X - vj.X, dy = vi.Y - vj.Y;
+                    float d = MathF.Sqrt(dx * dx + dy * dy);
+                    if (d < best) best = d;
+                }
+                if (best < float.MaxValue) nn.Add(best);
+            }
+            nn.Sort();
+            float median = nn.Count > 0 ? nn[nn.Count / 2] : 0f;
+            return MathF.Max(median * multiplier, minCap);
+        }
+
+        private static bool HasEdgeLongerThan(VertexModel a, VertexModel b, VertexModel c, float cap)
+        {
+            float dAB = Dist(a.BindPosition, b.BindPosition);
+            float dBC = Dist(b.BindPosition, c.BindPosition);
+            float dCA = Dist(c.BindPosition, a.BindPosition);
+            return (dAB > cap) || (dBC > cap) || (dCA > cap);
+        }
+
+        private static float Dist(SKPoint p, SKPoint q)
+        {
+            float dx = p.X - q.X, dy = p.Y - q.Y;
+            return MathF.Sqrt(dx * dx + dy * dy);
+        }
+
+
+
+
+
+
+        // === PARAMETRLƏR (istəsən slider-lərə bağlayarsan) ===
+        private const float AutoRadiusPx = 12f;  // baza qalınlıq (px)
+        private const float JointCircleRadiusPx = 9f;   // oynaq dairəsi radiusu
+        private const int JointCirclePoints = 8;    // dairə üçün nöqtə sayı
+        private const float RingsPer100px = 4f;   // 100px sümük uzunluğuna neçə “ring”
+        private const float DedupTolerancePx = 3f;   // yaxın nöqtələri birləşdir
+
+        [RelayCommand(CanExecute = nameof(CanAutoGenVertices))]
+        private void AutoGenerateVertices()
+        {
+            if (!CanAutoGenVertices()) return;
+
+            // İstəsən mövcud nöqtələri saxla; indi təmiz başlayırıq
+            Vertices.Clear();
+            Triangles.Clear();
+            _vertexIdCounter = 0;
+
+            var temp = new List<SKPoint>(1024);
+
+            // 1) Sümük boyunca ikili zolaq
+            foreach (var j in Joints)
+            {
+                if (j.Parent == null) continue;
+
+                var a = j.Parent.Position;
+                var b = j.Position;
+                var dir = new SKPoint(b.X - a.X, b.Y - a.Y);
+                float len = MathF.Sqrt(dir.X * dir.X + dir.Y * dir.Y);
+                if (len < 1e-3f) continue;
+
+                dir = new SKPoint(dir.X / len, dir.Y / len);
+                var nrm = new SKPoint(-dir.Y, dir.X);
+
+                // sümük uzunluğuna görə ring sayı
+                int rings = Math.Max(1, (int)MathF.Round((len / 100f) * RingsPer100px));
+
+                for (int i = 0; i <= rings; i++)
+                {
+                    float t = rings == 0 ? 0f : (float)i / rings;
+                    var p = new SKPoint(a.X + dir.X * (t * len),
+                                        a.Y + dir.Y * (t * len));
+
+                    // uclar daha incə olsun (0.8 .. 1.0 .. 0.8)
+                    float edgeTaper = 0.8f + 0.2f * (1f - MathF.Abs(0.5f - t) * 2f);
+                    float r = AutoRadiusPx * edgeTaper;
+
+                    temp.Add(new SKPoint(p.X + nrm.X * r, p.Y + nrm.Y * r));
+                    temp.Add(new SKPoint(p.X - nrm.X * r, p.Y - nrm.Y * r));
                 }
             }
 
-            // 6. UI-ı yenilə və yadda saxlama düyməsini aktiv et
-            RequestRedraw?.Invoke(this, EventArgs.Empty);
+            // 2) Oynaq ətrafında dairəvi dəstək nöqtələri
+            foreach (var j in Joints)
+            {
+                AddCirclePoints(temp, j.Position, JointCircleRadiusPx, JointCirclePoints);
+            }
+
+            // 3) Yaxın nöqtələri dedup et
+            var unique = DedupPoints(temp, DedupTolerancePx);
+
+            // 4) VertexModel-lərə çevir
+            foreach (var p in unique)
+            {
+                var v = new VertexModel(_vertexIdCounter++, p);
+                Vertices.Add(v);
+            }
+
+            // 5) Avto-triangulation-u çağır
+            AutoTriangle();
+
             SaveRigCommand.NotifyCanExecuteChanged();
-            MessageBox.Show($"{mesh.Triangles.Count} üçbucaq avtomatik yaradıldı.", "Uğurlu");
+            AutoWeightCommand.NotifyCanExecuteChanged();
+            RequestRedraw?.Invoke(this, EventArgs.Empty);
+
+            MessageBox.Show($"AutoMesh: {unique.Count} nöqtə yaradıldı, {Triangles.Count} üçbucaq quruldu.", "Uğurlu");
         }
 
-        private bool CanAutoTriangle()
+        private bool CanAutoGenVertices()
         {
-            // Yalnız ən azı 3 nöqtə varsa işləsin
-            return Vertices.Count >= 3;
+            return IsImageLoaded && Joints.Count >= 2;
         }
-        // ==================================
+
+        private static void AddCirclePoints(List<SKPoint> acc, SKPoint c, float r, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                float ang = (float)(i * (2 * Math.PI / count));
+                acc.Add(new SKPoint(c.X + r * MathF.Cos(ang),
+                                    c.Y + r * MathF.Sin(ang)));
+            }
+        }
+
+        private static List<SKPoint> DedupPoints(List<SKPoint> pts, float tol)
+        {
+            float tol2 = tol * tol;
+            var outList = new List<SKPoint>(pts.Count);
+
+            foreach (var p in pts)
+            {
+                bool exists = false;
+                for (int i = 0; i < outList.Count; i++)
+                {
+                    float dx = p.X - outList[i].X, dy = p.Y - outList[i].Y;
+                    if (dx * dx + dy * dy <= tol2) { exists = true; break; }
+                }
+                if (!exists) outList.Add(p);
+            }
+            return outList;
+        }
 
 
     }

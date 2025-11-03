@@ -127,10 +127,10 @@ namespace SpriteEditor.ViewModels
             AwLongPower = 0.5f;
             AwMinKeep = 0.02f;
             AwTopK = 4;
-            AwParentBlend = 0.5f;
+            AwParentBlend = 0.25f;
             AwAncestorDecay = 0.40f;
             AwSmoothIters = 3;
-            AwSmoothMu = 0.55f;
+            AwSmoothMu = 0.30f;
             // Kolleksiya dəyişikliklərini izləyək ki, UI-dakı düymələr vaxtında aktivləşsin/deaktivləşsin
             Joints.CollectionChanged += (_, __) =>
             {
@@ -247,7 +247,7 @@ namespace SpriteEditor.ViewModels
             }
 
             // 5) Mesh qonşuluğunda weight smoothing (Laplacian-vari)
-            if (Triangles.Count > 0 && Vertices.Count > 0)
+            if (Triangles.Count > 0 && Vertices.Count > 0 && smoothIters > 0)
             {
                 var neighbors = BuildVertexNeighbors(Vertices, Triangles);
                 for (int it = 0; it < smoothIters; it++)
@@ -255,6 +255,14 @@ namespace SpriteEditor.ViewModels
                     SmoothWeightsOnce(Vertices, neighbors, smoothMu, topK, minKeep);
                 }
             }
+            // === YENİ ƏLAVƏ: XƏBƏRDARLIQ ===
+            else if (smoothIters > 0 && Triangles.Count == 0)
+            {
+                // Yumşaltma istənilib, amma üçbucaq yoxdur
+                MessageBox.Show("Ağırlıqlandırma tamamlandı, lakin üçbucaqlar (mesh) tapılmadığı üçün 'Smoothing' (yumşaltma) əməliyyatı ötürüldü. Nəticə kəskin ola bilər.",
+                                "Xəbərdarlıq", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            // ================================
 
             SaveRigCommand.NotifyCanExecuteChanged();
             MessageBox.Show("Avtomatik ağırlıqlandırma tamamlandı (segment-əsaslı)!", "Uğurlu");
@@ -1289,61 +1297,120 @@ namespace SpriteEditor.ViewModels
 
         // Fayl: ViewModels/RiggingViewModel.cs
 
+
+
+        // 1) Triangle.NET CDT helper
+        private (List<SKPoint> verts, List<(int a, int b, int c)> tris)
+        TriangulateWithConstraints(
+            IList<SKPoint> contour,
+            IList<SKPoint> interior,
+            double minAngleDeg,
+            double targetEdgeLen)
+        {
+            // polygon + contour segments
+            var poly = new Polygon(contour.Count);
+            var outer = new Contour(contour.Select(p => new Vertex(p.X, p.Y)), 0, true);
+            poly.Add(outer); // kənar bütün kənarları "segment" kimi əlavə olunur
+
+            // daxili nöqtələr (Steiner)
+            if (interior != null)
+                foreach (var p in interior) poly.Add(new Vertex(p.X, p.Y));
+
+            // daha sıx mesh üçün sahəni bir az da kiçik edirik
+            double maxArea = Math.Max(1.5, targetEdgeLen * targetEdgeLen * 0.35);
+
+            var co = new ConstraintOptions { ConformingDelaunay = true };
+            var qo = new QualityOptions
+            {
+                MinimumAngle = minAngleDeg,
+                MaximumArea = maxArea
+            };
+
+            var mesh = (TriangleNet.Mesh)poly.Triangulate(co, qo);
+
+            // çıxış
+            var outVerts = mesh.Vertices.Select(v => new SKPoint((float)v.X, (float)v.Y)).ToList();
+            var outTris = new List<(int, int, int)>();
+            foreach (var t in mesh.Triangles)
+            {
+                var a = t.GetVertex(0)?.ID ?? -1;
+                var b = t.GetVertex(1)?.ID ?? -1;
+                var c = t.GetVertex(2)?.ID ?? -1;
+                if (a >= 0 && b >= 0 && c >= 0)
+                    outTris.Add((a, b, c));
+            }
+
+            return (outVerts, outTris);
+        }
+
+        // 2) Sadə “contour indekslərinə” dayanan xəritə
+        private Dictionary<int, VertexModel> MapCdtOutputToVm(
+            List<SKPoint> cdtVerts,
+            IList<VertexModel> vmVerts,
+            float snapTol = 1.5f)
+        {
+            // CDT-dən gələn nöqtələri ən yaxın VM vertex-inə snap edirik
+            var map = new Dictionary<int, VertexModel>(cdtVerts.Count);
+            float tol2 = snapTol * snapTol;
+
+            for (int i = 0; i < cdtVerts.Count; i++)
+            {
+                var p = cdtVerts[i];
+                VertexModel best = null; float bestD2 = float.MaxValue;
+
+                foreach (var vm in vmVerts)
+                {
+                    float dx = vm.BindPosition.X - p.X, dy = vm.BindPosition.Y - p.Y;
+                    float d2 = dx * dx + dy * dy;
+                    if (d2 < bestD2) { bestD2 = d2; best = vm; }
+                }
+
+                if (best != null && bestD2 <= tol2) map[i] = best;
+            }
+            return map;
+        }
+
+
+
+
+
         [RelayCommand(CanExecute = nameof(CanAutoTriangle))]
         private void AutoTriangle()
         {
             if (!CanAutoTriangle()) return;
 
+            // 1) Mövcud Vertices-dən kontur (sadə: convex hull) və daxili nöqtələr
+            var hull = ComputeConvexHull(Vertices).Select(v => v.BindPosition).ToList();
+
+            // içəridəki nöqtələr (VM-lərdən, hull-a daxil olanlar)
+            var hullSet = new HashSet<VertexModel>(ComputeConvexHull(Vertices));
+            var interior = Vertices.Where(v => !hullSet.Contains(v)).Select(v => v.BindPosition).ToList();
+
+            // 2) CDT qur
+            float edgeLen = MathF.Max(4f, MathF.Min(LoadedBitmap.Width, LoadedBitmap.Height) / 120f);
+            var (cdtVerts, cdtTris) = TriangulateWithConstraints(hull, interior, 28.0, edgeLen);
+
+            // 3) CDT → VM xəritə və Triangles-i doldur
             Triangles.Clear();
-
-            // 1) TN vertex-lərini yarat (ID TƏYİN ETMƏ)
-            var tnByVm = new Dictionary<VertexModel, TriangleNet.Geometry.Vertex>(Vertices.Count);
-            foreach (var vm in Vertices)
-                tnByVm[vm] = new TriangleNet.Geometry.Vertex(vm.BindPosition.X, vm.BindPosition.Y);
-
-            // 2) Kənar silueti HULL ilə qur (yalnız hull nöqtələri contour-a düşür)
-            var hull = ComputeConvexHull(Vertices); // VertexModel-lərin hull sırası
-
-            var polygon = new TriangleNet.Geometry.Polygon();
-
-            if (hull.Count >= 3)
+            var map = MapCdtOutputToVm(cdtVerts, Vertices, snapTol: 2.0f);
+            int added = 0;
+            foreach (var (a, b, c) in cdtTris)
             {
-                // Hull-dakı TN vertex instansları ilə contour qur
-                var contour = new TriangleNet.Geometry.Contour(hull.Select(vm => tnByVm[vm]));
-                polygon.Add(contour);
-
-                // DAXİLİ nöqtələri ayrıca əlavə et (hull-da olmayanlar)
-                foreach (var vm in Vertices)
-                    if (!hull.Contains(vm))
-                        polygon.Add(tnByVm[vm]);
-            }
-            else
-            {
-                // Hull alınmadısa: sadə fallback – bütün nöqtələri point set kimi əlavə et
-                foreach (var vm in Vertices) polygon.Add(tnByVm[vm]);
-            }
-
-            // 3) Triangulate (keyfiyyət)
-            var copt = new TriangleNet.Meshing.ConstraintOptions { ConformingDelaunay = true };
-            var qopt = new TriangleNet.Meshing.QualityOptions { MinimumAngle = 28.0 };
-            var mesh = (TriangleNet.Mesh)polygon.Triangulate(copt, qopt);
-
-            // 4) Post-filter: çox uzun kənarlı üçbucaqları at + fallback
-            float cap = ComputeEdgeCapFromNearestNeighbors(Vertices, 3.0f, 20f);
-            int created = TransferTrianglesWithEdgeCap_ByRef(mesh, tnByVm, cap);
-
-            if (created == 0)
-            {
-                // Çox sərt olmuşuq – limiti yumşalt və yenə köçür
-                Triangles.Clear();
-                created = TransferTrianglesWithEdgeCap_ByRef(mesh, tnByVm, cap * 2.0f);
+                if (!map.TryGetValue(a, out var vA)) continue;
+                if (!map.TryGetValue(b, out var vB)) continue;
+                if (!map.TryGetValue(c, out var vC)) continue;
+                if (!TriangleExists(vA, vB, vC))
+                {
+                    Triangles.Add(new TriangleModel(vA, vB, vC));
+                    added++;
+                }
             }
 
             SaveRigCommand.NotifyCanExecuteChanged();
             RequestRedraw?.Invoke(this, EventArgs.Empty);
-
-            MessageBox.Show($"Triangle.NET: {mesh.Triangles.Count} | Əlavə olunan: {created}", "Avto Üçbucaq");
+            MessageBox.Show($"Avto Üçbucaq: {added} üçbucaq yaradıldı.", "Uğurlu");
         }
+
 
         private bool CanAutoTriangle() => Vertices.Count >= 3;
 
@@ -1382,63 +1449,6 @@ namespace SpriteEditor.ViewModels
             return lower.Concat(upper).Select(t => t.vm).ToList();
         }
 
-        // TN vertex → VM map ilə köçürür, uzun kənarlı üçbucaqları atır
-        private int TransferTrianglesWithEdgeCap_ByRef(
-            TriangleNet.Mesh mesh,
-            Dictionary<VertexModel, TriangleNet.Geometry.Vertex> vmToTn, // tərs map lazımdır
-            float cap)
-        {
-            // tərs xəritə: TN → VM
-            var tnToVm = vmToTn.ToDictionary(kv => kv.Value, kv => kv.Key);
-
-            int created = 0;
-            foreach (var t in mesh.Triangles)
-            {
-                var v0 = t.GetVertex(0);
-                var v1 = t.GetVertex(1);
-                var v2 = t.GetVertex(2);
-                if (v0 == null || v1 == null || v2 == null) continue;
-
-                if (!tnToVm.TryGetValue(v0, out var a) ||
-                    !tnToVm.TryGetValue(v1, out var b) ||
-                    !tnToVm.TryGetValue(v2, out var c)) continue;
-
-                if (HasEdgeLongerThan(a, b, c, cap)) continue;
-
-                if (!TriangleExists(a, b, c))
-                {
-                    Triangles.Add(new TriangleModel(a, b, c));
-                    created++;
-                }
-            }
-            return created;
-        }
-
-        private static float ComputeEdgeCapFromNearestNeighbors(
-            IList<VertexModel> verts, float multiplier = 3.0f, float minCap = 20f)
-        {
-            if (verts == null || verts.Count < 2) return float.MaxValue;
-
-            var nn = new List<float>(verts.Count);
-            for (int i = 0; i < verts.Count; i++)
-            {
-                var vi = verts[i].BindPosition;
-                float best = float.MaxValue;
-                for (int j = 0; j < verts.Count; j++)
-                {
-                    if (i == j) continue;
-                    var vj = verts[j].BindPosition;
-                    float dx = vi.X - vj.X, dy = vi.Y - vj.Y;
-                    float d = MathF.Sqrt(dx * dx + dy * dy);
-                    if (d < best) best = d;
-                }
-                if (best < float.MaxValue) nn.Add(best);
-            }
-            nn.Sort();
-            float median = nn.Count > 0 ? nn[nn.Count / 2] : 0f;
-            return MathF.Max(median * multiplier, minCap);
-        }
-
         private static bool HasEdgeLongerThan(VertexModel a, VertexModel b, VertexModel c, float cap)
         {
             float dAB = Dist(a.BindPosition, b.BindPosition);
@@ -1454,102 +1464,79 @@ namespace SpriteEditor.ViewModels
         }
 
 
-
-
-
-
-        // === PARAMETRLƏR (istəsən slider-lərə bağlayarsan) ===
-        private const float AutoRadiusPx = 12f;  // baza qalınlıq (px)
-        private const float JointCircleRadiusPx = 9f;   // oynaq dairəsi radiusu
-        private const int JointCirclePoints = 8;    // dairə üçün nöqtə sayı
-        private const float RingsPer100px = 4f;   // 100px sümük uzunluğuna neçə “ring”
-        private const float DedupTolerancePx = 3f;   // yaxın nöqtələri birləşdir
+        
 
         [RelayCommand(CanExecute = nameof(CanAutoGenVertices))]
         private void AutoGenerateVertices()
         {
             if (!CanAutoGenVertices()) return;
 
-            // İstəsən mövcud nöqtələri saxla; indi təmiz başlayırıq
             Vertices.Clear();
             Triangles.Clear();
             _vertexIdCounter = 0;
 
-            var temp = new List<SKPoint>(1024);
+            int minDim = Math.Min(LoadedBitmap.Width, LoadedBitmap.Height);
 
-            // 1) Sümük boyunca ikili zolaq
-            foreach (var j in Joints)
+            // 3.1) Düzgün kontur (marching squares → CCW)
+            var mask = BuildMaskFromAlphaOrBg(LoadedBitmap, alphaTh: 8, bgDelta: 18);
+
+            // YENİ: maskadan kontur çək
+            int step = Math.Clamp(minDim / 180, 1, 4);
+            var contour = TraceOuterContourFromMask(mask, step);
+            if (contour.Count < 3)
             {
-                if (j.Parent == null) continue;
+                MessageBox.Show("Kontur çıxarıla bilmədi (alfa və ya fon seçimi uğursuz). 'Background Eraser' istifadə et və ya bgDelta-ni artır.", "Xəta");
+                return;
+            }
 
-                var a = j.Parent.Position;
-                var b = j.Position;
-                var dir = new SKPoint(b.X - a.X, b.Y - a.Y);
-                float len = MathF.Sqrt(dir.X * dir.X + dir.Y * dir.Y);
-                if (len < 1e-3f) continue;
+            // 3.2) Poisson disk ilə daxili nümunə — hədəf kənar uzunluğuna bağlı sıxlıq
+            float targetEdgeLen = MathF.Max(2.5f, minDim / 140f);
+            var interior = PoissonDiskInPolygon(contour, radius: targetEdgeLen);
 
-                dir = new SKPoint(dir.X / len, dir.Y / len);
-                var nrm = new SKPoint(-dir.Y, dir.X);
+            // 3.3) CDT – Conforming Delaunay + sahə limitini bir az aqressiv saxla
+            var (cdtVerts, cdtTris) = TriangulateWithConstraints(contour, interior, minAngleDeg: 28.0, targetEdgeLen);
 
-                // sümük uzunluğuna görə ring sayı
-                int rings = Math.Max(1, (int)MathF.Round((len / 100f) * RingsPer100px));
+            // 3.4) CDT çıxışını **birbaşa** VM-ə KÖÇÜR (SNAP YOXDUR!)
+            var idx2Vm = new List<VertexModel>(cdtVerts.Count);
+            foreach (var p in cdtVerts)
+            {
+                var vm = new VertexModel(_vertexIdCounter++, p);
+                Vertices.Add(vm);
+                idx2Vm.Add(vm);
+            }
 
-                for (int i = 0; i <= rings; i++)
+            // 3.5) Uzun kənarları at (artefaktlara qarşı)
+            float longCap = targetEdgeLen * 3.0f;
+
+            int added = 0;
+            foreach (var (a, b, c) in cdtTris)
+            {
+                var vA = idx2Vm[a];
+                var vB = idx2Vm[b];
+                var vC = idx2Vm[c];
+
+                if (HasEdgeLongerThan(vA, vB, vC, longCap)) continue;
+
+                if (!TriangleExists(vA, vB, vC))
                 {
-                    float t = rings == 0 ? 0f : (float)i / rings;
-                    var p = new SKPoint(a.X + dir.X * (t * len),
-                                        a.Y + dir.Y * (t * len));
-
-                    // uclar daha incə olsun (0.8 .. 1.0 .. 0.8)
-                    float edgeTaper = 0.8f + 0.2f * (1f - MathF.Abs(0.5f - t) * 2f);
-                    float r = AutoRadiusPx * edgeTaper;
-
-                    temp.Add(new SKPoint(p.X + nrm.X * r, p.Y + nrm.Y * r));
-                    temp.Add(new SKPoint(p.X - nrm.X * r, p.Y - nrm.Y * r));
+                    Triangles.Add(new TriangleModel(vA, vB, vC));
+                    added++;
                 }
             }
-
-            // 2) Oynaq ətrafında dairəvi dəstək nöqtələri
-            foreach (var j in Joints)
-            {
-                AddCirclePoints(temp, j.Position, JointCircleRadiusPx, JointCirclePoints);
-            }
-
-            // 3) Yaxın nöqtələri dedup et
-            var unique = DedupPoints(temp, DedupTolerancePx);
-
-            // 4) VertexModel-lərə çevir
-            foreach (var p in unique)
-            {
-                var v = new VertexModel(_vertexIdCounter++, p);
-                Vertices.Add(v);
-            }
-
-            // 5) Avto-triangulation-u çağır
-            AutoTriangle();
 
             SaveRigCommand.NotifyCanExecuteChanged();
             AutoWeightCommand.NotifyCanExecuteChanged();
             RequestRedraw?.Invoke(this, EventArgs.Empty);
 
-            MessageBox.Show($"AutoMesh: {unique.Count} nöqtə yaradıldı, {Triangles.Count} üçbucaq quruldu.", "Uğurlu");
+            MessageBox.Show($"AutoMesh: {Vertices.Count} vertex, {Triangles.Count} üçbucaq.", "Uğurlu");
         }
+
+
 
         private bool CanAutoGenVertices()
         {
             return IsImageLoaded && Joints.Count >= 2;
         }
-
-        private static void AddCirclePoints(List<SKPoint> acc, SKPoint c, float r, int count)
-        {
-            for (int i = 0; i < count; i++)
-            {
-                float ang = (float)(i * (2 * Math.PI / count));
-                acc.Add(new SKPoint(c.X + r * MathF.Cos(ang),
-                                    c.Y + r * MathF.Sin(ang)));
-            }
-        }
-
         private static List<SKPoint> DedupPoints(List<SKPoint> pts, float tol)
         {
             float tol2 = tol * tol;
@@ -1568,6 +1555,254 @@ namespace SpriteEditor.ViewModels
             return outList;
         }
 
+
+
+        private static bool PointInPolygon(IList<SKPoint> poly, SKPoint p)
+        {
+            bool inside = false;
+            for (int i = 0, j = poly.Count - 1; i < poly.Count; j = i++)
+            {
+                var pi = poly[i]; var pj = poly[j];
+                bool intersect = ((pi.Y > p.Y) != (pj.Y > p.Y)) &&
+                                 (p.X < (pj.X - pi.X) * (p.Y - pi.Y) / Math.Max(1e-6f, (pj.Y - pi.Y)) + pi.X);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+
+
+        // 1B) Kiçik RDP + CCW
+        private List<SKPoint> DedupPointsRdp(List<SKPoint> pts, float mergeTol, float rdpTol, bool ensureCcw)
+        {
+            if (pts == null || pts.Count < 3) return pts ?? new List<SKPoint>();
+
+            // birləşdirmə
+            var merged = DedupPoints(pts, mergeTol);
+
+            // RDP
+            float Tol2 = rdpTol * rdpTol;
+            var outL = new List<SKPoint>();
+            void Rdp(int a, int b)
+            {
+                float maxD = 0f; int idx = -1;
+                var A = merged[a]; var B = merged[b];
+                for (int i = a + 1; i < b; i++)
+                {
+                    float d = PointLineDist2(merged[i], A, B);
+                    if (d > maxD) { maxD = d; idx = i; }
+                }
+                if (idx != -1 && maxD > Tol2)
+                {
+                    Rdp(a, idx); Rdp(idx, b);
+                }
+                else outL.Add(A);
+            }
+            Rdp(0, merged.Count - 1); outL.Add(merged[^1]);
+
+            if (ensureCcw)
+            {
+                float area2 = 0f;
+                for (int i = 0; i < outL.Count; i++)
+                {
+                    var a = outL[i]; var b = outL[(i + 1) % outL.Count];
+                    area2 += a.X * b.Y - a.Y * b.X;
+                }
+                if (area2 < 0) outL.Reverse();
+            }
+            return outL;
+        }
+
+        private float PointLineDist2(SKPoint p, SKPoint a, SKPoint b)
+        {
+            float vx = b.X - a.X, vy = b.Y - a.Y;
+            float wx = p.X - a.X, wy = p.Y - a.Y;
+            float t = (vx * wx + vy * wy) / Math.Max(1e-6f, vx * vx + vy * vy);
+            t = MathF.Max(0, MathF.Min(1, t));
+            float dx = a.X + t * vx - p.X, dy = a.Y + t * vy - p.Y;
+            return dx * dx + dy * dy;
+        }
+
+        // radius ~ hədəf kənar uzunluğu, bbox + rejection sampling + grid sürətləndirici
+        private List<SKPoint> PoissonDiskInPolygon(IList<SKPoint> poly, float radius, int k = 30)
+        {
+            var rnd = new Random(12345);
+            float r = Math.Max(1.0f, radius);
+            float cell = r / MathF.Sqrt(2f);
+
+            // bbox
+            float minX = poly.Min(p => p.X), minY = poly.Min(p => p.Y);
+            float maxX = poly.Max(p => p.X), maxY = poly.Max(p => p.Y);
+            int gx = Math.Max(1, (int)MathF.Ceiling((maxX - minX) / cell));
+            int gy = Math.Max(1, (int)MathF.Ceiling((maxY - minY) / cell));
+
+            var grid = new int[gx * gy];
+            Array.Fill(grid, -1);
+
+            var samples = new List<SKPoint>();
+            var active = new List<int>();
+
+            SKPoint RandPoint() =>
+                new SKPoint((float)(minX + rnd.NextDouble() * (maxX - minX)),
+                            (float)(minY + rnd.NextDouble() * (maxY - minY)));
+
+            bool InPoly(SKPoint p) => PointInPolygon(poly, p);
+
+            bool FarEnough(SKPoint p)
+            {
+                int ix = (int)((p.X - minX) / cell);
+                int iy = (int)((p.Y - minY) / cell);
+                for (int yy = Math.Max(0, iy - 2); yy <= Math.Min(gy - 1, iy + 2); yy++)
+                    for (int xx = Math.Max(0, ix - 2); xx <= Math.Min(gx - 1, xx + 2); xx++)
+                    {
+                        int id = grid[yy * gx + xx];
+                        if (id < 0) continue;
+                        var q = samples[id];
+                        float dx = p.X - q.X, dy = p.Y - q.Y;
+                        if (dx * dx + dy * dy < r * r) return false;
+                    }
+                return true;
+            }
+
+            // ilk nümunə
+            for (int tries = 0; tries < 1000 && samples.Count == 0; tries++)
+            {
+                var p = RandPoint();
+                if (!InPoly(p)) continue;
+                samples.Add(p); active.Add(0);
+                int ix = (int)((p.X - minX) / cell), iy = (int)((p.Y - minY) / cell);
+                grid[iy * gx + ix] = 0;
+            }
+            // genişlət
+            while (active.Count > 0 && samples.Count < 20000)
+            {
+                int ai = active[rnd.Next(active.Count)];
+                var baseP = samples[ai];
+                bool found = false;
+                for (int i = 0; i < k; i++)
+                {
+                    float ang = (float)(rnd.NextDouble() * Math.PI * 2);
+                    float rad = r * (1f + (float)rnd.NextDouble());
+                    var cand = new SKPoint(baseP.X + rad * MathF.Cos(ang), baseP.Y + rad * MathF.Sin(ang));
+                    if (!InPoly(cand) || !FarEnough(cand)) continue;
+
+                    samples.Add(cand);
+                    active.Add(samples.Count - 1);
+                    int ix = (int)((cand.X - minX) / cell), iy = (int)((cand.Y - minY) / cell);
+                    if (ix >= 0 && iy >= 0 && ix < gx && iy < gy) grid[iy * gx + ix] = samples.Count - 1;
+                    found = true; break;
+                }
+                if (!found) active.Remove(ai);
+            }
+            return samples;
+        }
+
+
+        // Fon rəngini künclərdən götürürük və ondan “kifayət qədər fərqli” pikselləri obyekt sayırıq.
+        private bool[,] BuildMaskFromAlphaOrBg(SKBitmap bmp, byte alphaTh = 8, int bgDelta = 80)
+        {
+            int W = bmp.Width, H = bmp.Height;
+            var mask = new bool[W, H];
+
+            // Alpha varmı? (yəni şəkildə əhəmiyyətli sayda piksel alphaTh-dan böyükdür)
+            int alphaCount = 0, total = Math.Max(1, W * H / 50); // sürət üçün təxmini yoxlama
+            for (int y = 0; y < H; y += Math.Max(1, H / 50))
+            {
+                for (int x = 0; x < W; x += Math.Max(1, W / 50))
+                {
+                    if (bmp.GetPixel(x, y).Alpha > alphaTh) alphaCount++;
+                }
+            }
+            bool hasAlpha = alphaCount > total / 3;
+
+            if (hasAlpha)
+            {
+                for (int y = 0; y < H; y++)
+                    for (int x = 0; x < W; x++)
+                        mask[x, y] = bmp.GetPixel(x, y).Alpha > alphaTh;
+                return mask;
+            }
+
+            // Alfa yoxdursa: fon rəngi = 4 küncün medianı
+            SKColor[] corners = new[]
+            {
+                 bmp.GetPixel(1,1),
+                 bmp.GetPixel(W-2,1),
+                 bmp.GetPixel(1,H-2),
+                 bmp.GetPixel(W-2,H-2)
+    };
+            byte mr = (byte)corners.Select(c => c.Red).OrderBy(v => v).ElementAt(2);
+            byte mg = (byte)corners.Select(c => c.Green).OrderBy(v => v).ElementAt(2);
+            byte mb = (byte)corners.Select(c => c.Blue).OrderBy(v => v).ElementAt(2);
+
+            int thr2 = bgDelta * bgDelta;
+            for (int y = 0; y < H; y++)
+            {
+                for (int x = 0; x < W; x++)
+                {
+                    var c = bmp.GetPixel(x, y);
+                    int dr = c.Red - mr;
+                    int dg = c.Green - mg;
+                    int db = c.Blue - mb;
+                    int d2 = dr * dr + dg * dg + db * db;
+                    mask[x, y] = d2 > thr2; // fondan xeyli fərqlənirsə, obyekt say
+                }
+            }
+
+            using (var tmp = new SKBitmap(bmp.Width, bmp.Height))
+            {
+                for (int y = 0; y < bmp.Height; y++)
+                    for (int x = 0; x < bmp.Width; x++)
+                        tmp.SetPixel(x, y, mask[x, y] ? new SKColor(0, 255, 0) : new SKColor(40, 40, 40));
+                using var image = SKImage.FromBitmap(tmp);
+                using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+                File.WriteAllBytes("mask_debug.png", data.ToArray());
+            }
+
+            return mask;
+        }
+
+
+        // Maskadakı “true” regionun kənarını CCW qaytarır
+        private List<SKPoint> TraceOuterContourFromMask(bool[,] mask, int step = 1)
+        {
+            int W = mask.GetLength(0), H = mask.GetLength(1);
+
+            SKPoint? start = null;
+            for (int y = 1; y < H - 1 && start == null; y += step)
+                for (int x = 1; x < W - 1; x += step)
+                    if (mask[x, y]) { start = new SKPoint(x, y); break; }
+
+            if (start == null) return new List<SKPoint>();
+
+            var contour = new List<SKPoint>(1024);
+            int[,] dirs = { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 }, { -1, 0 }, { -1, -1 }, { 0, -1 }, { 1, -1 } };
+
+            bool Inside(int x, int y) =>
+                x >= 0 && y >= 0 && x < W && y < H && mask[x, y];
+
+            int cx = (int)start.Value.X, cy = (int)start.Value.Y;
+            int dir = 0, guard = W * H * 4;
+
+            do
+            {
+                contour.Add(new SKPoint(cx, cy));
+                int best = -1;
+                for (int k = 0; k < 8; k++)
+                {
+                    int i = (dir + k) % 8;
+                    int nx = cx + dirs[i, 0], ny = cy + dirs[i, 1];
+                    if (Inside(nx, ny)) { best = i; break; }
+                }
+                if (best == -1) break;
+                cx += dirs[best, 0]; cy += dirs[best, 1];
+                dir = (best + 7) % 8;
+                guard--;
+            }
+            while (guard > 0 && (Math.Abs(cx - start.Value.X) > 1 || Math.Abs(cy - start.Value.Y) > 1));
+
+            return DedupPointsRdp(contour, 1.5f, 0.75f, ensureCcw: true);
+        }
 
     }
 }

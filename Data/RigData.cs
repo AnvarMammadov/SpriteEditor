@@ -14,6 +14,9 @@ namespace SpriteEditor.Data
         public string ImageFileName { get; set; } // Hansı şəkil üçün olduğunu bilmək
         public List<JointData> Joints { get; set; }
 
+        // RigData.cs içərisində mövcud xassələrin altına əlavə edin:
+        public List<AnimationClipData> Animations { get; set; } = new List<AnimationClipData>();
+
         // === YENİ (PLAN 3) ===
         /// <summary>
         /// Şəkilə tətbiq edilmiş deformasiya toru (mesh)

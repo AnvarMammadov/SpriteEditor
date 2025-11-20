@@ -4,16 +4,18 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json; // JSON Serializasiyası üçün
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media.Animation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using SkiaSharp;
 using SpriteEditor.Data; // Yaratdığımız Data modelləri üçün
-using System.Text.Json; // JSON Serializasiyası üçün
 using TriangleNet.Geometry; // Triangle.NET üçün
 using TriangleNet.Meshing;
+using System.Windows.Threading; // Timer üçün lazımdır
 
 
 
@@ -116,13 +118,45 @@ namespace SpriteEditor.ViewModels
 
         private const float EPS = 1e-4f;
 
+        // === ANİMASİYA SİSTEMİ ===
 
+        [ObservableProperty]
+        private ObservableCollection<AnimationClipData> _animations = new ObservableCollection<AnimationClipData>();
 
+        [ObservableProperty]
+        private AnimationClipData _currentAnimation; // Hazırda seçili animasiya
+
+        [ObservableProperty]
+        private double _currentTime = 0.0; // Zaman çubuğu (Slider dəyəri)
+
+        [ObservableProperty]
+        private double _totalDuration = 2.0; // Animasiya uzunluğu
+
+        [ObservableProperty]
+        private bool _isPlaying = false;
+
+        // Bu dəyişən slider-i əllə çəkəndə lazımdır ki, hər dəfə render etsin
+        partial void OnCurrentTimeChanged(double value)
+        {
+            ApplyAnimationAtTime((float)value);
+        }
+
+        // === Timer Dəyişəni ===
+        private DispatcherTimer _animationTimer;
+
+        private void SetupTimer()
+        {
+            _animationTimer = new DispatcherTimer();
+            _animationTimer.Interval = TimeSpan.FromMilliseconds(16); // ~60 FPS
+            _animationTimer.Tick += AnimationTimer_Tick;
+        }
         public RiggingViewModel()
         {
-            // (İstəyə bağlı) başlanğıc AutoWeight presetləri
-            // Bunları istəmirsənsə, silə bilərsən.
-            AwSigmaFactor = 0.20f;
+
+            SetupTimer();
+             // (İstəyə bağlı) başlanğıc AutoWeight presetləri
+             // Bunları istəmirsənsə, silə bilərsən.
+             AwSigmaFactor = 0.20f;
             AwRadialPower = 1.0f;
             AwLongPower = 0.5f;
             AwMinKeep = 0.02f;
@@ -1790,6 +1824,161 @@ namespace SpriteEditor.ViewModels
 
             return DedupPointsRdp(contour, 1.5f, 0.75f, ensureCcw: true);
         }
+
+
+        [RelayCommand]
+        private void AddKeyframe()
+        {
+            if (SelectedJoint == null) return;
+            if (CurrentAnimation == null)
+            {
+                // Əgər animasiya yoxdursa, yenisini yarat
+                CurrentAnimation = new AnimationClipData { Name = "Anim_1" };
+                Animations.Add(CurrentAnimation);
+            }
+
+            float time = (float)CurrentTime;
+
+            // 1. Fırlanma (Rotation) üçün Track tap və ya yarat
+            SaveKeyframe(SelectedJoint.Id, "Rotation", SelectedJoint.Rotation, time);
+
+            // 2. Mövqe (Position) üçün Track (X və Y ayrı)
+            // Qeyd: Yalnız Root sümük və ya IK üçün Position vacibdir, amma hamısı üçün saxlayaq.
+            SaveKeyframe(SelectedJoint.Id, "PosX", SelectedJoint.Position.X, time);
+            SaveKeyframe(SelectedJoint.Id, "PosY", SelectedJoint.Position.Y, time);
+
+            MessageBox.Show($"Keyframe əlavə edildi: {time:F2}s");
+        }
+
+        private void SaveKeyframe(int jointId, string propName, float value, float time)
+        {
+            // Mövcud track-i tap
+            var track = CurrentAnimation.Tracks.FirstOrDefault(t => t.JointId == jointId && t.PropertyName == propName);
+            if (track == null)
+            {
+                track = new AnimationTrackData { JointId = jointId, PropertyName = propName };
+                CurrentAnimation.Tracks.Add(track);
+            }
+
+            // Eyni zamanda köhnə keyframe varsa, onu yenilə
+            var existingKey = track.Keyframes.FirstOrDefault(k => Math.Abs(k.Time - time) < 0.01f);
+            if (existingKey != null)
+            {
+                existingKey.Value = value;
+            }
+            else
+            {
+                track.Keyframes.Add(new KeyframeData { Time = time, Value = value });
+                // Zaman üzrə sırala (vacibdir!)
+                track.Keyframes.Sort((a, b) => a.Time.CompareTo(b.Time));
+            }
+        }
+
+
+        public void ApplyAnimationAtTime(float time)
+        {
+            if (CurrentAnimation == null) return;
+
+            foreach (var track in CurrentAnimation.Tracks)
+            {
+                // Həmin sümüyü tap
+                var joint = Joints.FirstOrDefault(j => j.Id == track.JointId);
+                if (joint == null) continue;
+
+                // İnterpolasiya dəyərini hesabla
+                float interpolatedValue = GetInterpolatedValue(track.Keyframes, time);
+
+                // Dəyəri tətbiq et
+                switch (track.PropertyName)
+                {
+                    case "Rotation":
+                        joint.Rotation = interpolatedValue;
+                        break;
+                    case "PosX":
+                        joint.Position = new SKPoint(interpolatedValue, joint.Position.Y);
+                        break;
+                    case "PosY":
+                        joint.Position = new SKPoint(joint.Position.X, interpolatedValue);
+                        break;
+                }
+            }
+
+            // ƏN VACİB HİSSƏ: Sümüklər dəyişdi, indi Mesh-i yenidən hesabla!
+            // Pose rejimindəki kimi iyerarxiyanı yeniləyirik (valideyn hərəkəti uşağa keçsin)
+            // Qeyd: Əgər hər sümüyün Position/Rotation-unu keyframe ediriksə, 
+            // UpdatePoseHierarchy lazım olmaya bilər, amma FK üçün bu vacibdir.
+            // Burada sadəlik üçün birbaşa DeformMesh çağırırıq.
+
+            if (Vertices.Count > 0)
+            {
+                // Yuxarıda Pose məntiqində yazdığınız iyerarxiya yeniləməsini bura inteqrasiya etmək lazımdır
+                // Amma hələlik sadə deformasiya:
+                // DeformMesh() metodunu Public etməlisiniz ki, burdan çağıra bilək.
+                // Və ya bu kod daxildədirsə birbaşa:
+                DeformMesh();
+            }
+
+            RequestRedraw?.Invoke(this, EventArgs.Empty);
+        }
+
+        private float GetInterpolatedValue(List<KeyframeData> keys, float time)
+        {
+            if (keys.Count == 0) return 0;
+            if (keys.Count == 1) return keys[0].Value;
+
+            // 1. Zamandan əvvəlki son kadrı tap (Key A)
+            var keyA = keys.LastOrDefault(k => k.Time <= time);
+            // 2. Zamandan sonrakı ilk kadrı tap (Key B)
+            var keyB = keys.FirstOrDefault(k => k.Time > time);
+
+            if (keyA == null) return keyB.Value; // Başlanğıcdan əvvəl
+            if (keyB == null) return keyA.Value; // Sondan sonra
+
+            // 3. Lerp (Linear Interpolation)
+            float t = (time - keyA.Time) / (keyB.Time - keyA.Time);
+            return keyA.Value + (keyB.Value - keyA.Value) * t;
+        }
+
+
+        // === Timer Hadisəsi (Hər 16ms-dən bir işləyir) ===
+        private void AnimationTimer_Tick(object? sender, EventArgs e)
+        {
+            // Zamanı irəli çək
+            CurrentTime += 0.016;
+
+            // Əgər sona çatdısa, başa qaytar (Loop)
+            if (CurrentTime >= TotalDuration)
+            {
+                CurrentTime = 0;
+            }
+            // Qeyd: CurrentTime dəyişəndə 'OnCurrentTimeChanged' metodu (Mərhələ 2-də yazdıq)
+            // avtomatik olaraq 'ApplyAnimationAtTime' metodunu çağırır və şəkli yeniləyir.
+        }
+
+        // === Pult Əmrləri (Play/Pause/Stop) ===
+
+        [RelayCommand]
+        private void Play()
+        {
+            IsPlaying = true;
+            _animationTimer.Start();
+        }
+
+        [RelayCommand]
+        private void Pause()
+        {
+            IsPlaying = false;
+            _animationTimer.Stop();
+        }
+
+        [RelayCommand]
+        private void Stop()
+        {
+            IsPlaying = false;
+            _animationTimer.Stop();
+            CurrentTime = 0; // Başa sarı
+        }
+
 
     }
 }

@@ -65,7 +65,7 @@ namespace SpriteEditor.ViewModels
         [NotifyCanExecuteChangedFor(nameof(LoadImageCommand))]
         [NotifyCanExecuteChangedFor(nameof(SaveRigCommand))]
         [NotifyCanExecuteChangedFor(nameof(LoadRigCommand))]
-        [NotifyCanExecuteChangedFor(nameof(AutoGenerateVerticesCommand))]
+       // [NotifyCanExecuteChangedFor(nameof(AutoGenerateVerticesCommand))]
         private bool _isImageLoaded = false;
 
         [ObservableProperty]
@@ -134,7 +134,7 @@ namespace SpriteEditor.ViewModels
             // Kolleksiya dəyişikliklərini izləyək ki, UI-dakı düymələr vaxtında aktivləşsin/deaktivləşsin
             Joints.CollectionChanged += (_, __) =>
             {
-                AutoGenerateVerticesCommand?.NotifyCanExecuteChanged();
+               // AutoGenerateVerticesCommand?.NotifyCanExecuteChanged();
                 AutoWeightCommand?.NotifyCanExecuteChanged();
                 AutoTriangleCommand?.NotifyCanExecuteChanged();
                 SaveRigCommand?.NotifyCanExecuteChanged();
@@ -153,7 +153,7 @@ namespace SpriteEditor.ViewModels
             };
 
             // İlk vəziyyət üçün (əgər VM yaradılan kimi UI binding artıq qurulubsa)
-            AutoGenerateVerticesCommand?.NotifyCanExecuteChanged();
+           // AutoGenerateVerticesCommand?.NotifyCanExecuteChanged();
             AutoWeightCommand?.NotifyCanExecuteChanged();
             AutoTriangleCommand?.NotifyCanExecuteChanged();
             SaveRigCommand?.NotifyCanExecuteChanged();
@@ -572,7 +572,7 @@ namespace SpriteEditor.ViewModels
                     SaveRigCommand.NotifyCanExecuteChanged();
                     AutoWeightCommand.NotifyCanExecuteChanged();
                     AutoTriangleCommand.NotifyCanExecuteChanged();
-                    AutoGenerateVerticesCommand.NotifyCanExecuteChanged();
+                   // AutoGenerateVerticesCommand.NotifyCanExecuteChanged();
 
                     MessageBox.Show("Skelet və Mesh uğurla yükləndi.", "Uğurlu");
                 }
@@ -1210,7 +1210,7 @@ namespace SpriteEditor.ViewModels
             Joints.Add(newJoint);
             AutoWeightCommand.NotifyCanExecuteChanged();
             AutoTriangleCommand.NotifyCanExecuteChanged();
-            AutoGenerateVerticesCommand.NotifyCanExecuteChanged(); // <-- əlavə et
+            //AutoGenerateVerticesCommand.NotifyCanExecuteChanged(); // <-- əlavə et
         }
         private void AddVertex(VertexModel newVertex)
         {
@@ -1223,7 +1223,7 @@ namespace SpriteEditor.ViewModels
             Joints.Remove(jointToRemove);
             AutoWeightCommand.NotifyCanExecuteChanged();
             AutoTriangleCommand.NotifyCanExecuteChanged();
-            AutoGenerateVerticesCommand.NotifyCanExecuteChanged(); // <-- əlavə et
+            //AutoGenerateVerticesCommand.NotifyCanExecuteChanged(); // <-- əlavə et
         }
         private void RemoveVertex(VertexModel vertexToRemove)
         {
@@ -1343,111 +1343,98 @@ namespace SpriteEditor.ViewModels
             return (outVerts, outTris);
         }
 
-        // 2) Sadə “contour indekslərinə” dayanan xəritə
-        private Dictionary<int, VertexModel> MapCdtOutputToVm(
-            List<SKPoint> cdtVerts,
-            IList<VertexModel> vmVerts,
-            float snapTol = 1.5f)
-        {
-            // CDT-dən gələn nöqtələri ən yaxın VM vertex-inə snap edirik
-            var map = new Dictionary<int, VertexModel>(cdtVerts.Count);
-            float tol2 = snapTol * snapTol;
 
-            for (int i = 0; i < cdtVerts.Count; i++)
-            {
-                var p = cdtVerts[i];
-                VertexModel best = null; float bestD2 = float.MaxValue;
-
-                foreach (var vm in vmVerts)
-                {
-                    float dx = vm.BindPosition.X - p.X, dy = vm.BindPosition.Y - p.Y;
-                    float d2 = dx * dx + dy * dy;
-                    if (d2 < bestD2) { bestD2 = d2; best = vm; }
-                }
-
-                if (best != null && bestD2 <= tol2) map[i] = best;
-            }
-            return map;
-        }
+   
 
 
 
 
+
+        // === DÜZƏLİŞ: AutoTriangle (Sadə və Stabil Versiya) ===
 
         [RelayCommand(CanExecute = nameof(CanAutoTriangle))]
         private void AutoTriangle()
         {
             if (!CanAutoTriangle()) return;
 
-            // 1) Mövcud Vertices-dən kontur (sadə: convex hull) və daxili nöqtələr
-            var hull = ComputeConvexHull(Vertices).Select(v => v.BindPosition).ToList();
-
-            // içəridəki nöqtələr (VM-lərdən, hull-a daxil olanlar)
-            var hullSet = new HashSet<VertexModel>(ComputeConvexHull(Vertices));
-            var interior = Vertices.Where(v => !hullSet.Contains(v)).Select(v => v.BindPosition).ToList();
-
-            // 2) CDT qur
-            float edgeLen = MathF.Max(4f, MathF.Min(LoadedBitmap.Width, LoadedBitmap.Height) / 120f);
-            var (cdtVerts, cdtTris) = TriangulateWithConstraints(hull, interior, 28.0, edgeLen);
-
-            // 3) CDT → VM xəritə və Triangles-i doldur
+            // 1) Köhnə üçbucaqları təmizlə
             Triangles.Clear();
-            var map = MapCdtOutputToVm(cdtVerts, Vertices, snapTol: 2.0f);
-            int added = 0;
-            foreach (var (a, b, c) in cdtTris)
+
+            // 2) Triangle.NET üçün Polygon hazırla
+            var polygon = new TriangleNet.Geometry.Polygon();
+
+            // 3) Bütün mövcud VertexModel-ləri ID-lərinə görə xəritəyə salaq
+            var idToVm = new Dictionary<int, VertexModel>(Vertices.Count);
+
+            // 4) Hər bir VertexModel-i Triangle.NET-in Vertex-inə çevir
+            // Vacib: Bizim VertexModel.Id-ni Triangle.NET-in Vertex.ID-sinə mənimsədirik
+            foreach (var vmVertex in Vertices)
             {
-                if (!map.TryGetValue(a, out var vA)) continue;
-                if (!map.TryGetValue(b, out var vB)) continue;
-                if (!map.TryGetValue(c, out var vC)) continue;
-                if (!TriangleExists(vA, vB, vC))
+                var tnVertex = new TriangleNet.Geometry.Vertex(vmVertex.BindPosition.X, vmVertex.BindPosition.Y)
                 {
-                    Triangles.Add(new TriangleModel(vA, vB, vC));
-                    added++;
+                    ID = vmVertex.Id
+                };
+                polygon.Add(tnVertex);
+
+                // Xəritəyə əlavə et
+                if (!idToVm.ContainsKey(vmVertex.Id))
+                {
+                    idToVm.Add(vmVertex.Id, vmVertex);
                 }
             }
 
-            SaveRigCommand.NotifyCanExecuteChanged();
-            RequestRedraw?.Invoke(this, EventArgs.Empty);
-            MessageBox.Show($"Avto Üçbucaq: {added} üçbucaq yaradıldı.", "Uğurlu");
-        }
+            // 5) SADƏ Triangulyasiya et (Constraint və ya Quality OLMADAN)
+            // Bu metod YALNIZ verilən nöqtələrdən istifadə edəcək, yenilərini yaratmayacaq.
+            try
+            {
+                var mesh = (TriangleNet.Mesh)polygon.Triangulate();
 
+                // 6) Nəticəni öz TriangleModel-lərimizə çevir
+                int created = 0;
+                foreach (var tnTriangle in mesh.Triangles)
+                {
+                    // Nöqtələri ID ilə götürürük
+                    var v0 = tnTriangle.GetVertex(0);
+                    var v1 = tnTriangle.GetVertex(1);
+                    var v2 = tnTriangle.GetVertex(2);
+
+                    // ID-lərə görə bizim VertexModel-ləri tapırıq
+                    if (v0 == null || v1 == null || v2 == null) continue;
+
+                    if (!idToVm.TryGetValue(v0.ID, out var vmV0)) continue;
+                    if (!idToVm.TryGetValue(v1.ID, out var vmV1)) continue;
+                    if (!idToVm.TryGetValue(v2.ID, out var vmV2)) continue;
+
+                    // Təkrar yoxla (opsional, amma faydalıdır)
+                    if (!TriangleExists(vmV0, vmV1, vmV2))
+                    {
+                        Triangles.Add(new TriangleModel(vmV0, vmV1, vmV2));
+                        created++;
+                    }
+                }
+
+                // 7) UI və command-ları yenilə
+                SaveRigCommand.NotifyCanExecuteChanged();
+                RequestRedraw?.Invoke(this, EventArgs.Empty);
+
+                MessageBox.Show($"{created} üçbucaq avtomatik yaradıldı.", "Uğurlu");
+            }
+            catch (Exception ex)
+            {
+                // Triangle.NET bəzən uğursuz ola bilir (məs. bütün nöqtələr bir xətt üzrədirsə)
+                MessageBox.Show($"Triangulyasiya zamanı xəta: {ex.Message}\n\nNöqtələrin düzgün yerləşdiyindən əmin olun.", "Xəta");
+            }
+        }
 
         private bool CanAutoTriangle() => Vertices.Count >= 3;
 
+        // Yuxarıdakı metod üçün ComputeConvexHull, MapCdtOutputToVm, 
+        // TriangulateWithConstraints, PointLineDist2 və s. köməkçi metodlara ehtiyac yoxdur.
+        // Onları silə və ya saxlaya bilərsiniz.
         // =============== HELPERS ===============
 
         // Monotone chain (O(n log n)) – VertexModel üzrə konveks hull qaytarır
-        private static List<VertexModel> ComputeConvexHull(IList<VertexModel> verts)
-        {
-            var pts = verts
-                .Select(v => (vm: v, x: v.BindPosition.X, y: v.BindPosition.Y))
-                .OrderBy(t => t.x).ThenBy(t => t.y)
-                .ToList();
-
-            float Cross((VertexModel vm, float x, float y) o, (VertexModel vm, float x, float y) a, (VertexModel vm, float x, float y) b)
-                => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
-
-            var lower = new List<(VertexModel vm, float x, float y)>();
-            foreach (var p in pts)
-            {
-                while (lower.Count >= 2 && Cross(lower[^2], lower[^1], p) <= 0) lower.RemoveAt(lower.Count - 1);
-                lower.Add(p);
-            }
-
-            var upper = new List<(VertexModel vm, float x, float y)>();
-            for (int i = pts.Count - 1; i >= 0; i--)
-            {
-                var p = pts[i];
-                while (upper.Count >= 2 && Cross(upper[^2], upper[^1], p) <= 0) upper.RemoveAt(upper.Count - 1);
-                upper.Add(p);
-            }
-
-            // son elementlər təkrardır, at
-            lower.RemoveAt(lower.Count - 1);
-            upper.RemoveAt(upper.Count - 1);
-
-            return lower.Concat(upper).Select(t => t.vm).ToList();
-        }
+ 
 
         private static bool HasEdgeLongerThan(VertexModel a, VertexModel b, VertexModel c, float cap)
         {
@@ -1466,7 +1453,6 @@ namespace SpriteEditor.ViewModels
 
         
 
-        [RelayCommand(CanExecute = nameof(CanAutoGenVertices))]
         private void AutoGenerateVertices()
         {
             if (!CanAutoGenVertices()) return;
@@ -1713,7 +1699,8 @@ namespace SpriteEditor.ViewModels
                     if (bmp.GetPixel(x, y).Alpha > alphaTh) alphaCount++;
                 }
             }
-            bool hasAlpha = alphaCount > total / 3;
+           // Əgər nümunədə həm şəffaf, həm qeyri-şəffaf piksel varsa, deməli "hasAlpha" doğrudur.
+             bool hasAlpha = (alphaCount > 0) && (alphaCount < total);
 
             if (hasAlpha)
             {

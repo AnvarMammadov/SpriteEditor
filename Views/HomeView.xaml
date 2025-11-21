@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:SpriteEditor.Views"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="500" d:DesignWidth="800">
 
     <!-- Arxa fon rəngi əsas pəncərədən gəlir, amma burada da təyin edə bilərik -->
     <Grid Background="{StaticResource Brush.Bg.Deep}">
@@ -88,6 +88,7 @@
                                    TextWrapping="Wrap"
                                    Margin="0,0,0,15"/>
 
+                        <!-- Sprite Slicer -->
                         <StackPanel Orientation="Horizontal" Margin="0,5">
                             <Path Data="{StaticResource Icon.Grid}"
                                   Fill="{StaticResource Brush.Accent.Blue}"
@@ -101,6 +102,7 @@
                                        FontSize="12"/>
                         </StackPanel>
 
+                        <!-- BG Eraser -->
                         <StackPanel Orientation="Horizontal" Margin="0,5">
                             <Path Data="{StaticResource Icon.Eraser}"
                                   Fill="{StaticResource Brush.Accent.Green}"
@@ -114,6 +116,7 @@
                                        FontSize="12"/>
                         </StackPanel>
 
+                        <!-- Rigging -->
                         <StackPanel Orientation="Horizontal" Margin="0,5">
                             <Path Data="{StaticResource Icon.Bone}"
                                   Fill="{StaticResource Brush.Accent.Primary}"
@@ -126,13 +129,29 @@
                                        Foreground="{StaticResource Brush.Text.Secondary}"
                                        FontSize="12"/>
                         </StackPanel>
+
+                        <!-- YENİ: Format Converter -->
+                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                            <Path Data="{StaticResource Icon.Convert}"
+                                  Fill="#F472B6"
+                                  Width="12"
+                                  Height="12"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,10,0"/>
+                            <!-- Icon.Convert yoxdursa, müvəqqəti olaraq Icon.Grid istifadə edə bilərsiniz və ya App.xaml-a əlavə etməlisiniz -->
+                            <TextBlock Text="Converter - Şəkil formatlarını dəyişmək üçün"
+                                       Foreground="{StaticResource Brush.Text.Secondary}"
+                                       FontSize="12"/>
+                        </StackPanel>
+
                     </StackPanel>
                 </Border>
 
             </StackPanel>
 
             <!-- Versiya Nömrəsi (Aşağı sağ künc) -->
-            <TextBlock Text="v1.0.0"
+            <TextBlock Text="v1.1.0"
                        Foreground="{StaticResource Brush.Text.Secondary}"
                        Opacity="0.3"
                        HorizontalAlignment="Right"

@@ -249,6 +249,21 @@ namespace SpriteEditor.Services
             }
         }
 
+        /// <summary>
+        /// Şəkli yükləyir və verilən yeni fayl yoluna (yeni formatla) yadda saxlayır.
+        /// ImageSharp uzantıya (.png, .jpg, .ico) baxaraq formatı avtomatik seçir.
+        /// </summary>
+        public void ConvertImageFormat(string inputPath, string outputPath)
+        {
+            using (Image image = Image.Load(inputPath))
+            {
+                // ICO üçün xüsusi hal: Ölçüləri standartlaşdırmaq məsləhətdir (məs: 256x256)
+                // Amma sadəlik üçün birbaşa saxlayırıq, ImageSharp bunu idarə etməyə çalışacaq.
+                image.Save(outputPath);
+            }
+        }
+
+
         #region Diagnostika Testi
         /// <summary>
         /// === DİAQNOSTİKA TESTİ #2 ===

@@ -226,6 +226,18 @@
                                 <TextBlock Text="Rigging &amp; Skin"/>
                             </StackPanel>
                         </Button>
+
+                        <Button Command="{Binding GoToFormatConverterCommand}"
+                                Style="{StaticResource Style.Button.Nav}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource Icon.Convert}"
+                                 Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                 Width="14" Height="14"
+                                 Stretch="Uniform"
+                                 Margin="0,0,10,0"/>
+                                <TextBlock Text="Format Converter"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
 
                     <!-- Footer -->

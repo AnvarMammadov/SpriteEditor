@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-
+using SpriteEditor.ViewModels;
 namespace SpriteEditor.ViewModels
 {
     public partial class MainViewModel : ObservableObject
@@ -22,6 +22,8 @@ namespace SpriteEditor.ViewModels
 
         private readonly RiggingViewModel _riggingViewModel;
 
+        private readonly FormatConverterViewModel _formatConverterViewModel;
+
         public MainViewModel()
         {
             // Bütün səhifələri yaddaşda yaradırıq
@@ -29,6 +31,7 @@ namespace SpriteEditor.ViewModels
             _spriteSlicerViewModel = new SpriteSlicerViewModel();
             _backgroundEraserViewModel = new BackgroundEraserViewModel();
             _riggingViewModel = new RiggingViewModel();
+            _formatConverterViewModel = new FormatConverterViewModel();
 
             // Proqram açıldıqda "Home" səhifəsini göstər
             _currentViewModel = _homeViewModel;
@@ -57,6 +60,12 @@ namespace SpriteEditor.ViewModels
         private void GoToRigging()
         {
             CurrentViewModel = _riggingViewModel;
+        }
+
+        [RelayCommand]
+        private void GoToFormatConverter()
+        {
+            CurrentViewModel = _formatConverterViewModel;
         }
 
 

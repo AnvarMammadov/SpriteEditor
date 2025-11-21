@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
@@ -105,16 +106,16 @@ namespace SpriteEditor.Services
                     float toleranceDistance = maxDistance * (tolerancePercent / 100f);
 
                     // 5. Strukturlar
-                    var pixelsToProcess = new Queue<Point>();
-                    var visitedPixels = new HashSet<Point>();
+                    var pixelsToProcess = new Queue<SixLabors.ImageSharp.Point>();
+                    var visitedPixels = new HashSet<SixLabors.ImageSharp.Point>();
 
                     // 6. Başlanğıc nöqtə
-                    pixelsToProcess.Enqueue(new Point(startX, startY));
+                    pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(startX, startY));
 
                     // 7. "Sel" (Flood)
                     while (pixelsToProcess.Count > 0)
                     {
-                        Point currentPoint = pixelsToProcess.Dequeue();
+                        SixLabors.ImageSharp.Point currentPoint = pixelsToProcess.Dequeue();
                         int x = currentPoint.X;
                         int y = currentPoint.Y;
 
@@ -145,10 +146,10 @@ namespace SpriteEditor.Services
                             image[x, y] = new Rgba32(currentColor.R, currentColor.G, currentColor.B, 0);
 
                             // Qonşuları əlavə et
-                            pixelsToProcess.Enqueue(new Point(x + 1, y));
-                            pixelsToProcess.Enqueue(new Point(x - 1, y));
-                            pixelsToProcess.Enqueue(new Point(x, y + 1));
-                            pixelsToProcess.Enqueue(new Point(x, y - 1));
+                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x + 1, y));
+                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x - 1, y));
+                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x, y + 1));
+                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x, y - 1));
                         }
                     }
 
@@ -192,16 +193,16 @@ namespace SpriteEditor.Services
                     float toleranceDistance = maxDistance * (tolerancePercent / 100f);
 
                     // 5. Strukturlar
-                    var pixelsToProcess = new Queue<Point>();
-                    var visitedPixels = new HashSet<Point>();
+                    var pixelsToProcess = new Queue<SixLabors.ImageSharp.Point>();
+                    var visitedPixels = new HashSet<SixLabors.ImageSharp.Point>();
 
                     // 6. Başlanğıc nöqtə
-                    pixelsToProcess.Enqueue(new Point(startX, startY));
+                    pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(startX, startY));
 
                     // 7. "Sel" (Flood)
                     while (pixelsToProcess.Count > 0)
                     {
-                        Point currentPoint = pixelsToProcess.Dequeue();
+                        SixLabors.ImageSharp.Point currentPoint = pixelsToProcess.Dequeue();
                         int x = currentPoint.X;
                         int y = currentPoint.Y;
 
@@ -232,10 +233,10 @@ namespace SpriteEditor.Services
                             image[x, y] = new Rgba32(currentColor.R, currentColor.G, currentColor.B, 0);
 
                             // Qonşuları əlavə et
-                            pixelsToProcess.Enqueue(new Point(x + 1, y));
-                            pixelsToProcess.Enqueue(new Point(x - 1, y));
-                            pixelsToProcess.Enqueue(new Point(x, y + 1));
-                            pixelsToProcess.Enqueue(new Point(x, y - 1));
+                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x + 1, y));
+                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x - 1, y));
+                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x, y + 1));
+                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x, y - 1));
                         }
                     }
 
@@ -262,6 +263,107 @@ namespace SpriteEditor.Services
                 image.Save(outputPath);
             }
         }
+
+        /// <summary>
+        /// Şəkil üzərindəki ayrı-ayrı obyektləri (adaları) avtomatik tapır.
+        /// </summary>
+        public List<Int32Rect> DetectSprites(string imagePath, byte alphaThreshold = 10)
+        {
+            var detectedRects = new List<Int32Rect>();
+
+            using (Image<Rgba32> image = Image.Load<Rgba32>(imagePath))
+            {
+                int width = image.Width;
+                int height = image.Height;
+                bool[,] visited = new bool[width, height];
+
+                // Pikselləri gəzirik
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        // Əgər piksel görünürdürsə (Alpha > threshold) və hələ yoxlanmayıbsa
+                        if (!visited[x, y] && image[x, y].A > alphaThreshold)
+                        {
+                            // Yeni bir "Ada" tapdıq, onun sərhədlərini hesablayaq (BFS Alqoritmi)
+                            var rect = FindBoundingBox(image, visited, x, y, alphaThreshold);
+                            detectedRects.Add(rect);
+                        }
+                    }
+                }
+            }
+
+            return detectedRects;
+        }
+
+        // Flood Fill (BFS) ilə adanın sərhədlərini tapır
+        private Int32Rect FindBoundingBox(Image<Rgba32> image, bool[,] visited, int startX, int startY, byte alphaThreshold)
+        {
+            int minX = startX, minY = startY;
+            int maxX = startX, maxY = startY;
+
+            Queue<System.Drawing.Point> queue = new Queue<System.Drawing.Point>();
+            queue.Enqueue(new System.Drawing.Point(startX, startY));
+            visited[startX, startY] = true;
+
+            while (queue.Count > 0)
+            {
+                var p = queue.Dequeue();
+
+                if (p.X < minX) minX = p.X;
+                if (p.X > maxX) maxX = p.X;
+                if (p.Y < minY) minY = p.Y;
+                if (p.Y > maxY) maxY = p.Y;
+
+                // 4 qonşu pikselə baxırıq
+                int[] dx = { 1, -1, 0, 0 };
+                int[] dy = { 0, 0, 1, -1 };
+
+                for (int i = 0; i < 4; i++)
+                {
+                    int nx = p.X + dx[i];
+                    int ny = p.Y + dy[i];
+
+                    // Sərhəd daxilindədirmi?
+                    if (nx >= 0 && nx < image.Width && ny >= 0 && ny < image.Height)
+                    {
+                        if (!visited[nx, ny] && image[nx, ny].A > alphaThreshold)
+                        {
+                            visited[nx, ny] = true;
+                            queue.Enqueue(new System.Drawing.Point(nx, ny));
+                        }
+                    }
+                }
+            }
+
+            return new Int32Rect(minX, minY, maxX - minX + 1, maxY - minY + 1);
+        }
+
+
+        /// <summary>
+        /// Grid yerinə, verilmiş xüsusi koordinatlara (Rect) əsasən kəsim edir.
+        /// </summary>
+        public void SliceByRects(string imagePath, List<Int32Rect> rects, string outputDirectory)
+        {
+            using (Image sourceImage = Image.Load(imagePath))
+            {
+                string sanitizedBaseFileName = Path.GetFileNameWithoutExtension(imagePath);
+
+                for (int i = 0; i < rects.Count; i++)
+                {
+                    var r = rects[i];
+                    var cropRectangle = new Rectangle(r.X, r.Y, r.Width, r.Height);
+
+                    using (Image sprite = sourceImage.Clone(ctx => ctx.Crop(cropRectangle)))
+                    {
+                        string outputFileName = $"{sanitizedBaseFileName}_sprite_{i}.png";
+                        string outputPath = Path.Combine(outputDirectory, outputFileName);
+                        sprite.Save(outputPath, new PngEncoder());
+                    }
+                }
+            }
+        }
+
 
 
         #region Diagnostika Testi

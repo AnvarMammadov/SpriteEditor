@@ -1,13 +1,14 @@
 ﻿using System.Collections.ObjectModel; // ObservableCollection üçün
 using System.IO; // Path üçün
+using System.Runtime.InteropServices;
 using System.Threading.Tasks; // Asinxron əməliyyatlar üçün (Task)
+using System.Windows;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using SpriteEditor.Services; // Service-i əlavə edirik
 using SpriteEditor.ViewModels; // GridLineViewModel üçün
-using System.Runtime.InteropServices;
 
 namespace SpriteEditor.ViewModels
 {
@@ -56,6 +57,7 @@ namespace SpriteEditor.ViewModels
         // === UI Xassələri (Properties) ===
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(SliceImageCommand))] // Düymənin aktivliyini yeniləyir
+        [NotifyCanExecuteChangedFor(nameof(AutoDetectSpritesCommand))]
         private bool _isImageLoaded = false;
 
         [ObservableProperty]
@@ -74,6 +76,18 @@ namespace SpriteEditor.ViewModels
         // === UI Xətt Kolleksiyası ===
         // UI-dakı "qırıq-qırıq xətlər" bu kolleksiyaya bağlı olacaq
         public ObservableCollection<GridLineViewModel> GridLines { get; } = new ObservableCollection<GridLineViewModel>();
+
+
+        // === AVTOMATİK KƏSİM PARAMETRLƏRİ ===
+
+        // Tapılmış spriteları ekranda göstərmək üçün (Qırmızı çərçivələr)
+        public ObservableCollection<Int32Rect> DetectedRects { get; } = new ObservableCollection<Int32Rect>();
+
+        [ObservableProperty]
+        private bool _useAutoDetection = false; // Grid modu ilə Avto mod arasında keçid
+
+
+
 
         // === Constructor ===
         public SpriteSlicerViewModel()
@@ -156,62 +170,91 @@ namespace SpriteEditor.ViewModels
 
         // === Kəsmə Əməliyyatı (Asinxron) ===
 
-        // Bu metod 'CanSliceImage' metodu 'true' qaytardıqda işləyəcək
+        // SliceImageAsync metodunu dəyişirik ki, rejimə görə işləsin
         [RelayCommand(CanExecute = nameof(CanSliceImage))]
-        private async Task SliceImageAsync() // Asinxron (async) edirik ki, UI donmasın
+        private async Task SliceImageAsync()
         {
-            // 1. İstifadəçidən hara yaddaş saxlayacağını soruş
             SaveFileDialog saveDialog = new SaveFileDialog();
-            saveDialog.Title = "Kəsilmiş spritları hara saxlamaq istəyirsiniz? (Qovluq seçin)";
-            saveDialog.FileName = "sprite_0_0.png"; // Nümunə fayl adı
-            saveDialog.Filter = "PNG Image (*.png)|*.png";
+            saveDialog.Title = "Kəsilmiş spritları hara saxlamaq istəyirsiniz?";
+            saveDialog.FileName = "sprite_output.png";
 
             if (saveDialog.ShowDialog() == true)
             {
                 string outputDirectory = Path.GetDirectoryName(saveDialog.FileName);
-                if (outputDirectory == null) return;
-
-                IsSlicing = true; // Proses başladı
+                IsSlicing = true;
 
                 try
                 {
-                    // 2. Əsas işi (UI-ı dondura biləcək) arxa planda (Task.Run) icra et
                     await Task.Run(() =>
                     {
-                        _imageService.SliceSpriteSheet(
-                            _loadedImagePath,
-                            Columns,
-                            Rows,
-                            (int)SlicerX,
-                            (int)SlicerY,
-                            (int)SlicerWidth,
-                            (int)SlicerHeight,
-                            outputDirectory
-                        );
+                        if (UseAutoDetection)
+                        {
+                            // === YENİ: Avtomatik tapılanları kəs ===
+                            _imageService.SliceByRects(_loadedImagePath, DetectedRects.ToList(), outputDirectory);
+                        }
+                        else
+                        {
+                            // === KÖHNƏ: Grid ilə kəs ===
+                            _imageService.SliceSpriteSheet(
+                                _loadedImagePath, Columns, Rows,
+                                (int)SlicerX, (int)SlicerY, (int)SlicerWidth, (int)SlicerHeight,
+                                outputDirectory
+                            );
+                        }
                     });
 
+                    // Qovluğu yenilə (Shell Notify)
                     SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH, Marshal.StringToHGlobalAuto(outputDirectory), IntPtr.Zero);
-
-                    // 3. Bitəndə məlumat ver
-                    System.Windows.MessageBox.Show(
-                        $"{Columns}x{Rows} ölçüsündə spritlar uğurla kəsildi və '{outputDirectory}' qovluğuna yazıldı.",
-                        "Əməliyyat Tamamlandı",
-                        System.Windows.MessageBoxButton.OK,
-                        System.Windows.MessageBoxImage.Information);
+                    MessageBox.Show("Uğurla kəsildi!", "Hazırdır");
                 }
                 catch (Exception ex)
                 {
-                    // Xəta baş verərsə
-                    System.Windows.MessageBox.Show(
-                        $"Xəta baş verdi: {ex.Message}",
-                        "Xəta",
-                        System.Windows.MessageBoxButton.OK,
-                        System.Windows.MessageBoxImage.Error);
+                    MessageBox.Show($"Xəta: {ex.Message}");
                 }
                 finally
                 {
-                    IsSlicing = false; // Proses bitdi (həm uğurlu, həm uğursuz halda)
+                    IsSlicing = false;
                 }
+            }
+        }
+
+
+        // Bu yeni əmrdir
+        [RelayCommand(CanExecute = nameof(CanSliceImage))]
+        private async Task AutoDetectSpritesAsync()
+        {
+            if (!IsImageLoaded) return;
+
+            IsSlicing = true; // Düymələri deaktiv et
+            DetectedRects.Clear();
+            GridLines.Clear();
+
+            try
+            {
+                // Prosesi işlət
+                var rects = await Task.Run(() => _imageService.DetectSprites(_loadedImagePath));
+
+                // Nəticələri əlavə et
+                foreach (var r in rects) DetectedRects.Add(r);
+
+                if (rects.Count > 0)
+                {
+                    UseAutoDetection = true; // Bu dəyişən XAML-da Yaşıl Qutunu gizlədəcək
+                    MessageBox.Show($"{rects.Count} sprite tapıldı.", "Tamamlandı");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Xəta: {ex.Message}");
+            }
+            finally
+            {
+                // === BU HİSSƏ ÇOX VACİBDİR ===
+                IsSlicing = false; // Düymələri yenidən aktivləşdir
+
+                // WPF-ə məcbur edirik ki, düymələrin vəziyyətini yoxlasın
+                SliceImageCommand.NotifyCanExecuteChanged();
+                AutoDetectSpritesCommand.NotifyCanExecuteChanged();
             }
         }
 
@@ -222,13 +265,15 @@ namespace SpriteEditor.ViewModels
         }
 
         // Sütun/Sətr dəyişəndə avtomatik çağırılacaq (NotifyPropertyChangedFor sayəsində)
-        partial void OnColumnsChanged(int value) => UpdateGridLines();
-        partial void OnRowsChanged(int value) => UpdateGridLines();
+        partial void OnColumnsChanged(int value) { UseAutoDetection = false; UpdateGridLines(); }
+        partial void OnRowsChanged(int value) { UseAutoDetection = false; UpdateGridLines(); }
 
         // YENİ KOD: Slicer Box dəyişəndə avtomatik çağırılacaq
         partial void OnSlicerXChanged(double value) => UpdateGridLines();
         partial void OnSlicerYChanged(double value) => UpdateGridLines();
         partial void OnSlicerWidthChanged(double value) => UpdateGridLines();
         partial void OnSlicerHeightChanged(double value) => UpdateGridLines();
+        // Columns/Rows dəyişəndə UseAutoDetection = false etmək yaxşı olar
+      
     }
 }

@@ -83,6 +83,19 @@
 
                     <Separator Background="{StaticResource Brush.Border}" Margin="0,10,0,20" Opacity="0.3"/>
 
+                    <!-- YENİ: AVTO DETECT -->
+                    <TextBlock Text="AVTOMATİK TƏSBİT" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
+
+                    <Button Command="{Binding AutoDetectSpritesCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,10">
+                        <StackPanel Orientation="Horizontal">
+                            <!-- Magic Wand Icon -->
+                            <Path Data="M7.5,5.6L10,7L8.6,4.5L10,2L7.5,3.4L5,2L6.4,4.5L5,7L7.5,5.6M19.5,15.4L22,14L20.6,16.5L22,19L19.5,17.6L17,19L18.4,16.5L17,14L19.5,15.4M22,2L20.6,4.5L22,7L19.5,5.6L17,7L18.4,4.5L17,2L19.5,3.4L22,2M13.34,12.66L12.6,14.5C12.4,15 11.6,15 11.4,14.5L10.66,12.66L8.8,11.9C8.3,11.7 8.3,10.9 8.8,10.7L10.66,10L11.4,8.1C11.6,7.6 12.4,7.6 12.6,8.1L13.34,10L15.2,10.7C15.7,10.9 15.7,11.7 15.2,11.9L13.34,12.66Z" 
+                            Fill="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(TextElement.Foreground)}" 
+                            Width="16" Height="16" Stretch="Uniform" Margin="0,0,8,0"/>
+                            <TextBlock Text="Avto Tap (Auto Detect)"/>
+                        </StackPanel>
+                    </Button>
+
                     <!-- 3. Əməliyyat -->
                     <Button Command="{Binding SliceImageCommand}" Style="{StaticResource Style.Button.Accent}" Height="40">
                         <StackPanel Orientation="Horizontal">
@@ -146,8 +159,44 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
+                        <ItemsControl ItemsSource="{Binding DetectedRects}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemContainerStyle>
+                                <Style TargetType="ContentPresenter">
+                                    <!-- Rect-in X və Y koordinatlarını Canvas-a bağlayırıq -->
+                                    <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                    <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                </Style>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <!-- Çərçivə Dizaynı -->
+                                    <Rectangle Width="{Binding Width}" 
+                       Height="{Binding Height}" 
+                       Stroke="#EF4444" 
+                       StrokeThickness="2" 
+                       StrokeDashArray="4 2"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
                         <!-- Slicer Overlay (Resizeable Box) -->
                         <Canvas x:Name="SlicerCanvas">
+                            <Canvas.Style>
+                                <Style TargetType="Canvas">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <!-- Əgər UseAutoDetection = True isə, Qutunu GİZLƏT -->
+                                        <DataTrigger Binding="{Binding UseAutoDetection}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Canvas.Style>
                             <!-- Slicer Çərçivəsi -->
                             <Border x:Name="SlicerBorder"
                                     Canvas.Left="{Binding SlicerX}"

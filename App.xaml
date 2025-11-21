@@ -3,24 +3,204 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:SpriteEditor"
              xmlns:viewmodels="clr-namespace:SpriteEditor.ViewModels"
-             xmlns:view="clr-namespace:SpriteEditor.Views"
+             xmlns:views="clr-namespace:SpriteEditor.Views"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
 
+        <!-- =============================================== -->
+        <!-- RƏNG PALİTRASI (MODERN DARK THEME) -->
+        <!-- =============================================== -->
+
+        <!-- Əsas Fonlar -->
+        <SolidColorBrush x:Key="Brush.Bg.Deep" Color="#111827"/>
+        <!-- Ən tünd (Canvas arxası) -->
+        <SolidColorBrush x:Key="Brush.Bg.Panel" Color="#1F2937"/>
+        <!-- Panellər -->
+        <SolidColorBrush x:Key="Brush.Bg.Input" Color="#374151"/>
+        <!-- Inputlar -->
+
+        <!-- Vurğu (Accent) Rəngləri -->
+        <SolidColorBrush x:Key="Brush.Accent.Primary" Color="#EAB308"/>
+        <!-- Sarı/Qızılı (Sümüklər üçün) -->
+        <SolidColorBrush x:Key="Brush.Accent.Blue" Color="#3B82F6"/>
+        <!-- Mavi (Seçim üçün) -->
+        <SolidColorBrush x:Key="Brush.Accent.Green" Color="#22C55E"/>
+        <!-- Yaşıl (Təsdiq) -->
+        <SolidColorBrush x:Key="Brush.Accent.Red" Color="#EF4444"/>
+        <!-- Qırmızı (Silmək) -->
+
+        <!-- Mətn Rəngləri -->
+        <SolidColorBrush x:Key="Brush.Text.Primary" Color="#F9FAFB"/>
+        <!-- Ağ -->
+        <SolidColorBrush x:Key="Brush.Text.Secondary" Color="#9CA3AF"/>
+        <!-- Boz -->
+        <SolidColorBrush x:Key="Brush.Border" Color="#4B5563"/>
+        <!-- Çərçivələr -->
+
+        <!-- =============================================== -->
+        <!-- İKONLAR (Path Geometries) -->
+        <!-- =============================================== -->
+        <Geometry x:Key="Icon.Home">M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10</Geometry>
+        <Geometry x:Key="Icon.Grid">M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z</Geometry>
+        <Geometry x:Key="Icon.Bone">M12 5c-1.5 0-2.5 1-2.5 2.5 0 .5.15 1 .4 1.4L6.5 12.3c-.4-.3-.9-.4-1.5-.4-1.7 0-3 1.3-3 3s1.3 3 3 3c1.5 0 2.8-1.1 2.9-2.5l3.4-3.4c.4.3.9.4 1.4.4s1-.1 1.4-.4l3.4 3.4c.1 1.4 1.4 2.5 2.9 2.5 1.7 0 3-1.3 3-3s-1.3-3-3-3c-.6 0-1.1.1-1.5.4L14.1 8.9c.3-.4.4-.9.4-1.4 0-1.5-1-2.5-2.5-2.5z</Geometry>
+        <Geometry x:Key="Icon.Edit">M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7 M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z</Geometry>
+        <Geometry x:Key="Icon.Eraser">M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z</Geometry>
+        <Geometry x:Key="Icon.Play">M5 3l14 9-14 9V3z</Geometry>
+        <Geometry x:Key="Icon.Pause">M6 4h4v16H6zM14 4h4v16h-4z</Geometry>
+        <Geometry x:Key="Icon.Stop">M6 6h12v12H6z</Geometry>
+
+        <!-- =============================================== -->
+        <!-- STILLƏR (STYLES) -->
+        <!-- =============================================== -->
+
+        <!-- Modern Button Style -->
+        <Style TargetType="Button" x:Key="Style.Button.Primary">
+            <Setter Property="Background" Value="{StaticResource Brush.Bg.Input}"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#4B5563"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#374151"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Accent Button Style (Yellow/Gold) -->
+        <Style TargetType="Button" x:Key="Style.Button.Accent" BasedOn="{StaticResource Style.Button.Primary}">
+            <Setter Property="Background" Value="{StaticResource Brush.Accent.Primary}"/>
+            <Setter Property="Foreground" Value="#111827"/>
+            <!-- Qara mətn -->
+            <Setter Property="BorderThickness" Value="0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.9"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Naviqasiya Düyməsi (Sidebar) -->
+        <Style TargetType="Button" x:Key="Style.Button.Nav">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Secondary}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="15,0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Margin="4,2">
+                            <ContentPresenter VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#374151"/>
+                                <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern TextBox -->
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource Brush.Bg.Deep}"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ScrollViewer x:Name="PART_ContentHost"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent.Blue}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Tool Toggle Button (RadioButton kimi görünən) -->
+        <Style TargetType="RadioButton" x:Key="Style.RadioButton.Tool">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Border"
+                                Background="{StaticResource Brush.Bg.Input}"
+                                BorderBrush="{StaticResource Brush.Border}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="10,8"
+                                Margin="0,0,0,8"
+                                Cursor="Hand">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <!-- İkon yeri (ContentPresenter) -->
+                                <ContentPresenter Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource Brush.Accent.Blue}"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource Brush.Accent.Blue}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource Brush.Accent.Blue}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Views (Məlumat Şablonları) -->
         <DataTemplate DataType="{x:Type viewmodels:HomeViewModel}">
-            <view:HomeView />
+            <views:HomeView />
         </DataTemplate>
-
         <DataTemplate DataType="{x:Type viewmodels:SpriteSlicerViewModel}">
-            <view:SpriteSlicerView />
+            <views:SpriteSlicerView />
         </DataTemplate>
-
         <DataTemplate DataType="{x:Type viewmodels:BackgroundEraserViewModel}">
-            <view:BackgroundEraserView />
+            <views:BackgroundEraserView />
         </DataTemplate>
-
         <DataTemplate DataType="{x:Type viewmodels:RiggingViewModel}">
-            <view:RiggingView />
+            <views:RiggingView />
         </DataTemplate>
 
     </Application.Resources>

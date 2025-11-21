@@ -8,204 +8,263 @@
              xmlns:vm="clr-namespace:SpriteEditor.ViewModels" 
              xmlns:converters="clr-namespace:SpriteEditor.Converters" 
              mc:Ignorable="d" 
-             d:DesignHeight="650" d:DesignWidth="1000" Background="#FF2D2D30"
-             Foreground="#FFE1E1E1">
+             d:DesignHeight="700" d:DesignWidth="1000">
 
     <UserControl.Resources>
-        <SolidColorBrush x:Key="BgSecondary" Color="#FF3F3F46"/>
         <converters:EnumToBooleanConverter x:Key="EnumToBooleanConverter"/>
-        <SolidColorBrush x:Key="AccentBlue" Color="#FF007ACC"/>
-        <SolidColorBrush x:Key="TextPrimary" Color="#FFE1E1E1"/>
-        <SolidColorBrush x:Key="BgPrimary" Color="#FF2D2D30"/>
-
-        <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-        <Style x:Key="HeaderTextBlock" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,15,0,5"/>
-        </Style>
-        <Style TargetType="TextBox">
-            <Setter Property="Background" Value="{StaticResource BgPrimary}"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="5"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-        </Style>
     </UserControl.Resources>
 
-    <Grid Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Grid Background="{StaticResource Brush.Bg.Deep}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280"/>
+            <!-- Alətlər Paneli -->
+            <ColumnDefinition Width="*"/>
+            <!-- Canvas -->
+        </Grid.ColumnDefinitions>
 
-        <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="260"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <!-- =============================================== -->
+        <!-- SOL PANEL: ALƏTLƏR -->
+        <!-- =============================================== -->
+        <Border Grid.Column="0" Background="{StaticResource Brush.Bg.Panel}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,1,0" Padding="20">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="RIGGING TOOLS" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12" Margin="0,0,0,15"/>
 
-            <Border Grid.Column="0" Background="{StaticResource BgSecondary}" CornerRadius="5" Padding="10" Margin="0,0,10,10">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <TextBlock Text="1. Fayl" Style="{StaticResource HeaderTextBlock}"/>
-                        <Button Content="Görüntü Yüklə..." Command="{Binding LoadImageCommand}" Margin="5"/>
+                    <!-- 1. FAYL BÖLMƏSİ -->
+                    <Button Content="Sprite Yüklə" Command="{Binding LoadImageCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,20">
+                        <Button.ContentTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="M9 12l2-2 4 4 M15 12l-4-4-4 4 M11 3v9" Stroke="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(TextElement.Foreground)}" StrokeThickness="2" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Sprite Yüklə"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </Button.ContentTemplate>
+                    </Button>
 
-                        <TextBlock Text="2. Skelet Alətləri" Style="{StaticResource HeaderTextBlock}"/>
-                        <RadioButton Content="Redaktə (Edit)" GroupName="ToolMode" 
-                                     IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.Edit}}"
-                                     Foreground="White" Margin="5"/>
-                        <RadioButton Content="Sümük Yarat" GroupName="ToolMode" 
-                                     IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.CreateJoint}}"
-                                     Foreground="White" Margin="5"/>
-                        <RadioButton Content="Hərəkət (Pose)" GroupName="ToolMode" 
-                                     IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.Pose}}"
-                                     Foreground="White" Margin="5"/>
+                    <Separator Background="{StaticResource Brush.Border}" Margin="0,0,0,20" Opacity="0.3"/>
 
-                        <TextBlock Text="3. Mesh Alətləri" Style="{StaticResource HeaderTextBlock}"/>
-                        <RadioButton Content="Mesh Redaktə" GroupName="ToolMode" 
-                                     IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.EditMesh}}"
-                                     Foreground="White" Margin="5"/>
+                    <!-- 2. MODLAR (TOOLS) -->
+                    <TextBlock Text="MODLAR" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
 
-                        <Expander Header="AutoWeight Parametrləri" Margin="5,0,5,5" IsExpanded="False" Foreground="White">
-                            <StackPanel Margin="5">
-                                <TextBlock Text="σ (Sümük qalınlığı)" />
-                                <DockPanel>
-                                    <Slider Minimum="0.05" Maximum="0.40" Value="{Binding AwSigmaFactor}" Width="150"/>
-                                    <TextBox Width="50" Text="{Binding AwSigmaFactor, StringFormat=F2}"/>
-                                </DockPanel>
-
-                                <TextBlock Text="Radial Güc" Margin="0,5,0,0"/>
-                                <DockPanel>
-                                    <Slider Minimum="0.5" Maximum="2.0" Value="{Binding AwRadialPower}" Width="150"/>
-                                    <TextBox Width="50" Text="{Binding AwRadialPower, StringFormat=F2}"/>
-                                </DockPanel>
-                                <Button Content="Default-a Qaytar" Command="{Binding ResetAutoWeightDefaultsCommand}" Margin="0,10,0,0"/>
-                            </StackPanel>
-                        </Expander>
-
-                        <Button Content="Auto Mesh (Nöqtələri Yarat)" Command="{Binding AutoGenerateVerticesCommand}" Margin="5,5,5,0"/>
-                        <Button Content="Avto Üçbucaq Yarat" Command="{Binding AutoTriangleCommand}" Margin="5,5,5,0"/>
-                        <Button Content="Avto Ağırlıq Hesabla" Command="{Binding AutoWeightCommand}" Margin="5"/>
-
-                        <TextBlock Text="4. Əməliyyatlar" Style="{StaticResource HeaderTextBlock}"/>
-                        <Button Content="Skeleti Yüklə" Command="{Binding LoadRigCommand}" Margin="5,5,5,0"/>
-                        <Button Content="Skeleti Yadda Saxla" Command="{Binding SaveRigCommand}" Margin="5,5,5,5"/>
-
-                        <StackPanel>
-                            <StackPanel.Style>
-                                <Style TargetType="StackPanel">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SelectedJoint}" Value="{x:Null}">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </StackPanel.Style>
-                            <TextBlock Text="5. Seçilmiş Oynaq" Style="{StaticResource HeaderTextBlock}"/>
-                            <TextBlock Text="Ad:" Margin="5,0"/>
-                            <TextBox Text="{Binding SelectedJoint.Name, UpdateSourceTrigger=PropertyChanged}" Margin="5"/>
+                    <RadioButton GroupName="ToolMode" Style="{StaticResource Style.RadioButton.Tool}"
+                                 IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.CreateJoint}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="+ Sümük Yarat" FontWeight="SemiBold"/>
                         </StackPanel>
-                    </StackPanel>
-                </ScrollViewer>
-            </Border>
+                    </RadioButton>
 
-            <Border x:Name="CanvasBorder" 
-                    Grid.Column="1" 
-                    Background="#FF1E1E1E" 
-                    CornerRadius="5" 
-                    Margin="0,0,0,10" 
-                    ClipToBounds="True"
-                    MouseLeftButtonDown="SKCanvasView_MouseLeftButtonDown"
-                    MouseLeftButtonUp="SKCanvasView_MouseLeftButtonUp"
-                    MouseMove="SKCanvasView_MouseMove"
-                    MouseLeave="SKCanvasView_MouseLeave"
-                    MouseDown="SKCanvasView_MouseDown"
-                    MouseUp="SKCanvasView_MouseUp"
-                    MouseRightButtonDown="SKCanvasView_MouseRightButtonDown"
-                    PreviewMouseWheel="SKCanvasView_PreviewMouseWheel"
-                    Focusable="True" 
-                    KeyDown="CanvasBorder_KeyDown">
-                <skia:SKElement x:Name="SKCanvasView"
-                                IgnorePixelScaling="True"
-                                PaintSurface="SKCanvasView_PaintSurface"
-                                SizeChanged="SKCanvasView_SizeChanged"/>
+                    <RadioButton GroupName="ToolMode" Style="{StaticResource Style.RadioButton.Tool}"
+                                 IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.Edit}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="✎ Redaktə (Edit)" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton GroupName="ToolMode" Style="{StaticResource Style.RadioButton.Tool}"
+                                 IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.EditMesh}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="▧ Mesh Redaktə" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton GroupName="ToolMode" Style="{StaticResource Style.RadioButton.Tool}"
+                                 IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.Pose}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="▶ Pose (Hərəkət)" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </RadioButton>
+
+                    <Separator Background="{StaticResource Brush.Border}" Margin="0,10,0,20" Opacity="0.3"/>
+
+                    <!-- 3. MESH ACTIONS -->
+                    <TextBlock Text="MESH &amp; SKIN" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="Auto Verts" Command="{Binding AutoGenerateVerticesCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,4,0" FontSize="11"/>
+                        <Button Grid.Column="1" Content="Auto Tris" Command="{Binding AutoTriangleCommand}" Style="{StaticResource Style.Button.Primary}" Margin="4,0,0,0" FontSize="11"/>
+                    </Grid>
+
+                    <Button Content="Avto Ağırlıq (Weights)" Command="{Binding AutoWeightCommand}" Style="{StaticResource Style.Button.Accent}" Margin="0,0,0,15"/>
+
+                    <Expander Header="Skinning Parametrləri" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,15">
+                        <StackPanel Margin="0,10,0,0">
+                            <TextBlock Text="Sigma (Qalınlıq):" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11"/>
+                            <Slider Minimum="0.05" Maximum="0.40" Value="{Binding AwSigmaFactor}" Margin="0,5,0,10"/>
+
+                            <TextBlock Text="Radial Güc:" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11"/>
+                            <Slider Minimum="0.5" Maximum="2.0" Value="{Binding AwRadialPower}" Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </Expander>
+
+                    <Separator Background="{StaticResource Brush.Border}" Margin="0,0,0,20" Opacity="0.3"/>
+
+                    <!-- 4. SEÇİLMİŞ OBYEKT -->
+                    <!-- DÜZƏLİŞ: Visibility Binding xətasını DataTrigger ilə əvəz etdik -->
+                    <StackPanel>
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <!-- Əgər SelectedJoint NULL-dursa, paneli gizlət -->
+                                    <DataTrigger Binding="{Binding SelectedJoint}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+
+                        <Grid>
+                            <StackPanel>
+                                <TextBlock Text="XÜSUSİYYƏTLƏR" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
+                                <TextBlock Text="Sümük Adı:" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12" Margin="0,0,0,5"/>
+                                <TextBox Text="{Binding SelectedJoint.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- SAXLAMAQ -->
+                    <StackPanel Margin="0,20,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Content="Save Rig" Command="{Binding SaveRigCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,4,0"/>
+                            <Button Grid.Column="1" Content="Load Rig" Command="{Binding LoadRigCommand}" Style="{StaticResource Style.Button.Primary}" Margin="4,0,0,0"/>
+                        </Grid>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- =============================================== -->
+        <!-- SAĞ TƏRƏF: CANVAS VƏ ANIMATION BAR -->
+        <!-- =============================================== -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- CANVAS SAHƏSİ -->
+            <Grid Grid.Row="0" ClipToBounds="True">
+                <!-- DÜZƏLİŞ: DrawingBrush Grid.Background içində olmalıdır -->
+                <Grid.Background>
+                    <DrawingBrush Viewport="0,0,20,20" ViewportUnits="Absolute" TileMode="Tile">
+                        <DrawingBrush.Drawing>
+                            <GeometryDrawing>
+                                <GeometryDrawing.Pen>
+                                    <Pen Brush="#1F2937" Thickness="1"/>
+                                </GeometryDrawing.Pen>
+                                <GeometryDrawing.Geometry>
+                                    <GeometryGroup>
+                                        <LineGeometry StartPoint="0,0" EndPoint="0,20"/>
+                                        <LineGeometry StartPoint="0,0" EndPoint="20,0"/>
+                                    </GeometryGroup>
+                                </GeometryDrawing.Geometry>
+                            </GeometryDrawing>
+                        </DrawingBrush.Drawing>
+                        <!-- Arxa fonun əsas rəngi tünd olsun deyə Brush -->
+                        <DrawingBrush.RelativeTransform>
+                            <TranslateTransform X="0" Y="0"/>
+                        </DrawingBrush.RelativeTransform>
+                    </DrawingBrush>
+                </Grid.Background>
+
+                <!-- Grid fonunun çox parlaq olmaması üçün əlavə tünd qat -->
+                <Rectangle Fill="#0F1218" Opacity="0.9" IsHitTestVisible="False"/>
+
+                <!-- SkiaSharp Canvas -->
+                <Border x:Name="CanvasBorder" 
+                        Background="Transparent" 
+                        MouseLeftButtonDown="SKCanvasView_MouseLeftButtonDown"
+                        MouseLeftButtonUp="SKCanvasView_MouseLeftButtonUp"
+                        MouseMove="SKCanvasView_MouseMove"
+                        MouseLeave="SKCanvasView_MouseLeave"
+                        MouseDown="SKCanvasView_MouseDown"
+                        MouseUp="SKCanvasView_MouseUp"
+                        MouseRightButtonDown="SKCanvasView_MouseRightButtonDown"
+                        PreviewMouseWheel="SKCanvasView_PreviewMouseWheel"
+                        Focusable="True" 
+                        KeyDown="CanvasBorder_KeyDown">
+                    <skia:SKElement x:Name="SKCanvasView"
+                                    IgnorePixelScaling="True"
+                                    PaintSurface="SKCanvasView_PaintSurface"
+                                    SizeChanged="SKCanvasView_SizeChanged"/>
+                </Border>
+
+                <!-- İnfo Overlay (Sol Yuxarı) -->
+                <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="15" 
+                        Background="#CC111827" CornerRadius="4" Padding="10,5" IsHitTestVisible="False">
+                    <StackPanel>
+                        <TextBlock Text="{Binding CurrentTool}" FontWeight="Bold" Foreground="{StaticResource Brush.Accent.Primary}"/>
+                        <TextBlock Text="Kamera: Ctrl + Scroll (Zoom), Middle Mouse (Pan)" FontSize="10" Foreground="Gray" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ANIMATION TIMELINE (Aşağı Panel) -->
+            <Border Grid.Row="1" Background="{StaticResource Brush.Bg.Panel}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,1,0,0" Padding="10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- Controls -->
+                        <ColumnDefinition Width="*"/>
+                        <!-- Slider -->
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- Add Keyframe -->
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Playback Controls -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,20,0">
+                        <Button Command="{Binding StopCommand}" Width="32" Height="32" Style="{StaticResource Style.Button.Primary}" Padding="0" Margin="0,0,4,0">
+                            <Path Data="{StaticResource Icon.Stop}" Fill="White" Width="10" Height="10" Stretch="Uniform"/>
+                        </Button>
+                        <Button Command="{Binding PauseCommand}" Width="32" Height="32" Style="{StaticResource Style.Button.Primary}" Padding="0" Margin="0,0,4,0">
+                            <Path Data="{StaticResource Icon.Pause}" Fill="White" Width="10" Height="10" Stretch="Uniform"/>
+                        </Button>
+                        <Button Command="{Binding PlayCommand}" Width="32" Height="32" Style="{StaticResource Style.Button.Accent}" Padding="0">
+                            <Path Data="{StaticResource Icon.Play}" Fill="Black" Width="10" Height="10" Stretch="Uniform"/>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Timeline Slider -->
+                    <Grid Grid.Column="1" VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,2">
+                            <TextBlock Text="{Binding CurrentTime, StringFormat=N2}" Foreground="{StaticResource Brush.Accent.Blue}" FontWeight="Bold"/>
+                            <TextBlock Text=" / " Foreground="Gray"/>
+                            <TextBlock Text="{Binding TotalDuration, StringFormat=N2}" Foreground="Gray"/>
+                            <TextBlock Text="s" Foreground="Gray"/>
+                        </StackPanel>
+
+                        <Slider Grid.Row="1" 
+                                Minimum="0" 
+                                Maximum="{Binding TotalDuration}" 
+                                Value="{Binding CurrentTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                IsSnapToTickEnabled="False"
+                                VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- Add Keyframe -->
+                    <Button Grid.Column="2" Command="{Binding AddKeyframeCommand}" Style="{StaticResource Style.Button.Primary}" Margin="20,0,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="◆" Foreground="{StaticResource Brush.Accent.Green}" Margin="0,0,6,0"/>
+                            <TextBlock Text="Add Keyframe"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
             </Border>
         </Grid>
-
-        <Border Grid.Row="1" 
-                Background="{StaticResource BgSecondary}" 
-                CornerRadius="5" 
-                Height="80" 
-                Padding="10">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,0">
-                    <Button Command="{Binding StopCommand}" Width="30" Height="30" Margin="2" Background="#FF444444" BorderThickness="0">
-                        <Rectangle Width="10" Height="10" Fill="#FFEEEEEE"/>
-                    </Button>
-                    <Button Command="{Binding PauseCommand}" Width="30" Height="30" Margin="2" Background="#FF444444" BorderThickness="0">
-                        <Grid Width="10" Height="10">
-                            <Rectangle Width="3" Height="10" Fill="#FFEEEEEE" HorizontalAlignment="Left"/>
-                            <Rectangle Width="3" Height="10" Fill="#FFEEEEEE" HorizontalAlignment="Right"/>
-                        </Grid>
-                    </Button>
-                    <Button Command="{Binding PlayCommand}" Width="40" Height="40" Margin="5,0" Background="{StaticResource AccentBlue}" BorderThickness="0">
-                        <Polygon Points="0,0 12,7 0,14" Fill="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0,0,0"/>
-                    </Button>
-                </StackPanel>
-
-                <Grid Grid.Column="1" VerticalAlignment="Center" Margin="10,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" Margin="2,0,0,2">
-                        <TextBlock Text="{Binding CurrentTime, StringFormat=N2}" Foreground="#FF00A8FF" FontWeight="Bold" FontSize="14"/>
-                        <TextBlock Text=" / " Foreground="Gray" Margin="5,0"/>
-                        <TextBlock Text="{Binding TotalDuration, StringFormat=N2}" Foreground="Gray"/>
-                        <TextBlock Text=" s" Foreground="Gray"/>
-                    </StackPanel>
-
-                    <Slider Grid.Row="1" 
-                            Minimum="0" 
-                            Maximum="{Binding TotalDuration}" 
-                            Value="{Binding CurrentTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            TickFrequency="0.1" 
-                            IsSnapToTickEnabled="False" 
-                            LargeChange="0.1"
-                            VerticalAlignment="Center"/>
-                </Grid>
-
-                <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="20,0,0,0">
-                    <Button Command="{Binding AddKeyframeCommand}" 
-                            Background="#FF28A745" 
-                            Foreground="White" 
-                            FontWeight="Bold" 
-                            Height="35" 
-                            Padding="15,0"
-                            BorderThickness="0"
-                            Cursor="Hand">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="+" FontSize="16" Margin="0,0,5,2"/>
-                            <TextBlock Text="Keyframe"/>
-                        </StackPanel>
-                    </Button>
-                    <TextBlock Text="Sümüyü seç və əlavə et" FontSize="10" Foreground="Gray" HorizontalAlignment="Center" Margin="0,5,0,0"/>
-                </StackPanel>
-            </Grid>
-        </Border>
     </Grid>
 </UserControl>

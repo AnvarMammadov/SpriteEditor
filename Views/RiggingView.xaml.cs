@@ -29,22 +29,31 @@ namespace SpriteEditor.Views
         // === Sümükləri çəkmək üçün stillər (Paint objects) ===
         private readonly SKPaint _bonePaint = new SKPaint
         {
+
             Style = SKPaintStyle.Stroke,
-            Color = SKColors.Yellow,
-            StrokeWidth = 2,
+            Color = SKColor.Parse("#EAB308"), // XAML-dakı Brush.Accent.Primary (Sarı/Qızılı)
+            StrokeWidth = 3, // Bir az qalınlaşdırdıq
             IsAntialias = true
         };
         private readonly SKPaint _jointPaint = new SKPaint
         {
             Style = SKPaintStyle.Fill,
-            Color = SKColors.Cyan,
+            Color = SKColors.White, // Oynaqlar ağ olsun, daha təmiz görünür
+            IsAntialias = true
+        };
+
+        private readonly SKPaint _jointBorderPaint = new SKPaint // Oynaq ətrafında qara kontur
+        {
+            Style = SKPaintStyle.Stroke,
+            Color = SKColors.Black,
+            StrokeWidth = 1,
             IsAntialias = true
         };
 
         private readonly SKPaint _selectedJointPaint = new SKPaint
         {
             Style = SKPaintStyle.Stroke,
-            Color = SKColors.Magenta,
+            Color = SKColor.Parse("#EF4444"), // Brush.Accent.Red (Seçilmiş)
             StrokeWidth = 2,
             IsAntialias = true
         };
@@ -54,7 +63,7 @@ namespace SpriteEditor.Views
         private readonly SKPaint _meshLinePaint = new SKPaint
         {
             Style = SKPaintStyle.Stroke,
-            Color = new SKColor(255, 0, 255, 100), // Şəffaf magenta
+            Color = new SKColor(59, 130, 246, 80), // Brush.Accent.Blue (yarımşəffaf)
             StrokeWidth = 1,
             IsAntialias = true
         };
@@ -180,6 +189,7 @@ namespace SpriteEditor.Views
             foreach (var joint in _viewModel.Joints)
             {
                 canvas.DrawCircle(joint.Position, 5f, _jointPaint);
+                canvas.DrawCircle(joint.Position, 5f, _jointBorderPaint);
                 if (joint.Parent != null)
                 {
                     canvas.DrawLine(joint.Parent.Position, joint.Position, _bonePaint);

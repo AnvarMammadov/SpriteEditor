@@ -5,200 +5,184 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:SpriteEditor.Views"
              mc:Ignorable="d" 
-             d:DesignHeight="550" d:DesignWidth="880"
-             
-             Background="#FF2D2D30"
-             Foreground="#FFE1E1E1">
+             d:DesignHeight="600" d:DesignWidth="900">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        
-        
-        <SolidColorBrush x:Key="BgPrimary" Color="#FF2D2D30"/>
-        <SolidColorBrush x:Key="BgSecondary" Color="#FF3F3F46"/>
-        <SolidColorBrush x:Key="AccentBlue" Color="#FF007ACC"/>
-        <SolidColorBrush x:Key="AccentBlueHover" Color="#FF009AFF"/>
-        <SolidColorBrush x:Key="TextPrimary" Color="#FFE1E1E1"/>
-        <SolidColorBrush x:Key="SlicerBrush" Color="LimeGreen"/>
 
-        <Style TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource AccentBlue}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="3">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource AccentBlueHover}"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style TargetType="TextBox">
-            <Setter Property="Background" Value="{StaticResource BgPrimary}"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource AccentBlue}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="5"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-        </Style>
-
-        <Style x:Key="HeaderTextBlock" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource AccentBlue}"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,15,0,5"/>
-        </Style>
-
-        <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="5,0,0,0"/>
-        </Style>
-
-        <Style x:Key="ResizeThumbStyle" TargetType="Thumb">
-            <Setter Property="Width" Value="10"/>
-            <Setter Property="Height" Value="10"/>
-            <Setter Property="Background" Value="{StaticResource SlicerBrush}"/>
-            <Setter Property="BorderBrush" Value="Black"/>
+        <!-- Slicer Overlay üçün Xüsusi Thumb Stili -->
+        <Style x:Key="SlicerThumbStyle" TargetType="Thumb">
+            <Setter Property="Width" Value="12"/>
+            <Setter Property="Height" Value="12"/>
+            <Setter Property="Background" Value="{StaticResource Brush.Accent.Primary}"/>
+            <!-- Sarı -->
+            <Setter Property="BorderBrush" Value="#111827"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Thumb">
-                        <Rectangle Fill="{TemplateBinding Background}"
-                                   Stroke="{TemplateBinding BorderBrush}"
-                                   StrokeThickness="{TemplateBinding BorderThickness}"/>
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"/>
+                        <!-- Dairəvi -->
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-
-
     </UserControl.Resources>
 
-
-    <Grid Margin="10">
+    <!-- Main Grid Background -->
+    <Grid Background="{StaticResource Brush.Bg.Deep}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="280"/>
+            <!-- Sol Panel -->
             <ColumnDefinition Width="*"/>
+            <!-- Canvas -->
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" 
-                Background="{StaticResource BgSecondary}" 
-                CornerRadius="5" 
-                Padding="10">
+        <!-- SOL PANEL: ALƏTLƏR -->
+        <Border Grid.Column="0" Background="{StaticResource Brush.Bg.Panel}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,1,0" Padding="20">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="SLICER TOOLS" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12" Margin="0,0,0,15"/>
 
-            <StackPanel>
-                <TextBlock Text="1. Fayl Əməliyyatları" Style="{StaticResource HeaderTextBlock}"/>
-
-                <Button Content="Görüntü Yüklə..." 
-                        Command="{Binding LoadImageCommand}"/>
-
-                <TextBlock Text="2. Spritesheet Parametrləri" Style="{StaticResource HeaderTextBlock}"/>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Sütun sayı:"/>
-                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Columns, UpdateSourceTrigger=PropertyChanged}"/>
-
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Sətr sayı:"/>
-                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Rows, UpdateSourceTrigger=PropertyChanged}"/>
-                </Grid>
-
-                <Button Content="Spritları Kəs" 
-                    Margin="5,20,5,5" 
-                    Command="{Binding SliceImageCommand}"/>
-                <ProgressBar IsIndeterminate="True" 
-                             Visibility="{Binding IsSlicing, Converter={StaticResource BooleanToVisibilityConverter}}"
-                             Height="10" Margin="5,0"/>
-            </StackPanel>
-        </Border>
-
-        <Border Grid.Column="1" 
-                Background="#FF1E1E1E" 
-                CornerRadius="5" 
-                Margin="10,0,0,0"
-                ClipToBounds="True">
-            <Viewbox Stretch="Uniform">
-                <Grid Width="{Binding ImagePixelWidth}" 
-                      Height="{Binding ImagePixelHeight}">
-
-                    <Image Source="{Binding LoadedImageSource}"/>
-
-                    <ItemsControl ItemsSource="{Binding GridLines}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-
-                        <ItemsControl.ItemTemplate>
+                    <!-- 1. Fayl -->
+                    <Button Content="Görüntü Yüklə" Command="{Binding LoadImageCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,20">
+                        <Button.ContentTemplate>
                             <DataTemplate>
-                                <Line X1="{Binding X1}" 
-                                      Y1="{Binding Y1}" 
-                                      X2="{Binding X2}" 
-                                      Y2="{Binding Y2}"
-                                      Stroke="#FF007ACC" 
-                                      StrokeThickness="2"
-                                      StrokeDashArray="4 2"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="M9 12l2-2 4 4 M15 12l-4-4-4 4 M11 3v9" Stroke="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(TextElement.Foreground)}" StrokeThickness="2" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Görüntü Yüklə"/>
+                                </StackPanel>
                             </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    
-                    <Canvas x:Name="SlicerCanvas">
+                        </Button.ContentTemplate>
+                    </Button>
 
-                        <Border x:Name="SlicerBorder"
-                                Canvas.Left="{Binding SlicerX}"
-                                Canvas.Top="{Binding SlicerY}"
-                                Width="{Binding SlicerWidth}"
-                                Height="{Binding SlicerHeight}"
-                                BorderBrush="{StaticResource SlicerBrush}"
-                                BorderThickness="2"
-                                Background="#3300FF00" 
-                                IsHitTestVisible="False"/>
-                        <Thumb x:Name="ThumbMove"
-                               Canvas.Left="{Binding SlicerX}"
-                               Canvas.Top="{Binding SlicerY}"
-                               Width="{Binding SlicerWidth}"
-                               Height="{Binding SlicerHeight}"
-                               Cursor="SizeAll"
-                               Opacity="0"
-                               DragDelta="ThumbMove_DragDelta" />
+                    <Separator Background="{StaticResource Brush.Border}" Margin="0,0,0,20" Opacity="0.3"/>
 
-                        <Thumb x:Name="ThumbTopLeft" Cursor="SizeNWSE" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
-                        <Thumb x:Name="ThumbTopRight" Cursor="SizeNESW" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
-                        <Thumb x:Name="ThumbBottomLeft" Cursor="SizeNESW" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
-                        <Thumb x:Name="ThumbBottomRight" Cursor="SizeNWSE" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                    <!-- 2. Parametrlər -->
+                    <TextBlock Text="GRID PARAMETRLƏRİ" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
 
-                        <Thumb x:Name="ThumbTop" Cursor="SizeNS" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
-                        <Thumb x:Name="ThumbBottom" Cursor="SizeNS" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
-                        <Thumb x:Name="ThumbLeft" Cursor="SizeWE" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
-                        <Thumb x:Name="ThumbRight" Cursor="SizeWE" Style="{StaticResource ResizeThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                    </Canvas>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Sütun (Cols):" VerticalAlignment="Center" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,10,0"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Columns, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
 
-                </Grid>
-            </Viewbox>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Sətr (Rows):" VerticalAlignment="Center" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,10,0"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Rows, UpdateSourceTrigger=PropertyChanged}"/>
+                    </Grid>
+
+                    <Separator Background="{StaticResource Brush.Border}" Margin="0,10,0,20" Opacity="0.3"/>
+
+                    <!-- 3. Əməliyyat -->
+                    <Button Command="{Binding SliceImageCommand}" Style="{StaticResource Style.Button.Accent}" Height="40">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource Icon.Grid}" Fill="#111827" Width="14" Height="14" Stretch="Uniform" Margin="0,0,8,0"/>
+                            <TextBlock Text="Spritları Kəs (Slice)" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Button>
+
+                    <ProgressBar IsIndeterminate="True" 
+                                 Visibility="{Binding IsSlicing, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                 Height="4" Margin="0,10,0,0" Foreground="{StaticResource Brush.Accent.Blue}" Background="Transparent" BorderThickness="0"/>
+
+                    <TextBlock Text="İpucu: Qutunun ölçülərini şəklin üzərində dəyişə bilərsiniz." 
+                               TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,20,0,0" FontStyle="Italic"/>
+                </StackPanel>
+            </ScrollViewer>
         </Border>
 
+        <!-- SAĞ TƏRƏF: EDITOR -->
+        <!-- Fixed: Removed 'Background="#0F1218"' attribute to avoid duplicate assignment error -->
+        <Grid Grid.Column="1" ClipToBounds="True">
+            <!-- Arxa fon (Grid Pattern) -->
+            <Grid.Background>
+                <DrawingBrush Viewport="0,0,20,20" ViewportUnits="Absolute" TileMode="Tile">
+                    <DrawingBrush.Drawing>
+                        <GeometryDrawing>
+                            <GeometryDrawing.Pen>
+                                <Pen Brush="#1F2937" Thickness="1"/>
+                            </GeometryDrawing.Pen>
+                            <GeometryDrawing.Geometry>
+                                <GeometryGroup>
+                                    <LineGeometry StartPoint="0,0" EndPoint="0,20"/>
+                                    <LineGeometry StartPoint="0,0" EndPoint="20,0"/>
+                                </GeometryGroup>
+                            </GeometryDrawing.Geometry>
+                        </GeometryDrawing>
+                    </DrawingBrush.Drawing>
+                </DrawingBrush>
+            </Grid.Background>
+
+            <!-- Mərkəzi Şəkil Sahəsi -->
+            <Border Margin="20">
+                <Viewbox Stretch="Uniform">
+                    <Grid Width="{Binding ImagePixelWidth}" Height="{Binding ImagePixelHeight}">
+
+                        <!-- Əsas Şəkil -->
+                        <Image Source="{Binding LoadedImageSource}"/>
+
+                        <!-- Kəsim Xətləri (Grid Lines) -->
+                        <ItemsControl ItemsSource="{Binding GridLines}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Line X1="{Binding X1}" Y1="{Binding Y1}" X2="{Binding X2}" Y2="{Binding Y2}"
+                                          Stroke="{StaticResource Brush.Accent.Blue}" StrokeThickness="1" Opacity="0.8"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Slicer Overlay (Resizeable Box) -->
+                        <Canvas x:Name="SlicerCanvas">
+                            <!-- Slicer Çərçivəsi -->
+                            <Border x:Name="SlicerBorder"
+                                    Canvas.Left="{Binding SlicerX}"
+                                    Canvas.Top="{Binding SlicerY}"
+                                    Width="{Binding SlicerWidth}"
+                                    Height="{Binding SlicerHeight}"
+                                    BorderBrush="{StaticResource Brush.Accent.Green}"
+                                    BorderThickness="2"
+                                    Background="#2222C55E" 
+                                    IsHitTestVisible="False"/>
+
+                            <!-- Daxili Daşıma Sahəsi -->
+                            <Thumb x:Name="ThumbMove"
+                                   Canvas.Left="{Binding SlicerX}"
+                                   Canvas.Top="{Binding SlicerY}"
+                                   Width="{Binding SlicerWidth}"
+                                   Height="{Binding SlicerHeight}"
+                                   Cursor="SizeAll"
+                                   Opacity="0"
+                                   DragDelta="ThumbMove_DragDelta" />
+
+                            <!-- Resize Tutacaqları (Thumbs) -->
+                            <Thumb x:Name="ThumbTopLeft" Cursor="SizeNWSE" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                            <Thumb x:Name="ThumbTopRight" Cursor="SizeNESW" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                            <Thumb x:Name="ThumbBottomLeft" Cursor="SizeNESW" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                            <Thumb x:Name="ThumbBottomRight" Cursor="SizeNWSE" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+
+                            <Thumb x:Name="ThumbTop" Cursor="SizeNS" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                            <Thumb x:Name="ThumbBottom" Cursor="SizeNS" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                            <Thumb x:Name="ThumbLeft" Cursor="SizeWE" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                            <Thumb x:Name="ThumbRight" Cursor="SizeWE" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                        </Canvas>
+                    </Grid>
+                </Viewbox>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

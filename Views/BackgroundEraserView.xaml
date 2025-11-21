@@ -6,130 +6,179 @@
              xmlns:local="clr-namespace:SpriteEditor.Views"
              xmlns:converters="clr-namespace:SpriteEditor.Converters"
              mc:Ignorable="d" 
-             d:DesignHeight="550" d:DesignWidth="880" Background="#FF2D2D30"
-             Foreground="#FFE1E1E1">
+             d:DesignHeight="600" d:DesignWidth="900">
+
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <converters:EnumToBooleanConverter x:Key="EnumToBooleanConverter"/>
         <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
-        <SolidColorBrush x:Key="BgPrimary" Color="#FF2D2D30"/>
-        <SolidColorBrush x:Key="BgSecondary" Color="#FF3F3F46"/>
-        <SolidColorBrush x:Key="AccentBlue" Color="#FF007ACC"/>
-        <SolidColorBrush x:Key="AccentBlueHover" Color="#FF009AFF"/>
-        <SolidColorBrush x:Key="TextPrimary" Color="#FFE1E1E1"/>
-
     </UserControl.Resources>
 
-    <Grid Margin="10">
+    <Grid Background="{StaticResource Brush.Bg.Deep}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="280"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Background="{StaticResource BgSecondary}" CornerRadius="5" Padding="10">
-            <StackPanel>
-                <TextBlock Text="1. Fayl"/>
+        <!-- SOL PANEL -->
+        <Border Grid.Column="0" Background="{StaticResource Brush.Bg.Panel}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,1,0" Padding="20">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="ERASER TOOLS" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12" Margin="0,0,0,15"/>
 
-                <Button Content="Görüntü Yüklə..." 
-                        Command="{Binding LoadImageCommand}"
-                        Margin="5,5,5,0"/>
+                    <!-- 1. Fayl -->
+                    <Button Content="Görüntü Yüklə" Command="{Binding LoadImageCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,10"/>
+                    <Button Content="Sıfırla (Yenilə)" Command="{Binding RefreshImageCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,20"/>
 
-                <Button Content="Görüntünü Yenilə" 
-                        Command="{Binding RefreshImageCommand}"
-                        Margin="5,5,5,5"/>
+                    <Separator Background="{StaticResource Brush.Border}" Margin="0,0,0,20" Opacity="0.3"/>
 
-                <TextBlock Text="Alət Seçimi" Margin="0,15,0,5"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="5">
-                    <RadioButton Content="Pipet" 
-                                 GroupName="ToolMode" 
-                                 IsChecked="{Binding CurrentToolMode, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Pipet}" 
-                                 Foreground="White" VerticalAlignment="Center" Margin="5,0"/>
-                    <RadioButton Content="Manual Silgi" 
-                                 GroupName="ToolMode" 
-                                 IsChecked="{Binding CurrentToolMode, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=ManualEraser}" 
-                                 Foreground="White" VerticalAlignment="Center" Margin="5,0"/>
+                    <!-- 2. Alətlər -->
+                    <TextBlock Text="ALƏTLƏR" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
+
+                    <RadioButton GroupName="ToolMode" Style="{StaticResource Style.RadioButton.Tool}"
+                                 IsChecked="{Binding CurrentToolMode, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Pipet}">
+                        <StackPanel Orientation="Horizontal">
+                            <!-- Pipette Icon -->
+                            <Path Data="M19.22,4.78a3,3,0,0,0-4.24,0L10.22,9.54a3,3,0,0,0-.71.93L6,10l-.44.44L4.7,9.58,2.58,11.7l2.12,2.12-.86.86,4.16,4.16L9,18.12l2.12,2.12L13.24,18l.44-.44,1-.35a3,3,0,0,0,.93-.71l4.76-4.76A3,3,0,0,0,19.22,4.78ZM13.41,14.24l-2.12-2.12L15,8.41l2.12,2.12Z" Fill="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(TextElement.Foreground)}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,8,0"/>
+                            <TextBlock Text="Pipet (Rəng Seç)"/>
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton GroupName="ToolMode" Style="{StaticResource Style.RadioButton.Tool}"
+                                 IsChecked="{Binding CurrentToolMode, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=ManualEraser}">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource Icon.Eraser}" Fill="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(TextElement.Foreground)}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,8,0"/>
+                            <TextBlock Text="Manual Silgi"/>
+                        </StackPanel>
+                    </RadioButton>
+
+                    <!-- Manual Silgi Parametrləri -->
+                    <StackPanel Visibility="{Binding CurrentToolMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=ManualEraser}" Margin="5,0,0,0">
+                        <TextBlock Text="Fırça Ölçüsü:" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,10,0,5"/>
+                        <DockPanel>
+                            <TextBlock Text="{Binding BrushSize, StringFormat={}{0}px}" Foreground="{StaticResource Brush.Text.Primary}" Width="40" DockPanel.Dock="Right" TextAlignment="Right"/>
+                            <Slider Minimum="2" Maximum="100" Value="{Binding BrushSize}" IsSnapToTickEnabled="True" TickFrequency="1"/>
+                        </DockPanel>
+                    </StackPanel>
+
+                    <Separator Background="{StaticResource Brush.Border}" Margin="0,20,0,20" Opacity="0.3"/>
+
+                    <!-- 3. Magic Wand -->
+                    <TextBlock Text="MAGIC WAND" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Hədəf Rəng:" VerticalAlignment="Center" Foreground="{StaticResource Brush.Text.Secondary}"/>
+                        <Border Grid.Column="1" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" CornerRadius="4" Height="28" Margin="10,0,0,0">
+                            <Border.Background>
+                                <SolidColorBrush Color="{Binding TargetColor}"/>
+                            </Border.Background>
+                        </Border>
+                    </Grid>
+
+                    <TextBlock Text="Həssaslıq (Tolerance):" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,5,0,5"/>
+                    <DockPanel Margin="0,0,0,15">
+                        <TextBlock Text="{Binding Tolerance, StringFormat={}{0:F0}%}" Foreground="{StaticResource Brush.Text.Primary}" Width="40" DockPanel.Dock="Right" TextAlignment="Right"/>
+                        <Slider Minimum="0" Maximum="100" Value="{Binding Tolerance}"/>
+                    </DockPanel>
+
+                    <Button Command="{Binding GeneratePreviewCommand}" Style="{StaticResource Style.Button.Accent}" Margin="0,0,0,10">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Magic Erase (Preview)"/>
+                        </StackPanel>
+                    </Button>
+
+                    <ProgressBar IsIndeterminate="True" Visibility="{Binding IsProcessing, Converter={StaticResource BooleanToVisibilityConverter}}" Height="4" Foreground="{StaticResource Brush.Accent.Blue}" BorderThickness="0" Background="Transparent"/>
+
+                    <Separator Background="{StaticResource Brush.Border}" Margin="0,20,0,20" Opacity="0.3"/>
+
+                    <Button Content="Nəticəni Yadda Saxla" Command="{Binding SaveImageCommand}" Style="{StaticResource Style.Button.Primary}"/>
                 </StackPanel>
-
-                <StackPanel Visibility="{Binding CurrentToolMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=ManualEraser}">
-                    <TextBlock Text="Fırça Ölçüsü:" Margin="5,10,5,0"/>
-                    <TextBlock Text="{Binding BrushSize, StringFormat={}{0}px}" HorizontalAlignment="Center"/>
-                    <Slider Minimum="2" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True"
-                            Value="{Binding BrushSize}" Margin="5,0"/>
-                </StackPanel>
-
-
-                <TextBlock Text="2. Parametrlər (Magic Wand)" Margin="0,15,0,0"/>
-                <TextBlock Text="Hədəf Rəng:" Margin="5,0"/>
-                <Border BorderBrush="White" BorderThickness="1" Height="30" Margin="5">
-                    <Border.Background>
-                        <SolidColorBrush Color="{Binding TargetColor}"/>
-                    </Border.Background>
-                </Border>
-
-
-                <TextBlock Text="Həssaslıq (Tolerance):" Margin="5,10,5,0"/>
-                <TextBlock Text="{Binding Tolerance, StringFormat={}{0:F0}%}" HorizontalAlignment="Center"/>
-                <Slider Minimum="0" Maximum="100" 
-                        Value="{Binding Tolerance}" Margin="5,0"/>
-
-                <TextBlock Text="3. Əməliyyat"/>
-                <Button Content="Preview Yarat"
-                        Command="{Binding GeneratePreviewCommand}"/>
-                <Button Content="Nəticəni Yadda Saxla"
-                        Command="{Binding SaveImageCommand}" Margin="5,10,5,5"/>
-
-
-                <ProgressBar IsIndeterminate="True" 
-                             Visibility="{Binding IsProcessing, Converter={StaticResource BooleanToVisibilityConverter}}"
-                             Height="10" Margin="5,10,5,0"/>
-            </StackPanel>
+            </ScrollViewer>
         </Border>
 
-        <Grid Grid.Column="1" Margin="10,0,0,0">
+        <!-- SAĞ TƏRƏF: WORKSPACE -->
+        <Grid Grid.Column="1" Margin="20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="15"/>
+                <!-- Spacing -->
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <Border Background="#FF1E1E1E" 
-                    CornerRadius="5" 
-                    Padding="5" 
-                    ClipToBounds="True">
-                <ScrollViewer x:Name="OriginalImageScrollViewer"
-                              HorizontalScrollBarVisibility="Auto"
-                              VerticalScrollBarVisibility="Auto"
-                              PreviewMouseWheel="OriginalImage_PreviewMouseWheel">
+            <!-- Orijinal Şəkil Paneli -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-                    <Border x:Name="ImageContainerBorder"
-                            HorizontalAlignment="Center" 
-                            VerticalAlignment="Center">
+                <Border Background="{StaticResource Brush.Bg.Panel}" CornerRadius="6,6,0,0" Padding="10,6" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1,1,1,0">
+                    <TextBlock Text="ORİJİNAL (Redaktə)" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11"/>
+                </Border>
 
-                        <Grid>
-                            <TextBlock Text="ORİJİNAL" Foreground="Gray" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="5"/>
-
-                            <Image Source="{Binding LoadedImageSource}"
-                                   MouseLeftButtonDown="OriginalImage_MouseLeftButtonDown"
-                                   MouseLeftButtonUp="OriginalImage_MouseLeftButtonUp"
-                                   MouseMove="OriginalImage_MouseMove"
-                                   Cursor="Cross"
-                                   Stretch="Uniform"/>
-                        </Grid>
-
-                        <Border.LayoutTransform>
-                            <ScaleTransform x:Name="ImageScaleTransform" 
-                                            ScaleX="1" ScaleY="1" 
-                                            CenterX="0.5" CenterY="0.5"/>
-                        </Border.LayoutTransform>
-
-                    </Border>
-                </ScrollViewer>
-            </Border>
-
-            <Border Grid.Column="1" Background="#FF1E1E1E" CornerRadius="5" Padding="5" Margin="10,0,0,0">
-                <Viewbox Stretch="Uniform">
+                <Border Grid.Row="1" Background="#0F1218" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" CornerRadius="0,0,6,6" ClipToBounds="True">
                     <Grid>
-                        <Rectangle Fill="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}"/>
-                        <Rectangle Fill="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}">
+                        <!-- Arxa fon (Grid Pattern) -->
+                        <Grid.Background>
+                            <DrawingBrush Viewport="0,0,20,20" ViewportUnits="Absolute" TileMode="Tile">
+                                <DrawingBrush.Drawing>
+                                    <GeometryDrawing>
+                                        <GeometryDrawing.Pen>
+                                            <Pen Brush="#1F2937" Thickness="1"/>
+                                        </GeometryDrawing.Pen>
+                                        <GeometryDrawing.Geometry>
+                                            <GeometryGroup>
+                                                <LineGeometry StartPoint="0,0" EndPoint="0,20"/>
+                                                <LineGeometry StartPoint="0,0" EndPoint="20,0"/>
+                                            </GeometryGroup>
+                                        </GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+                                </DrawingBrush.Drawing>
+                            </DrawingBrush>
+                        </Grid.Background>
+
+                        <ScrollViewer x:Name="OriginalImageScrollViewer"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Auto"
+                                      PreviewMouseWheel="OriginalImage_PreviewMouseWheel">
+                            <Border x:Name="ImageContainerBorder" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Image Source="{Binding LoadedImageSource}"
+                                       MouseLeftButtonDown="OriginalImage_MouseLeftButtonDown"
+                                       MouseLeftButtonUp="OriginalImage_MouseLeftButtonUp"
+                                       MouseMove="OriginalImage_MouseMove"
+                                       Cursor="Cross"
+                                       Stretch="None"
+                                       RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                    <Image.LayoutTransform>
+                                        <ScaleTransform x:Name="ImageScaleTransform" ScaleX="1" ScaleY="1"/>
+                                    </Image.LayoutTransform>
+                                </Image>
+                            </Border>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Preview Paneli -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Border Background="{StaticResource Brush.Bg.Panel}" CornerRadius="6,6,0,0" Padding="10,6" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1,1,1,0">
+                    <TextBlock Text="NƏTİCƏ (Preview)" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11"/>
+                </Border>
+
+                <Border Grid.Row="1" Background="#0F1218" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" CornerRadius="0,0,6,6" ClipToBounds="True">
+                    <Grid>
+                        <!-- Transparent Background Checkerboard -->
+                        <Rectangle Fill="#1F2937"/>
+                        <Rectangle Fill="#374151">
                             <Rectangle.OpacityMask>
                                 <DrawingBrush Viewport="0,0,20,20" ViewportUnits="Absolute" TileMode="Tile">
                                     <DrawingBrush.Drawing>
@@ -146,11 +195,13 @@
                             </Rectangle.OpacityMask>
                         </Rectangle>
 
-                        <TextBlock Text="PREVIEW" Foreground="Gray" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="5"/>
-                        <Image Source="{Binding PreviewImageSource}"/>
+                        <Viewbox Stretch="Uniform">
+                            <Image Source="{Binding PreviewImageSource}" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                        </Viewbox>
                     </Grid>
-                </Viewbox>
-            </Border>
+                </Border>
+            </Grid>
+
         </Grid>
     </Grid>
 </UserControl>

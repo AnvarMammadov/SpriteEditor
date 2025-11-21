@@ -3,77 +3,244 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:SpriteEditor"
         mc:Ignorable="d"
-        Title="Sprite Editor" Height="600" Width="900"
-        WindowStartupLocation="CenterScreen">
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        Title="Sprite Editor Pro" Height="700" Width="1100"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource Brush.Bg.Deep}">
 
+    <!-- YENİ STİLLƏR (Düzəliş edildi: Setter.Value əlavə olundu) -->
     <Window.Resources>
-        <SolidColorBrush x:Key="BgPrimary" Color="#FF2D2D30"/>
-        <SolidColorBrush x:Key="BgSecondary" Color="#FF3F3F46"/>
-        <SolidColorBrush x:Key="AccentBlue" Color="#FF007ACC"/>
-        <SolidColorBrush x:Key="AccentBlueHover" Color="#FF009AFF"/>
-
-        <Style x:Key="NavButton" TargetType="Button">
+        <!-- Peşəkar Window Button Stili (Minimize/Maximize) -->
+        <Style x:Key="TitleBarButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="40"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#FFE1E1E1"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Height" Value="35"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="Padding" Value="10,0,0,0"/>
-            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="3">
-                            <ContentPresenter VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        <Border Background="{TemplateBinding Background}">
+                            <!-- Content (Geometry) burada yerləşəcək -->
+                            <Path Data="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
+                                  Fill="{TemplateBinding Foreground}"
+                                  Width="10" Height="10"
+                                  Stretch="Uniform"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  SnapsToDevicePixels="True" 
+                                  UseLayoutRounding="True"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource AccentBlueHover}"/>
+                    <!-- Sizin istədiyiniz: Parlaq mavi yox, zərif şəffaf ağ -->
+                    <Setter Property="Background" Value="#1AFFFFFF"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Close Button Stili (Xüsusi Qırmızı Hover) -->
+        <Style x:Key="TitleBarCloseButtonStyle" TargetType="Button" BasedOn="{StaticResource TitleBarButtonStyle}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <!-- Sizin istədiyiniz: Qırmızı fon -->
+                    <Setter Property="Background" Value="#E81123"/>
+                    <Setter Property="Foreground" Value="White"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
     </Window.Resources>
 
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <!-- Custom Title Bar -->
+            <RowDefinition Height="40"/>
+            <!-- App Content -->
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <StackPanel Grid.Column="0" Background="{StaticResource BgSecondary}">
-            <TextBlock Text="Sprite Editor" FontSize="18" FontWeight="Bold" 
-                       Foreground="White" Margin="10,10,10,20"/>
+        <!-- TITLE BAR -->
+        <Border Grid.Row="0"
+                Background="{StaticResource Brush.Bg.Panel}"
+                BorderBrush="{StaticResource Brush.Border}"
+                BorderThickness="0,0,0,1"
+                MouseDown="TitleBar_MouseDown">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <Button Content="Ana Səhifə" 
-                    Command="{Binding GoToHomeCommand}" 
-                    Style="{StaticResource NavButton}"/>
+                <!-- LOGO (Icon.Bone) -->
+                <Path Data="{StaticResource Icon.Bone}"
+                      Fill="{StaticResource Brush.Accent.Primary}"
+                      Width="18"
+                      Height="18"
+                      Stretch="Uniform"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Center"
+                      Margin="12,0,0,0"/>
 
-            <TextBlock Text="ALƏTLƏR" FontSize="11" Foreground="Gray" Margin="10,15,0,5"/>
-            <Button Content="Avtomatik Kəsmə (Grid)" 
-                    Command="{Binding GoToSpriteSlicerCommand}" 
-                    Style="{StaticResource NavButton}"/>
-            <Button Content="Background Eraser" 
-                   Command="{Binding GoToBackgroundEraserCommand}" 
-                   Style="{StaticResource NavButton}"/>
-            <Button Content="Manual Crop (Tezliklə)" 
-                    IsEnabled="False" 
-                    Style="{StaticResource NavButton}"/>
-            <Button Content="Rigging"
-                    IsEnabled="True"
-                    Command="{Binding GoToRiggingCommand}" 
-                    Style="{StaticResource NavButton}"/>
+                <!-- Window Buttons (YENİLƏNMİŞ HİSSƏ) -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Top"
+                            HorizontalAlignment="Right">
 
-        </StackPanel>
+                    <!-- Minimize -->
+                    <Button Click="Minimize_Click"
+                            Style="{StaticResource TitleBarButtonStyle}">
+                        <Button.Content>
+                            <!-- Düz xətt (Vektor) -->
+                            <Geometry>M0,5 H10 V6 H0 Z</Geometry>
+                        </Button.Content>
+                    </Button>
 
-        <ContentControl Grid.Column="1" 
-                        Content="{Binding CurrentViewModel}"
-                        Background="{StaticResource BgPrimary}"/>
+                    <!-- Maximize / Restore -->
+                    <Button Click="Maximize_Click"
+                            Style="{StaticResource TitleBarButtonStyle}">
+                        <Button.Content>
+                            <!-- Kvadrat (Vektor) -->
+                            <Geometry>M1,1 H9 V9 H1 Z M0,0 V10 H10 V0 Z</Geometry>
+                        </Button.Content>
+                    </Button>
+
+                    <!-- Close -->
+                    <Button Click="Close_Click"
+                            Style="{StaticResource TitleBarCloseButtonStyle}">
+                        <Button.Content>
+                            <!-- X işarəsi (Vektor) -->
+                            <Geometry>M0,0 L10,10 M0,10 L10,0</Geometry>
+                        </Button.Content>
+                        <!-- X işarəsini daha qalın və düzgün göstərmək üçün Template override -->
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}">
+                                    <Path Data="M0.7,0 L5,4.3 L9.3,0 L10,0.7 L5.7,5 L10,9.3 L9.3,10 L5,5.7 L0.7,10 L0,9.3 L4.3,5 L0,0.7 Z"
+                                          Fill="{TemplateBinding Foreground}"
+                                          Width="10" Height="10"
+                                          Stretch="Uniform"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          SnapsToDevicePixels="True"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- MAIN CONTENT -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="240"/>
+                <!-- Sol Menyu -->
+                <ColumnDefinition Width="*"/>
+                <!-- Məzmun -->
+            </Grid.ColumnDefinitions>
+
+            <!-- SOL MENYU -->
+            <Border Grid.Column="0"
+                    Background="{StaticResource Brush.Bg.Panel}"
+                    BorderBrush="{StaticResource Brush.Border}"
+                    BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Logo Hissəsi -->
+                    <StackPanel Grid.Row="0" Margin="20,30,20,30">
+                        <TextBlock Text="SPRITE EDITOR"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource Brush.Text.Primary}"/>
+                        <TextBlock Text="Professional Toolset"
+                                   FontSize="12"
+                                   Foreground="{StaticResource Brush.Text.Secondary}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+
+                    <!-- Naviqasiya Düymələri -->
+                    <StackPanel Grid.Row="1" Margin="10,0">
+                        <TextBlock Text="MENU"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource Brush.Border}"
+                                   Margin="10,0,0,10"/>
+
+                        <Button Command="{Binding GoToHomeCommand}"
+                                Style="{StaticResource Style.Button.Nav}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource Icon.Home}"
+                                      Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                      Width="14" Height="14"
+                                      Stretch="Uniform"
+                                      Margin="0,0,10,0"/>
+                                <TextBlock Text="Ana Səhifə"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding GoToSpriteSlicerCommand}"
+                                Style="{StaticResource Style.Button.Nav}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource Icon.Grid}"
+                                      Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                      Width="14" Height="14"
+                                      Stretch="Uniform"
+                                      Margin="0,0,10,0"/>
+                                <TextBlock Text="Sprite Slicer"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding GoToBackgroundEraserCommand}"
+                                Style="{StaticResource Style.Button.Nav}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource Icon.Eraser}"
+                                      Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                      Width="14" Height="14"
+                                      Stretch="Uniform"
+                                      Margin="0,0,10,0"/>
+                                <TextBlock Text="BG Eraser"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding GoToRiggingCommand}"
+                                Style="{StaticResource Style.Button.Nav}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource Icon.Bone}"
+                                      Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                      Width="14" Height="14"
+                                      Stretch="Uniform"
+                                      Margin="0,0,10,0"/>
+                                <TextBlock Text="Rigging &amp; Skin"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Footer -->
+                    <TextBlock Grid.Row="2"
+                               Text="v1.0.0 Beta"
+                               HorizontalAlignment="Center"
+                               Foreground="{StaticResource Brush.Border}"
+                               Margin="20"/>
+                </Grid>
+            </Border>
+
+            <!-- SAĞ MƏZMUN (CONTENT) -->
+            <ContentControl Grid.Column="1"
+                            Content="{Binding CurrentViewModel}"
+                            Margin="0"/>
+        </Grid>
     </Grid>
 </Window>

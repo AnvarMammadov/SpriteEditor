@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:system="clr-namespace:System;assembly=mscorlib">
 
-    <system:String x:Key="Str_AppTitle">Sprite Editor</system:String>
+    <system:String x:Key="Str_AppTitle">SpritUX</system:String>
     <system:String x:Key="Str_AppSubtitle">Professional Alətlər</system:String>
     <system:String x:Key="Str_Menu">MENYU</system:String>
     <system:String x:Key="Str_Home">Ana Səhifə</system:String>
@@ -77,6 +77,39 @@
     <system:String x:Key="Str_NoteIco">Qeyd: ICO formatı seçildikdə, şəkil avtomatik olaraq uyğun ölçüyə (256x256) gətirilə bilər.</system:String>
     <system:String x:Key="Str_HeaderPreviewSelected">PREVIEW (Seçilmiş Şəkil)</system:String>
     <system:String x:Key="Str_MsgNoImage">Şəkil seçilməyib</system:String>
+
+    <system:String x:Key="Str_Title_Error">Xəta</system:String>
+    <system:String x:Key="Str_Title_Success">Uğurlu</system:String>
+    <system:String x:Key="Str_Title_Warning">Xəbərdarlıq</system:String>
+    <system:String x:Key="Str_Title_Info">Məlumat</system:String>
+    <system:String x:Key="Str_Title_Completed">Tamamlandı</system:String>
+
+    <system:String x:Key="Str_Msg_ErrLoadImage">Şəkli yükləyərkən xəta baş verdi: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrSaveImage">Yadda saxlama zamanı xəta: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrGeneral">Xəta baş verdi: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrFormatNotSupported">Təəssüf ki, '{0}' formatı bu versiyada dəstəklənmir.</system:String>
+    <system:String x:Key="Str_Err_FileCorrupt">Fayl formatı dəstəklənmir və ya fayl zədəlidir.</system:String>
+    <system:String x:Key="Str_Err_JsonInvalid">JSON faylının strukturu düzgün deyil.</system:String>
+    <system:String x:Key="Str_Msg_ErrRigLoad">Skeleti yükləyərkən xəta baş verdi: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrTriangulation">Triangulyasiya zamanı xəta: {0}&#x0a;&#x0a;Nöqtələrin düzgün yerləşdiyindən əmin olun.</system:String>
+
+    <system:String x:Key="Str_Msg_SuccessSave">Şəkil uğurla yadda saxlandı!</system:String>
+    <system:String x:Key="Str_Msg_SuccessConvert">Konvertasiya uğurla tamamlandı!</system:String>
+    <system:String x:Key="Str_Msg_SuccessAutoWeight">Avtomatik ağırlıqlandırma tamamlandı (segment-əsaslı)!</system:String>
+    <system:String x:Key="Str_Msg_SuccessRigLoad">Skelet və Mesh uğurla yükləndi.</system:String>
+    <system:String x:Key="Str_Msg_SuccessRigSave">Skelet və Mesh uğurla yadda saxlandı!</system:String>
+    <system:String x:Key="Str_Msg_AutoTriResult">{0} üçbucaq avtomatik yaradıldı.</system:String>
+    <system:String x:Key="Str_Msg_KeyframeAdded">Keyframe əlavə edildi: {0:F2}s</system:String>
+    <system:String x:Key="Str_Msg_SpritesFound">{0} sprite tapıldı.</system:String>
+
+    <system:String x:Key="Str_Msg_WarnSmoothing">Ağırlıqlandırma tamamlandı, lakin üçbucaqlar (mesh) tapılmadığı üçün 'Smoothing' (yumşaltma) əməliyyatı ötürüldü. Nəticə kəskin ola bilər.</system:String>
+    <system:String x:Key="Str_Msg_WarnRigMismatch">Bu skelet faylı ('{0}') yüklənmiş şəkildən ('{1}') fərqli bir şəkil üçün yaradılıb.&#x0a;&#x0a;Davam etmək istəyirsinizmi?</system:String>
+
+    <system:String x:Key="Str_Filter_Images">Görüntü Faylları</system:String>
+    <system:String x:Key="Str_Filter_AllFiles">Bütün Fayllar</system:String>
+    <system:String x:Key="Str_Filter_RigJson">Rig JSON Faylı</system:String>
+    <system:String x:Key="Str_Dlg_LoadRig">Skelet Məlumatını Yüklə</system:String>
+    <system:String x:Key="Str_Dlg_SaveRig">Skelet Məlumatını Saxla</system:String>
 
     <system:String x:Key="Str_MsgBtnOk">Tamam</system:String>
     <system:String x:Key="Str_MsgBtnYes">Bəli</system:String>

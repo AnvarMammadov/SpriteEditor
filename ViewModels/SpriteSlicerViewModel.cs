@@ -8,7 +8,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using SpriteEditor.Services; // Service-i əlavə edirik
-using SpriteEditor.ViewModels; // GridLineViewModel üçün
+using SpriteEditor.ViewModels;
+using SpriteEditor.Views; // GridLineViewModel üçün
 
 namespace SpriteEditor.ViewModels
 {
@@ -100,8 +101,10 @@ namespace SpriteEditor.ViewModels
         [RelayCommand]
         private void LoadImage()
         {
+            string imgFilter = App.GetStr("Str_Filter_Images");
+            string allFilter = App.GetStr("Str_Filter_AllFiles");
             OpenFileDialog openDialog = new OpenFileDialog();
-            openDialog.Filter = "Görüntü Faylları (*.png;*.jpg;*.bmp)|*.png;*.jpg;*.bmp|Bütün Fayllar (*.*)|*.*";
+            openDialog.Filter = $"{imgFilter} (*.png;*.jpg;*.bmp)|*.png;*.jpg;*.bmp|{allFilter} (*.*)|*.*";
 
             if (openDialog.ShowDialog() == true)
             {
@@ -240,12 +243,20 @@ namespace SpriteEditor.ViewModels
                 if (rects.Count > 0)
                 {
                     UseAutoDetection = true; // Bu dəyişən XAML-da Yaşıl Qutunu gizlədəcək
-                    MessageBox.Show($"{rects.Count} sprite tapıldı.", "Tamamlandı");
+                    CustomMessageBox.Show(
+    App.GetStr("Str_Msg_SpritesFound", rects.Count),
+    "Str_Title_Completed",
+    MessageBoxButton.OK,
+    MsgImage.Info);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Xəta: {ex.Message}");
+                CustomMessageBox.Show(
+     App.GetStr("Str_Msg_ErrGeneral", ex.Message),
+     "Str_Title_Error",
+     MessageBoxButton.OK,
+     MsgImage.Error);
             }
             finally
             {

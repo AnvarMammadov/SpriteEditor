@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using SpriteEditor.Services;
+using SpriteEditor.Views;
 
 namespace SpriteEditor.ViewModels
 {
@@ -55,7 +56,7 @@ namespace SpriteEditor.ViewModels
             OpenFileDialog openDialog = new OpenFileDialog
             {
                 // Filtri genişləndirdik
-                Filter = "Bütün Şəkillər|*.png;*.jpg;*.jpeg;*.bmp;*.webp;*.tga;*.ico;*.avif;*.heic;*.tiff|AVIF Image (*.avif)|*.avif|WebP Image (*.webp)|*.webp|PNG Image (*.png)|*.png|JPEG Image (*.jpg)|*.jpg"
+                Filter = "All Images|*.png;*.jpg;*.jpeg;*.bmp;*.webp;*.tga;*.ico;*.avif;*.heic;*.tiff|AVIF Image (*.avif)|*.avif|WebP Image (*.webp)|*.webp|PNG Image (*.png)|*.png|JPEG Image (*.jpg)|*.jpg"
             };
 
             if (openDialog.ShowDialog() == true)
@@ -141,15 +142,23 @@ namespace SpriteEditor.ViewModels
                         _imageService.ConvertImageFormat(SourcePath, saveDialog.FileName);
                     });
 
-                    MessageBox.Show("Konvertasiya uğurla tamamlandı!", "Uğurlu", MessageBoxButton.OK, MessageBoxImage.Information);
+                    CustomMessageBox.Show("Str_Msg_SuccessConvert", "Str_Title_Success", MessageBoxButton.OK, MsgImage.Success);
                 }
                 catch (SixLabors.ImageSharp.UnknownImageFormatException)
                 {
-                    MessageBox.Show($"Təəssüf ki, '{SelectedFormat}' formatı bu versiyada dəstəklənmir.", "Dəstəklənməyən Format", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    CustomMessageBox.Show(
+     App.GetStr("Str_Msg_ErrFormatNotSupported", SelectedFormat),
+     "Str_Title_Warning",
+     MessageBoxButton.OK,
+     MsgImage.Warning);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Xəta baş verdi: {ex.Message}", "Xəta", MessageBoxButton.OK, MessageBoxImage.Error);
+                    CustomMessageBox.Show(
+     App.GetStr("Str_Msg_ErrGeneral", ex.Message),
+     "Str_Title_Error",
+     MessageBoxButton.OK,
+     MsgImage.Error);
                 }
             }
         }

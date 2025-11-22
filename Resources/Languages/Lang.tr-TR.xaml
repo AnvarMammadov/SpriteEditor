@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:system="clr-namespace:System;assembly=mscorlib">
 
-    <system:String x:Key="Str_AppTitle">Sprite Editor</system:String>
+    <system:String x:Key="Str_AppTitle">SpritUX</system:String>
     <system:String x:Key="Str_AppSubtitle">Profesyonel Araçlar</system:String>
     <system:String x:Key="Str_Menu">MENÜ</system:String>
     <system:String x:Key="Str_Home">Ana Sayfa</system:String>
@@ -77,6 +77,39 @@
     <system:String x:Key="Str_NoteIco">Not: ICO formatı seçildiğinde, resim otomatik olarak 256x256 boyutuna getirilebilir.</system:String>
     <system:String x:Key="Str_HeaderPreviewSelected">ÖNİZLEME (Seçilen Resim)</system:String>
     <system:String x:Key="Str_MsgNoImage">Resim seçilmedi</system:String>
+
+    <system:String x:Key="Str_Title_Error">Hata</system:String>
+    <system:String x:Key="Str_Title_Success">Başarılı</system:String>
+    <system:String x:Key="Str_Title_Warning">Uyarı</system:String>
+    <system:String x:Key="Str_Title_Info">Bilgi</system:String>
+    <system:String x:Key="Str_Title_Completed">Tamamlandı</system:String>
+
+    <system:String x:Key="Str_Msg_ErrLoadImage">Resim yüklenirken hata oluştu: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrSaveImage">Kaydetme sırasında hata: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrGeneral">Bir hata oluştu: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrFormatNotSupported">Maalesef '{0}' formatı bu sürümde desteklenmiyor.</system:String>
+    <system:String x:Key="Str_Err_FileCorrupt">Dosya formatı desteklenmiyor veya dosya bozuk.</system:String>
+    <system:String x:Key="Str_Err_JsonInvalid">JSON dosya yapısı geçersiz.</system:String>
+    <system:String x:Key="Str_Msg_ErrRigLoad">Rig yüklenirken hata oluştu: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrTriangulation">Üçgenleştirme hatası: {0}&#x0a;&#x0a;Noktaların doğru yerleştiğinden emin olun.</system:String>
+
+    <system:String x:Key="Str_Msg_SuccessSave">Resim başarıyla kaydedildi!</system:String>
+    <system:String x:Key="Str_Msg_SuccessConvert">Dönüştürme başarıyla tamamlandı!</system:String>
+    <system:String x:Key="Str_Msg_SuccessAutoWeight">Otomatik ağırlıklandırma tamamlandı (segment bazlı)!</system:String>
+    <system:String x:Key="Str_Msg_SuccessRigLoad">İskelet ve Mesh başarıyla yüklendi.</system:String>
+    <system:String x:Key="Str_Msg_SuccessRigSave">İskelet ve Mesh başarıyla kaydedildi!</system:String>
+    <system:String x:Key="Str_Msg_AutoTriResult">{0} üçgen otomatik oluşturuldu.</system:String>
+    <system:String x:Key="Str_Msg_KeyframeAdded">Keyframe eklendi: {0:F2}s</system:String>
+    <system:String x:Key="Str_Msg_SpritesFound">{0} sprite bulundu.</system:String>
+
+    <system:String x:Key="Str_Msg_WarnSmoothing">Ağırlıklandırma tamamlandı, ancak üçgenler bulunamadığı için 'Yumuşatma' atlandı. Sonuç keskin olabilir.</system:String>
+    <system:String x:Key="Str_Msg_WarnRigMismatch">Bu rig dosyası ('{0}') yüklenen resimden ('{1}') farklı bir resim için oluşturulmuş.&#x0a;&#x0a;Devam etmek istiyor musunuz?</system:String>
+
+    <system:String x:Key="Str_Filter_Images">Görüntü Dosyaları</system:String>
+    <system:String x:Key="Str_Filter_AllFiles">Tüm Dosyalar</system:String>
+    <system:String x:Key="Str_Filter_RigJson">Rig JSON Dosyası</system:String>
+    <system:String x:Key="Str_Dlg_LoadRig">İskelet Verisini Yükle</system:String>
+    <system:String x:Key="Str_Dlg_SaveRig">İskelet Verisini Kaydet</system:String>
 
     <system:String x:Key="Str_MsgBtnOk">Tamam</system:String>
     <system:String x:Key="Str_MsgBtnYes">Evet</system:String>

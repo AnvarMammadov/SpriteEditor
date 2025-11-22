@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:system="clr-namespace:System;assembly=mscorlib">
 
-    <system:String x:Key="Str_AppTitle">Sprite Editor</system:String>
+    <system:String x:Key="Str_AppTitle">SpritUX</system:String>
     <system:String x:Key="Str_AppSubtitle">Professional Toolset</system:String>
     <system:String x:Key="Str_Menu">MENU</system:String>
     <system:String x:Key="Str_Home">Home</system:String>
@@ -77,6 +77,39 @@
     <system:String x:Key="Str_NoteIco">Note: If ICO format is selected, the image may be automatically resized to 256x256.</system:String>
     <system:String x:Key="Str_HeaderPreviewSelected">PREVIEW (Selected Image)</system:String>
     <system:String x:Key="Str_MsgNoImage">No image selected</system:String>
+
+    <system:String x:Key="Str_Title_Error">Error</system:String>
+    <system:String x:Key="Str_Title_Success">Success</system:String>
+    <system:String x:Key="Str_Title_Warning">Warning</system:String>
+    <system:String x:Key="Str_Title_Info">Info</system:String>
+    <system:String x:Key="Str_Title_Completed">Completed</system:String>
+
+    <system:String x:Key="Str_Msg_ErrLoadImage">Error loading image: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrSaveImage">Error during save: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrGeneral">An error occurred: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrFormatNotSupported">Unfortunately, '{0}' format is not supported in this version.</system:String>
+    <system:String x:Key="Str_Err_FileCorrupt">File format not supported or file is corrupted.</system:String>
+    <system:String x:Key="Str_Err_JsonInvalid">JSON file structure is invalid.</system:String>
+    <system:String x:Key="Str_Msg_ErrRigLoad">Error loading rig: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrTriangulation">Triangulation error: {0}&#x0a;&#x0a;Ensure points are placed correctly.</system:String>
+
+    <system:String x:Key="Str_Msg_SuccessSave">Image saved successfully!</system:String>
+    <system:String x:Key="Str_Msg_SuccessConvert">Conversion completed successfully!</system:String>
+    <system:String x:Key="Str_Msg_SuccessAutoWeight">Automatic weighting completed (segment-based)!</system:String>
+    <system:String x:Key="Str_Msg_SuccessRigLoad">Skeleton and Mesh loaded successfully.</system:String>
+    <system:String x:Key="Str_Msg_SuccessRigSave">Skeleton and Mesh saved successfully!</system:String>
+    <system:String x:Key="Str_Msg_AutoTriResult">{0} triangles automatically created.</system:String>
+    <system:String x:Key="Str_Msg_KeyframeAdded">Keyframe added: {0:F2}s</system:String>
+    <system:String x:Key="Str_Msg_SpritesFound">{0} sprites found.</system:String>
+
+    <system:String x:Key="Str_Msg_WarnSmoothing">Weighting completed, but 'Smoothing' was skipped because no triangles (mesh) were found. The result might be sharp.</system:String>
+    <system:String x:Key="Str_Msg_WarnRigMismatch">This rig file ('{0}') was created for a different image than the loaded one ('{1}').&#x0a;&#x0a;Do you want to continue?</system:String>
+
+    <system:String x:Key="Str_Filter_Images">Image Files</system:String>
+    <system:String x:Key="Str_Filter_AllFiles">All Files</system:String>
+    <system:String x:Key="Str_Filter_RigJson">Rig JSON File</system:String>
+    <system:String x:Key="Str_Dlg_LoadRig">Load Skeleton Data</system:String>
+    <system:String x:Key="Str_Dlg_SaveRig">Save Skeleton Data</system:String>
 
     <system:String x:Key="Str_MsgBtnOk">OK</system:String>
     <system:String x:Key="Str_MsgBtnYes">Yes</system:String>

@@ -30,6 +30,20 @@ namespace SpriteEditor
                 this.Resources.MergedDictionaries.Add(resourceDict);
             }
         }
+
+        public static string GetStr(string key, params object[] args)
+        {
+            if (Application.Current.Resources.Contains(key))
+            {
+                string text = Application.Current.Resources[key] as string;
+                if (args.Length > 0)
+                {
+                    return string.Format(text, args);
+                }
+                return text;
+            }
+            return $"[{key}]"; // Əgər tapılmasa, key-i qaytarır ki, xəbərimiz olsun
+        }
     }
 
 }

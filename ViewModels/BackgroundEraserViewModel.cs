@@ -2,16 +2,18 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
-using SpriteEditor.Services;
-using System.Windows.Media;
 using SixLabors.ImageSharp.PixelFormats;
-using System.Runtime.InteropServices;
+using SpriteEditor.Services;
+using SpriteEditor.Views;
 using WpfColor = System.Windows.Media.Color;
 
 namespace SpriteEditor.ViewModels
@@ -59,7 +61,7 @@ namespace SpriteEditor.ViewModels
         private bool _isImageLoaded = false;
 
         [ObservableProperty]
-        [NotifyCanExecuteChangedFor("GeneratePreviewCommand")] 
+        [NotifyCanExecuteChangedFor("GeneratePreviewCommand")]
         [NotifyCanExecuteChangedFor("SaveImageCommand")]
         [NotifyCanExecuteChangedFor("RefreshImageCommand")]
         private bool _isProcessing = false;
@@ -98,7 +100,7 @@ namespace SpriteEditor.ViewModels
         public void LoadImage()
         {
             OpenFileDialog openDialog = new OpenFileDialog();
-            openDialog.Filter = "Görüntü Faylları (*.png;*.jpg;*.bmp)|*.png;*.jpg;*.bmp|Bütün Fayllar (*.*)|*.*";
+            openDialog.Filter = "Image Files (*.png;*.jpg;*.bmp)|*.png;*.jpg;*.bmp|Bütün Fayllar (*.*)|*.*";
 
             if (openDialog.ShowDialog() == true)
             {
@@ -121,7 +123,11 @@ namespace SpriteEditor.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    System.Windows.MessageBox.Show($"Şəkli yükləyərkən xəta baş verdi: {ex.Message}", "Xəta");
+                    CustomMessageBox.Show(
+     App.GetStr("Str_Msg_ErrLoadImage", ex.Message),
+     "Str_Title_Error",
+     MessageBoxButton.OK,
+     MsgImage.Error);
                     return;
                 }
 
@@ -171,7 +177,11 @@ namespace SpriteEditor.ViewModels
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Şəkli yenidən yükləyərkən xəta baş verdi: {ex.Message}", "Xəta");
+                CustomMessageBox.Show(
+     App.GetStr("Str_Msg_ErrLoadImage", ex.Message),
+     "Str_Title_Error",
+     MessageBoxButton.OK,
+     MsgImage.Error);
                 IsImageLoaded = false;
                 LoadedImageSource = null;
                 _loadedImagePath = null;
@@ -212,7 +222,7 @@ namespace SpriteEditor.ViewModels
                 // Hazırkı redaktə edilmiş şəkli PNG byte massivinə çevir
                 byte[] currentImageData = GetPngBytesFromWriteableBitmap(LoadedImageSource);
                 if (currentImageData == null)
-                    throw new Exception("Redaktə edilən şəklin məlumatı əldə edilə bilmədi.");
+                    throw new Exception("Editing Image data is not found!");
 
                 // 2. Servisə _loadedImagePath YOX, bu YENİ byte[] massivini göndər
                 byte[] pngData = await Task.Run(() =>
@@ -241,7 +251,11 @@ namespace SpriteEditor.ViewModels
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Xəta baş verdi: {ex.Message}", "Xəta");
+                CustomMessageBox.Show(
+     App.GetStr("Str_Msg_ErrGeneral", ex.Message),
+     "Str_Title_Error",
+     MessageBoxButton.OK,
+     MsgImage.Error);
             }
             finally
             {
@@ -262,11 +276,15 @@ namespace SpriteEditor.ViewModels
                 {
                     File.WriteAllBytes(saveDialog.FileName, LastProcessedData);
                     SHChangeNotify(SHCNE_CREATE, SHCNF_PATH, Marshal.StringToHGlobalAuto(saveDialog.FileName), IntPtr.Zero);
-                    System.Windows.MessageBox.Show("Şəkil uğurla yadda saxlandı!", "Uğurlu");
+                    CustomMessageBox.Show("Str_Msg_SuccessSave", "Str_Title_Success", MessageBoxButton.OK, MsgImage.Success);
                 }
                 catch (Exception ex)
                 {
-                    System.Windows.MessageBox.Show($"Yadda saxlama zamanı xəta: {ex.Message}", "Xəta");
+                    CustomMessageBox.Show(
+     App.GetStr("Str_Msg_ErrSaveImage", ex.Message),
+     "Str_Title_Error",
+     MessageBoxButton.OK,
+     MsgImage.Error);
                 }
             }
         }

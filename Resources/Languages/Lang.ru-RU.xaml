@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:system="clr-namespace:System;assembly=mscorlib">
 
-    <system:String x:Key="Str_AppTitle">Sprite Editor</system:String>
+    <system:String x:Key="Str_AppTitle">SpritUX</system:String>
     <system:String x:Key="Str_AppSubtitle">Профессиональные инструменты</system:String>
     <system:String x:Key="Str_Menu">МЕНЮ</system:String>
     <system:String x:Key="Str_Home">Главная</system:String>
@@ -77,6 +77,39 @@
     <system:String x:Key="Str_NoteIco">Прим: При выборе ICO, размер может быть изменен на 256x256.</system:String>
     <system:String x:Key="Str_HeaderPreviewSelected">ПРОСМОТР (Выбрано)</system:String>
     <system:String x:Key="Str_MsgNoImage">Изображение не выбрано</system:String>
+
+    <system:String x:Key="Str_Title_Error">Ошибка</system:String>
+    <system:String x:Key="Str_Title_Success">Успех</system:String>
+    <system:String x:Key="Str_Title_Warning">Внимание</system:String>
+    <system:String x:Key="Str_Title_Info">Инфо</system:String>
+    <system:String x:Key="Str_Title_Completed">Готово</system:String>
+
+    <system:String x:Key="Str_Msg_ErrLoadImage">Ошибка при загрузке изображения: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrSaveImage">Ошибка при сохранении: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrGeneral">Произошла ошибка: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrFormatNotSupported">К сожалению, формат '{0}' не поддерживается в этой версии.</system:String>
+    <system:String x:Key="Str_Err_FileCorrupt">Формат файла не поддерживается или файл поврежден.</system:String>
+    <system:String x:Key="Str_Err_JsonInvalid">Структура JSON файла неверна.</system:String>
+    <system:String x:Key="Str_Msg_ErrRigLoad">Ошибка при загрузке рига: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrTriangulation">Ошибка триангуляции: {0}&#x0a;&#x0a;Убедитесь, что точки расположены правильно.</system:String>
+
+    <system:String x:Key="Str_Msg_SuccessSave">Изображение успешно сохранено!</system:String>
+    <system:String x:Key="Str_Msg_SuccessConvert">Конвертация успешно завершена!</system:String>
+    <system:String x:Key="Str_Msg_SuccessAutoWeight">Авто-вес завершен (на основе сегментов)!</system:String>
+    <system:String x:Key="Str_Msg_SuccessRigLoad">Скелет и Меш успешно загружены.</system:String>
+    <system:String x:Key="Str_Msg_SuccessRigSave">Скелет и Меш успешно сохранены!</system:String>
+    <system:String x:Key="Str_Msg_AutoTriResult">{0} треугольников создано автоматически.</system:String>
+    <system:String x:Key="Str_Msg_KeyframeAdded">Ключ добавлен: {0:F2}s</system:String>
+    <system:String x:Key="Str_Msg_SpritesFound">Найдено {0} спрайтов.</system:String>
+
+    <system:String x:Key="Str_Msg_WarnSmoothing">Взвешивание завершено, но 'Сглаживание' пропущено, так как треугольники не найдены. Результат может быть резким.</system:String>
+    <system:String x:Key="Str_Msg_WarnRigMismatch">Этот файл рига ('{0}') создан для другого изображения, отличного от загруженного ('{1}').&#x0a;&#x0a;Хотите продолжить?</system:String>
+
+    <system:String x:Key="Str_Filter_Images">Файлы изображений</system:String>
+    <system:String x:Key="Str_Filter_AllFiles">Все файлы</system:String>
+    <system:String x:Key="Str_Filter_RigJson">Файл Рига JSON</system:String>
+    <system:String x:Key="Str_Dlg_LoadRig">Загрузить данные скелета</system:String>
+    <system:String x:Key="Str_Dlg_SaveRig">Сохранить данные скелета</system:String>
 
     <system:String x:Key="Str_MsgBtnOk">Ок</system:String>
     <system:String x:Key="Str_MsgBtnYes">Да</system:String>

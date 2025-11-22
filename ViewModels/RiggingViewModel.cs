@@ -8,14 +8,15 @@ using System.Text.Json; // JSON Serializasiyası üçün
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Animation;
+using System.Windows.Threading; // Timer üçün lazımdır
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using SkiaSharp;
 using SpriteEditor.Data; // Yaratdığımız Data modelləri üçün
+using SpriteEditor.Views;
 using TriangleNet.Geometry; // Triangle.NET üçün
 using TriangleNet.Meshing;
-using System.Windows.Threading; // Timer üçün lazımdır
 
 
 
@@ -293,13 +294,12 @@ namespace SpriteEditor.ViewModels
             else if (smoothIters > 0 && Triangles.Count == 0)
             {
                 // Yumşaltma istənilib, amma üçbucaq yoxdur
-                MessageBox.Show("Ağırlıqlandırma tamamlandı, lakin üçbucaqlar (mesh) tapılmadığı üçün 'Smoothing' (yumşaltma) əməliyyatı ötürüldü. Nəticə kəskin ola bilər.",
-                                "Xəbərdarlıq", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("Str_Msg_WarnSmoothing", "Str_Title_Warning", MessageBoxButton.OK, MsgImage.Warning);
             }
             // ================================
 
             SaveRigCommand.NotifyCanExecuteChanged();
-            MessageBox.Show("Avtomatik ağırlıqlandırma tamamlandı (segment-əsaslı)!", "Uğurlu");
+            CustomMessageBox.Show("Str_Msg_SuccessAutoWeight", "Str_Title_Success", MessageBoxButton.OK, MsgImage.Success);
         }
 
         private bool CanAutoWeight()
@@ -466,7 +466,7 @@ namespace SpriteEditor.ViewModels
         {
             OpenFileDialog openDialog = new OpenFileDialog
             {
-                Filter = "Görüntü Faylları (*.png)|*.png|Bütün Fayllar (*.*)|*.*"
+                Filter = "Image Files (*.png)|*.png|All Files (*.*)|*.*"
             };
 
             if (openDialog.ShowDialog() == true)
@@ -481,7 +481,7 @@ namespace SpriteEditor.ViewModels
                     }
                     if (LoadedBitmap == null)
                     {
-                        throw new Exception("Fayl formatı dəstəklənmir və ya fayl zədəlidir.");
+                        throw new Exception(App.GetStr("Str_Err_FileCorrupt"));
                     }
                     IsImageLoaded = true;
                     ClearRiggingData();
@@ -490,7 +490,11 @@ namespace SpriteEditor.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Şəkli yükləyərkən xəta baş verdi: {ex.Message}", "Xəta");
+                    CustomMessageBox.Show(
+    App.GetStr("Str_Msg_ErrRigLoad", ex.Message),
+    "Str_Title_Error",
+    MessageBoxButton.OK,
+    MsgImage.Error);
                     IsImageLoaded = false;
                     LoadedBitmap = null;
                     _loadedImagePath = null;
@@ -507,10 +511,13 @@ namespace SpriteEditor.ViewModels
         {
             if (!CanLoadRig()) return;
 
+            string rigFilter = App.GetStr("Str_Filter_RigJson");
+            string allFiles = App.GetStr("Str_Filter_AllFiles");
             OpenFileDialog openDialog = new OpenFileDialog
             {
-                Filter = "Rig JSON Faylı (*.rig.json)|*.rig.json|Bütün Fayllar (*.*)|*.*",
-                Title = "Skelet Məlumatını Yüklə"
+                Filter = $"{rigFilter} (*.rig.json)|*.rig.json|{allFiles} (*.*)|*.*",
+                Title = App.GetStr("Str_Dlg_LoadRig") // Və ya SaveRig üçün Str_Dlg_SaveRig
+
             };
 
             if (openDialog.ShowDialog() == true)
@@ -606,13 +613,17 @@ namespace SpriteEditor.ViewModels
                     SaveRigCommand.NotifyCanExecuteChanged();
                     AutoWeightCommand.NotifyCanExecuteChanged();
                     AutoTriangleCommand.NotifyCanExecuteChanged();
-                   // AutoGenerateVerticesCommand.NotifyCanExecuteChanged();
+                    // AutoGenerateVerticesCommand.NotifyCanExecuteChanged();
 
-                    MessageBox.Show("Skelet və Mesh uğurla yükləndi.", "Uğurlu");
+                    CustomMessageBox.Show("Str_Msg_SuccessRigLoad", "Str_Title_Success", MessageBoxButton.OK, MsgImage.Success);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Skeleti yükləyərkən xəta baş verdi: {ex.Message}", "Xəta");
+                    CustomMessageBox.Show(
+     App.GetStr("Str_Msg_ErrRigLoad", ex.Message),
+     "Str_Title_Error",
+     MessageBoxButton.OK,
+     MsgImage.Error);
                     ClearRiggingData();
                     RequestRedraw?.Invoke(this, EventArgs.Empty);
                 }
@@ -666,8 +677,8 @@ namespace SpriteEditor.ViewModels
             SaveFileDialog saveDialog = new SaveFileDialog
             {
                 FileName = $"{Path.GetFileNameWithoutExtension(_loadedImagePath)}.rig.json",
-                Filter = "Rig JSON Faylı (*.rig.json)|*.rig.json|Bütün Fayllar (*.*)|*.*",
-                Title = "Skelet Məlumatını Saxla"
+                Filter = "Rig JSON Faylı (*.rig.json)|*.rig.json|All Files (*.*)|*.*",
+                Title = "Save Bone Data"
             };
 
             if (saveDialog.ShowDialog() == true)
@@ -677,7 +688,7 @@ namespace SpriteEditor.ViewModels
                     var options = new JsonSerializerOptions { WriteIndented = true };
                     string jsonString = JsonSerializer.Serialize(rigData, options);
                     await File.WriteAllTextAsync(saveDialog.FileName, jsonString);
-                    MessageBox.Show("Skelet və Mesh uğurla yadda saxlandı!", "Uğurlu");
+                    CustomMessageBox.Show("Str_Msg_SuccessRigSave", "Str_Title_Success", MessageBoxButton.OK, MsgImage.Success);
                 }
                 catch (Exception ex)
                 {
@@ -1325,7 +1336,11 @@ namespace SpriteEditor.ViewModels
         //    AutoTriangleCommand.NotifyCanExecuteChanged();
         //    RequestRedraw?.Invoke(this, EventArgs.Empty);
 
-        //    MessageBox.Show($"{created} üçbucaq avtomatik yaradıldı.", "Uğurlu");
+    //        CustomMessageBox.Show(
+    //    App.GetStr("Str_Msg_AutoTriResult", created), 
+    //"Str_Title_Success", 
+    //MessageBoxButton.OK, 
+    //MsgImage.Success);
         //}
 
 
@@ -1485,7 +1500,7 @@ namespace SpriteEditor.ViewModels
         }
 
 
-        
+
 
         private void AutoGenerateVertices()
         {
@@ -1847,7 +1862,11 @@ namespace SpriteEditor.ViewModels
             SaveKeyframe(SelectedJoint.Id, "PosX", SelectedJoint.Position.X, time);
             SaveKeyframe(SelectedJoint.Id, "PosY", SelectedJoint.Position.Y, time);
 
-            MessageBox.Show($"Keyframe əlavə edildi: {time:F2}s");
+            CustomMessageBox.Show(
+     App.GetStr("Str_Msg_KeyframeAdded", time),
+     "Str_Title_Info",
+     MessageBoxButton.OK,
+     MsgImage.Info);
         }
 
         private void SaveKeyframe(int jointId, string propName, float value, float time)

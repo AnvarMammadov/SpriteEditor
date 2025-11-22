@@ -24,6 +24,8 @@ namespace SpriteEditor.ViewModels
 
         private readonly FormatConverterViewModel _formatConverterViewModel;
 
+        private readonly FrameAnimatorViewModel _frameAnimatorViewModel;
+
         public MainViewModel()
         {
             // Bütün səhifələri yaddaşda yaradırıq
@@ -32,6 +34,7 @@ namespace SpriteEditor.ViewModels
             _backgroundEraserViewModel = new BackgroundEraserViewModel();
             _riggingViewModel = new RiggingViewModel();
             _formatConverterViewModel = new FormatConverterViewModel();
+            _frameAnimatorViewModel = new FrameAnimatorViewModel();
 
             // Proqram açıldıqda "Home" səhifəsini göstər
             _currentViewModel = _homeViewModel;
@@ -68,12 +71,13 @@ namespace SpriteEditor.ViewModels
             CurrentViewModel = _formatConverterViewModel;
         }
 
+        [RelayCommand]
+        private void GoToFrameAnimator()
+        {
+            CurrentViewModel = _frameAnimatorViewModel;
+        }
+
 
         // Gələcəkdə bura yeni əmrlər əlavə edəcəksiniz:
-        // [RelayCommand]
-        // private void GoToManualCrop()
-        // {
-        //    CurrentViewModel = _manualCropViewModel;
-        // }
     }
 }

@@ -111,6 +111,16 @@
     <system:String x:Key="Str_Dlg_LoadRig">İskelet Verisini Yükle</system:String>
     <system:String x:Key="Str_Dlg_SaveRig">İskelet Verisini Kaydet</system:String>
 
+    <system:String x:Key="Str_FrameAnimator">Kare Animatörü</system:String>
+    <system:String x:Key="Str_DescAnimator">Sıralayıcı - Kare kare animasyon testi</system:String>
+    <system:String x:Key="Str_HeaderAnimTools">ANİMASYON ARAÇLARI</system:String>
+    <system:String x:Key="Str_BtnLoadFrames">Kareleri Yükle</system:String>
+    <system:String x:Key="Str_LblFPS">FPS (Hız):</system:String>
+    <system:String x:Key="Str_LblLoop">Döngü Oynatma</system:String>
+    <system:String x:Key="Str_BtnExportGif">GIF Olarak Dışa Aktar</system:String>
+    <system:String x:Key="Str_Msg_GifSaved">GIF başarıyla kaydedildi!</system:String>
+
+
     <system:String x:Key="Str_MsgBtnOk">Tamam</system:String>
     <system:String x:Key="Str_MsgBtnYes">Evet</system:String>
     <system:String x:Key="Str_MsgBtnNo">Hayır</system:String>

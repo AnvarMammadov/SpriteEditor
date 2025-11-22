@@ -7,6 +7,23 @@
              mc:Ignorable="d" 
              d:DesignHeight="500" d:DesignWidth="800">
 
+    <UserControl.Resources>
+        <Style x:Key="ToolCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="#2D3748"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#374151"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent.Blue}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
     <Grid Background="{StaticResource Brush.Bg.Deep}">
         <Grid>
             <Grid.Background>
@@ -38,31 +55,72 @@
                 <TextBlock Text="{DynamicResource Str_AppTitle}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Primary}" HorizontalAlignment="Center"/>
                 <TextBlock Text="{DynamicResource Str_AppSubtitle}" FontSize="14" Foreground="{StaticResource Brush.Accent.Blue}" HorizontalAlignment="Center" Opacity="0.8" Margin="0,5,0,30"/>
 
-                <Border Background="{StaticResource Brush.Bg.Panel}" CornerRadius="8" Padding="20" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" MaxWidth="400">
-                    <StackPanel>
-                        <TextBlock Text="{DynamicResource Str_Welcome}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Primary}" FontSize="16" Margin="0,0,0,10"/>
-                        <TextBlock Text="{DynamicResource Str_StartPrompt}" Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap" Margin="0,0,0,15"/>
+                <Border Background="{StaticResource Brush.Bg.Panel}" 
+        CornerRadius="8" 
+        Padding="20" 
+        BorderBrush="{StaticResource Brush.Border}" 
+        BorderThickness="1" 
+        MaxWidth="400" 
+        MaxHeight="450"
+        VerticalAlignment="Center" 
+        HorizontalAlignment="Center"
+        ClipToBounds="True">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,5">
-                            <Path Data="{StaticResource Icon.Grid}" Fill="{StaticResource Brush.Accent.Blue}" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="{DynamicResource Str_DescSlicer}" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12"/>
+                        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+                            <TextBlock Text="{DynamicResource Str_Welcome}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Primary}" FontSize="16" Margin="0,0,0,10"/>
+                            <TextBlock Text="{DynamicResource Str_StartPrompt}" Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap"/>
                         </StackPanel>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,5">
-                            <Path Data="{StaticResource Icon.Eraser}" Fill="{StaticResource Brush.Accent.Green}" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="{DynamicResource Str_DescEraser}" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12"/>
-                        </StackPanel>
+                        <ScrollViewer Grid.Row="1" 
+                      VerticalScrollBarVisibility="Auto" 
+                      HorizontalScrollBarVisibility="Disabled" 
+                      Padding="0,0,12,0">
 
-                        <StackPanel Orientation="Horizontal" Margin="0,5">
-                            <Path Data="{StaticResource Icon.Bone}" Fill="{StaticResource Brush.Accent.Primary}" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="{DynamicResource Str_DescRigging}" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12"/>
-                        </StackPanel>
+                            <UniformGrid Columns="1">
 
-                        <StackPanel Orientation="Horizontal" Margin="0,5">
-                            <Path Data="{StaticResource Icon.Convert}" Fill="#F472B6" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="{DynamicResource Str_DescConverter}" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12"/>
-                        </StackPanel>
-                    </StackPanel>
+                                <Border Style="{StaticResource ToolCardStyle}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Path Data="{StaticResource Icon.Grid}" Fill="{StaticResource Brush.Accent.Blue}" Width="16" Height="16" Stretch="Uniform" Margin="0,0,12,0"/>
+                                        <TextBlock Text="{DynamicResource Str_DescSlicer}" Foreground="{StaticResource Brush.Text.Primary}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource ToolCardStyle}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Path Data="{StaticResource Icon.Eraser}" Fill="{StaticResource Brush.Accent.Green}" Width="16" Height="16" Stretch="Uniform" Margin="0,0,12,0"/>
+                                        <TextBlock Text="{DynamicResource Str_DescEraser}" Foreground="{StaticResource Brush.Text.Primary}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource ToolCardStyle}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Path Data="{StaticResource Icon.Bone}" Fill="{StaticResource Brush.Accent.Primary}" Width="16" Height="16" Stretch="Uniform" Margin="0,0,12,0"/>
+                                        <TextBlock Text="{DynamicResource Str_DescRigging}" Foreground="{StaticResource Brush.Text.Primary}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource ToolCardStyle}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Path Data="{StaticResource Icon.Convert}" Fill="#F472B6" Width="16" Height="16" Stretch="Uniform" Margin="0,0,12,0"/>
+                                        <TextBlock Text="{DynamicResource Str_DescConverter}" Foreground="{StaticResource Brush.Text.Primary}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource ToolCardStyle}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Path Data="{StaticResource Icon.Film}" Fill="#A78BFA" Width="16" Height="16" Stretch="Uniform" Margin="0,0,12,0"/>
+                                        <TextBlock Text="{DynamicResource Str_DescAnimator}" Foreground="{StaticResource Brush.Text.Primary}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                                    </StackPanel>
+                                </Border>
+
+                            </UniformGrid>
+                        </ScrollViewer>
+                    </Grid>
                 </Border>
             </StackPanel>
 

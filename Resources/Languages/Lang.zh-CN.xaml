@@ -111,6 +111,16 @@
     <system:String x:Key="Str_Dlg_LoadRig">加载骨架数据</system:String>
     <system:String x:Key="Str_Dlg_SaveRig">保存骨架数据</system:String>
 
+    <system:String x:Key="Str_FrameAnimator">帧动画器</system:String>
+    <system:String x:Key="Str_DescAnimator">序列器 - 测试逐帧动画</system:String>
+    <system:String x:Key="Str_HeaderAnimTools">动画工具</system:String>
+    <system:String x:Key="Str_BtnLoadFrames">加载帧</system:String>
+    <system:String x:Key="Str_LblFPS">FPS（速度）：</system:String>
+    <system:String x:Key="Str_LblLoop">循环播放</system:String>
+    <system:String x:Key="Str_BtnExportGif">导出为 GIF</system:String>
+    <system:String x:Key="Str_Msg_GifSaved">GIF 已成功保存！</system:String>
+
+
     <system:String x:Key="Str_MsgBtnOk">确定</system:String>
     <system:String x:Key="Str_MsgBtnYes">是</system:String>
     <system:String x:Key="Str_MsgBtnNo">否</system:String>

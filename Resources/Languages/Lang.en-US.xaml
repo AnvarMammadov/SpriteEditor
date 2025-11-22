@@ -111,6 +111,15 @@
     <system:String x:Key="Str_Dlg_LoadRig">Load Skeleton Data</system:String>
     <system:String x:Key="Str_Dlg_SaveRig">Save Skeleton Data</system:String>
 
+    <system:String x:Key="Str_FrameAnimator">Frame Animator</system:String>
+    <system:String x:Key="Str_DescAnimator">Sequencer - Test frame-by-frame animations</system:String>
+    <system:String x:Key="Str_HeaderAnimTools">ANIMATION TOOLS</system:String>
+    <system:String x:Key="Str_BtnLoadFrames">Load Frames</system:String>
+    <system:String x:Key="Str_LblFPS">FPS (Speed):</system:String>
+    <system:String x:Key="Str_LblLoop">Loop Playback</system:String>
+    <system:String x:Key="Str_BtnExportGif">Export as GIF</system:String>
+    <system:String x:Key="Str_Msg_GifSaved">GIF saved successfully!</system:String>
+
     <system:String x:Key="Str_MsgBtnOk">OK</system:String>
     <system:String x:Key="Str_MsgBtnYes">Yes</system:String>
     <system:String x:Key="Str_MsgBtnNo">No</system:String>

@@ -155,6 +155,14 @@
                                 <TextBlock Text="{DynamicResource Str_Converter}"/>
                             </StackPanel>
                         </Button>
+
+                        <Button Command="{Binding GoToFrameAnimatorCommand}" Style="{StaticResource Style.Button.Nav}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource Icon.Film}"   Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"   Width="14" Height="14"  Stretch="Uniform"   Margin="0,0,10,0"/>
+                                <TextBlock Text="{DynamicResource Str_FrameAnimator}"/>
+                            </StackPanel>
+                        </Button>
+
                     </StackPanel>
 
                     <TextBlock Grid.Row="2" Text="{DynamicResource Str_Version}" HorizontalAlignment="Center" Foreground="{StaticResource Brush.Border}" Margin="20"/>

@@ -1,0 +1,123 @@
+﻿<UserControl x:Class="SpriteEditor.Views.FrameAnimatorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="900">
+
+    <Grid Background="{StaticResource Brush.Bg.Deep}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Background="{StaticResource Brush.Bg.Panel}" 
+                BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,1,0" Padding="20">
+            <StackPanel>
+                <TextBlock Text="{DynamicResource Str_HeaderAnimTools}" FontWeight="Bold" 
+                           Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12" Margin="0,0,0,15"/>
+
+                <Button Command="{Binding LoadFramesCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,20">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📂 "/>
+                        <TextBlock Text="{DynamicResource Str_BtnLoadFrames}"/>
+                    </StackPanel>
+                </Button>
+
+                <Separator Background="{StaticResource Brush.Border}" Margin="0,0,0,20" Opacity="0.3"/>
+
+                <TextBlock Text="{DynamicResource Str_LblFPS}" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11"/>
+                <DockPanel Margin="0,5,0,15">
+                    <TextBlock Text="{Binding Fps}" Foreground="{StaticResource Brush.Text.Primary}" 
+                               DockPanel.Dock="Right" Width="30" TextAlignment="Right"/>
+                    <Slider Minimum="1" Maximum="60" Value="{Binding Fps}" IsSnapToTickEnabled="True" TickFrequency="1"/>
+                </DockPanel>
+
+                <CheckBox Content="{DynamicResource Str_LblLoop}" IsChecked="{Binding IsLooping}" 
+                          Foreground="{StaticResource Brush.Text.Primary}" Margin="0,0,0,20"/>
+
+                <Grid Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0" Command="{Binding PlayCommand}" Style="{StaticResource Style.Button.Accent}" Margin="0,0,5,0">
+                        <TextBlock FontWeight="Bold">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="▶ Play"/>
+                                    <Setter Property="Foreground" Value="#111827"/>
+
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                            <Setter Property="Text" Value="⏸ Pause"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Button>
+
+                    <Button Grid.Column="1" Command="{Binding StopCommand}" Style="{StaticResource Style.Button.Primary}" Margin="5,0,0,0">
+                        <TextBlock Text="⏹ Stop"/>
+                    </Button>
+                </Grid>
+
+                <Button Command="{Binding ExportGifCommand}" Content="{DynamicResource Str_BtnExportGif}" 
+                        Style="{StaticResource Style.Button.Primary}"/>
+
+                <TextBlock Text="Frames" Margin="0,20,0,5" Foreground="Gray" FontSize="10"/>
+                <ListBox ItemsSource="{Binding Frames}" Height="150" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Image Source="{Binding ImageSource}" Height="24"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="White" VerticalAlignment="Center" Margin="5,0,0,0" FontSize="10"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Column="1" ClipToBounds="True">
+            <Grid.Background>
+                <DrawingBrush Viewport="0,0,20,20" ViewportUnits="Absolute" TileMode="Tile">
+                    <DrawingBrush.Drawing>
+                        <GeometryDrawing>
+                            <GeometryDrawing.Pen>
+                                <Pen Brush="#1F2937" Thickness="1"/>
+                            </GeometryDrawing.Pen>
+                            <GeometryDrawing.Geometry>
+                                <GeometryGroup>
+                                    <LineGeometry StartPoint="0,0" EndPoint="0,20"/>
+                                    <LineGeometry StartPoint="0,0" EndPoint="20,0"/>
+                                </GeometryGroup>
+                            </GeometryDrawing.Geometry>
+                        </GeometryDrawing>
+                    </DrawingBrush.Drawing>
+                </DrawingBrush>
+            </Grid.Background>
+
+            <Border Margin="20">
+                <Viewbox Stretch="Uniform">
+                    <Image Source="{Binding CurrentFrame.ImageSource}" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                </Viewbox>
+            </Border>
+
+            <Border HorizontalAlignment="Right" VerticalAlignment="Top" Background="#80000000" CornerRadius="5" Padding="5" Margin="10">
+                <TextBlock Foreground="White" FontSize="10">
+                    <Run Text="Frame: "/>
+                    <Run Text="{Binding CurrentFrame.Name}"/>
+                </TextBlock>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -395,6 +395,33 @@ namespace SpriteEditor.Services
         }
 
 
+        // Class daxilinə əlavə et:
+        public void CreateGifFromImages(List<string> imagePaths, int delayMs, string outputPath)
+        {
+            using (var collection = new MagickImageCollection())
+            {
+                foreach (var path in imagePaths)
+                {
+                    var img = new MagickImage(path);
+
+                    // Animasiya gecikməsi (100 = 1 saniyə Magick.NET-də, amma biz ms çevirəcəyik)
+                    // Magick.NET-də AnimationDelay 1/100 saniyə vahidi ilə ölçülür.
+                    img.AnimationDelay = (uint)delayMs / 10;
+
+                    // GIF optimallaşdırılması üçün (ölçünü azaldır)
+                    img.GifDisposeMethod = GifDisposeMethod.Background;
+
+                    collection.Add(img);
+                }
+
+                // Rəngləri optimallaşdır və yadda saxla
+                collection.Quantize(new QuantizeSettings { Colors = 256 });
+                collection.Optimize();
+                collection.Write(outputPath);
+            }
+        }
+
+
 
         #region Diagnostika Testi
         /// <summary>

@@ -111,6 +111,16 @@
     <system:String x:Key="Str_Dlg_LoadRig">Cargar Datos del Esqueleto</system:String>
     <system:String x:Key="Str_Dlg_SaveRig">Guardar Datos del Esqueleto</system:String>
 
+    <system:String x:Key="Str_FrameAnimator">Animador de Fotogramas</system:String>
+    <system:String x:Key="Str_DescAnimator">Secuenciador - Probar animaciones cuadro por cuadro</system:String>
+    <system:String x:Key="Str_HeaderAnimTools">HERRAMIENTAS DE ANIMACIÓN</system:String>
+    <system:String x:Key="Str_BtnLoadFrames">Cargar Fotogramas</system:String>
+    <system:String x:Key="Str_LblFPS">FPS (Velocidad):</system:String>
+    <system:String x:Key="Str_LblLoop">Reproducción en Bucle</system:String>
+    <system:String x:Key="Str_BtnExportGif">Exportar como GIF</system:String>
+    <system:String x:Key="Str_Msg_GifSaved">¡GIF guardado con éxito!</system:String>
+
+
     <system:String x:Key="Str_MsgBtnOk">Aceptar</system:String>
     <system:String x:Key="Str_MsgBtnYes">Sí</system:String>
     <system:String x:Key="Str_MsgBtnNo">No</system:String>

@@ -111,6 +111,16 @@
     <system:String x:Key="Str_Dlg_LoadRig">Загрузить данные скелета</system:String>
     <system:String x:Key="Str_Dlg_SaveRig">Сохранить данные скелета</system:String>
 
+    <system:String x:Key="Str_FrameAnimator">Аниматор Кадров</system:String>
+    <system:String x:Key="Str_DescAnimator">Секвенсер — Тест покадровой анимации</system:String>
+    <system:String x:Key="Str_HeaderAnimTools">ИНСТРУМЕНТЫ АНИМАЦИИ</system:String>
+    <system:String x:Key="Str_BtnLoadFrames">Загрузить кадры</system:String>
+    <system:String x:Key="Str_LblFPS">FPS (Скорость):</system:String>
+    <system:String x:Key="Str_LblLoop">Повтор воспроизведения</system:String>
+    <system:String x:Key="Str_BtnExportGif">Экспорт в GIF</system:String>
+    <system:String x:Key="Str_Msg_GifSaved">GIF успешно сохранён!</system:String>
+
+
     <system:String x:Key="Str_MsgBtnOk">Ок</system:String>
     <system:String x:Key="Str_MsgBtnYes">Да</system:String>
     <system:String x:Key="Str_MsgBtnNo">Нет</system:String>

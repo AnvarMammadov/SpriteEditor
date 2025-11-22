@@ -111,6 +111,16 @@
     <system:String x:Key="Str_Dlg_LoadRig">Skelet Məlumatını Yüklə</system:String>
     <system:String x:Key="Str_Dlg_SaveRig">Skelet Məlumatını Saxla</system:String>
 
+    <system:String x:Key="Str_FrameAnimator">Kadr Animatoru</system:String>
+    <system:String x:Key="Str_DescAnimator">Sekans - Kadr-kadr animasiya testi</system:String>
+    <system:String x:Key="Str_HeaderAnimTools">ANİMASİYA ALƏTLƏRİ</system:String>
+    <system:String x:Key="Str_BtnLoadFrames">Kadrları Yüklə</system:String>
+    <system:String x:Key="Str_LblFPS">FPS (Sürət):</system:String>
+    <system:String x:Key="Str_LblLoop">Dövrü Oynatma</system:String>
+    <system:String x:Key="Str_BtnExportGif">GIF kimi ixrac et</system:String>
+    <system:String x:Key="Str_Msg_GifSaved">GIF uğurla yadda saxlanıldı!</system:String>
+
+
     <system:String x:Key="Str_MsgBtnOk">Tamam</system:String>
     <system:String x:Key="Str_MsgBtnYes">Bəli</system:String>
     <system:String x:Key="Str_MsgBtnNo">Xeyr</system:String>

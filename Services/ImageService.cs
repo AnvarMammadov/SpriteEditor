@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using ImageMagick;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
@@ -251,15 +252,44 @@ namespace SpriteEditor.Services
         }
 
         /// <summary>
-        /// Şəkli yükləyir və verilən yeni fayl yoluna (yeni formatla) yadda saxlayır.
-        /// ImageSharp uzantıya (.png, .jpg, .ico) baxaraq formatı avtomatik seçir.
+        /// Şəkli yükləyir və yeni formata çevirir. 
+        /// AVIF, HEIC, WEBP kimi mürəkkəb formatları dəstəkləmək üçün Magick.NET istifadə edir.
         /// </summary>
         public void ConvertImageFormat(string inputPath, string outputPath)
         {
+            string extension = Path.GetExtension(inputPath).ToLower();
+
+            // Siyahıya baxırıq: Əgər ImageSharp-ın çətinlik çəkdiyi formatdırsa, Magick.NET işlət
+            if (extension == ".avif" || extension == ".heic" || extension == ".webp" || extension == ".tiff" || extension == ".tif")
+            {
+                try
+                {
+                    // Magick.NET ilə oxu və yaz
+                    using (var magickImage = new MagickImage(inputPath))
+                    {
+                        // ICO üçün xüsusi: Ölçünü 256x256 et (əgər böyükdürsə)
+                        if (Path.GetExtension(outputPath).ToLower() == ".ico")
+                        {
+                            if (magickImage.Width > 256 || magickImage.Height > 256)
+                            {
+                                magickImage.Resize(256, 256);
+                            }
+                        }
+
+                        magickImage.Write(outputPath);
+                    }
+                    return; // Bitdi
+                }
+                catch (Exception ex)
+                {
+                    // Əgər Magick.NET də bacarmasa, davam et və ImageSharp-ı yoxla (ehtiyat)
+                    System.Diagnostics.Debug.WriteLine($"Magick.NET xətası: {ex.Message}");
+                }
+            }
+
+            // Standart ImageSharp üsulu (PNG, JPG, BMP üçün çox sürətlidir)
             using (Image image = Image.Load(inputPath))
             {
-                // ICO üçün xüsusi hal: Ölçüləri standartlaşdırmaq məsləhətdir (məs: 256x256)
-                // Amma sadəlik üçün birbaşa saxlayırıq, ImageSharp bunu idarə etməyə çalışacaq.
                 image.Save(outputPath);
             }
         }

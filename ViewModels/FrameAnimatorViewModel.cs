@@ -44,6 +44,14 @@ namespace SpriteEditor.ViewModels
 
         private int _currentIndex = 0;
 
+
+
+        [ObservableProperty]
+        private bool _isPingPong = false; // Ping-Pong aktivdirmi?
+
+        private bool _isReversing = false; // Hazırda geriyə gedirik?
+
+
         // --- Constructor ---
         public FrameAnimatorViewModel()
         {
@@ -70,22 +78,50 @@ namespace SpriteEditor.ViewModels
         {
             if (Frames.Count == 0) return;
 
-            _currentIndex++;
+            // İstiqamətə görə indeksi artır və ya azalt
+            if (IsPingPong && _isReversing)
+            {
+                _currentIndex--;
+            }
+            else
+            {
+                _currentIndex++;
+            }
 
+            // Sərhədləri yoxla
             if (_currentIndex >= Frames.Count)
             {
-                if (IsLooping)
+                // Sona çatdıq
+                if (IsPingPong)
                 {
+                    // Ping-Pong: Geriyə dön
+                    _isReversing = true;
+                    _currentIndex = Math.Max(0, Frames.Count - 2); // Sonuncudan əvvəlki kadr
+                }
+                else if (IsLooping)
+                {
+                    // Normal Loop: Başa dön
                     _currentIndex = 0;
                 }
                 else
                 {
+                    // Dayan
                     Stop();
                     return;
                 }
             }
+            else if (_currentIndex < 0)
+            {
+                // Ping-Pong rejimində geriyə gedib başa çatdıq (0-dan aşağı düşdük)
+                _isReversing = false; // İrəli dön
+                _currentIndex = 1; // İkinci kadr
+            }
 
-            CurrentFrame = Frames[_currentIndex];
+            // İndeksi təhlükəsiz şəkildə tətbiq et
+            if (_currentIndex >= 0 && _currentIndex < Frames.Count)
+            {
+                CurrentFrame = Frames[_currentIndex];
+            }
         }
 
         [RelayCommand]
@@ -157,6 +193,7 @@ namespace SpriteEditor.ViewModels
             _timer.Stop();
             IsPlaying = false;
             _currentIndex = 0;
+            _isReversing = false;
             if (Frames.Count > 0) CurrentFrame = Frames[0];
         }
 

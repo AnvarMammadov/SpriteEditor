@@ -35,7 +35,10 @@
                 </DockPanel>
 
                 <CheckBox Content="{DynamicResource Str_LblLoop}" IsChecked="{Binding IsLooping}" 
-                          Foreground="{StaticResource Brush.Text.Primary}" Margin="0,0,0,20"/>
+                          Foreground="{StaticResource Brush.Text.Primary}" Margin="0,0,0,10"/>
+                <CheckBox Content="Ping-Pong" 
+              IsChecked="{Binding IsPingPong}" 
+              Foreground="{StaticResource Brush.Text.Primary}" Margin="0,0,0,20"/>
 
                 <Grid Margin="0,0,0,20">
                     <Grid.ColumnDefinitions>

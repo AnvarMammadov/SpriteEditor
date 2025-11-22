@@ -4,11 +4,14 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:SpriteEditor.Views"
+             xmlns:converters="clr-namespace:SpriteEditor.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="600" d:DesignWidth="900">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:BooleanToCursorConverter x:Key="BooleanToCursorConverter"/>
+
         <Style x:Key="SlicerThumbStyle" TargetType="Thumb">
             <Setter Property="Width" Value="12"/>
             <Setter Property="Height" Value="12"/>
@@ -114,19 +117,6 @@
                     <Grid Width="{Binding ImagePixelWidth}" Height="{Binding ImagePixelHeight}">
                         <Image Source="{Binding LoadedImageSource}"/>
 
-                        <ItemsControl ItemsSource="{Binding GridLines}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <Canvas/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Line X1="{Binding X1}" Y1="{Binding Y1}" X2="{Binding X2}" Y2="{Binding Y2}" Stroke="{StaticResource Brush.Accent.Blue}" StrokeThickness="1" Opacity="0.8"/>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-
                         <ItemsControl ItemsSource="{Binding DetectedRects}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -146,7 +136,7 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <Canvas x:Name="SlicerCanvas">
+                        <Canvas x:Name="SlicerCanvas" SnapsToDevicePixels="True">
                             <Canvas.Style>
                                 <Style TargetType="Canvas">
                                     <Setter Property="Visibility" Value="Visible"/>
@@ -157,7 +147,9 @@
                                     </Style.Triggers>
                                 </Style>
                             </Canvas.Style>
+
                             <Border x:Name="SlicerBorder" Canvas.Left="{Binding SlicerX}" Canvas.Top="{Binding SlicerY}" Width="{Binding SlicerWidth}" Height="{Binding SlicerHeight}" BorderBrush="{StaticResource Brush.Accent.Green}" BorderThickness="2" Background="#2222C55E" IsHitTestVisible="False"/>
+
                             <Thumb x:Name="ThumbMove" Canvas.Left="{Binding SlicerX}" Canvas.Top="{Binding SlicerY}" Width="{Binding SlicerWidth}" Height="{Binding SlicerHeight}" Cursor="SizeAll" Opacity="0" DragDelta="ThumbMove_DragDelta" />
 
                             <Thumb x:Name="ThumbTopLeft" Cursor="SizeNWSE" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
@@ -169,6 +161,42 @@
                             <Thumb x:Name="ThumbLeft" Cursor="SizeWE" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
                             <Thumb x:Name="ThumbRight" Cursor="SizeWE" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
                         </Canvas>
+
+                        <ItemsControl ItemsSource="{Binding GridLines}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Thumb DragDelta="GridLine_DragDelta" 
+           Cursor="{Binding IsVertical, Converter={StaticResource BooleanToCursorConverter}}"
+           Canvas.Left="0" Canvas.Top="0">
+                                        <Thumb.Template>
+                                            <ControlTemplate>
+                                                <Grid>
+                                                    <Line X1="{Binding X1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                          Y1="{Binding Y1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                          X2="{Binding X2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                          Y2="{Binding Y2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                          Stroke="{StaticResource Brush.Accent.Blue}" 
+                          StrokeThickness="1"/>
+
+                                                    <Line X1="{Binding X1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                          Y1="{Binding Y1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                          X2="{Binding X2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                          Y2="{Binding Y2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                          Stroke="Transparent" 
+                          StrokeThickness="15"/>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
                     </Grid>
                 </Viewbox>
             </Border>

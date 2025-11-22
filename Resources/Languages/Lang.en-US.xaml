@@ -94,6 +94,7 @@
     <system:String x:Key="Str_Msg_ErrTriangulation">Triangulation error: {0}&#x0a;&#x0a;Ensure points are placed correctly.</system:String>
 
     <system:String x:Key="Str_Msg_SuccessSave">Image saved successfully!</system:String>
+    <system:String x:Key="Str_Msg_SuccessSlice">Image sliced successfully!</system:String>
     <system:String x:Key="Str_Msg_SuccessConvert">Conversion completed successfully!</system:String>
     <system:String x:Key="Str_Msg_SuccessAutoWeight">Automatic weighting completed (segment-based)!</system:String>
     <system:String x:Key="Str_Msg_SuccessRigLoad">Skeleton and Mesh loaded successfully.</system:String>

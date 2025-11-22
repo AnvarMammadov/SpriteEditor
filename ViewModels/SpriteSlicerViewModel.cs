@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks; // Asinxron əməliyyatlar üçün (Task)
 using System.Windows;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
@@ -143,31 +144,38 @@ namespace SpriteEditor.ViewModels
         /// </summary>
         private void UpdateGridLines()
         {
-            GridLines.Clear(); // Köhnə xətləri təmizlə
-            if (!IsImageLoaded) return; // Şəkil yoxdursa, heç nə etmə
+            GridLines.Clear();
+            if (!IsImageLoaded) return;
 
-            // Hücrə eni/hündürlüyünü şəklin yox, Slicer Box-un ölçüsünə görə hesablayırıq
-            double cellWidth = (double)SlicerWidth / Columns;
-            double cellHeight = (double)SlicerHeight / Rows;
+            double cellWidth = SlicerWidth / Columns;
+            double cellHeight = SlicerHeight / Rows;
 
-            // 1. Şaquli (Vertical) Xətləri çək
+            // Şaquli Xətlər (Vertical)
             for (int i = 1; i < Columns; i++)
             {
-                // Xəttin X koordinatı SlicerX-dən başlayaraq hesablanır
                 double x = SlicerX + (i * cellWidth);
-
-                // Xətt SlicerY-dən başlayır və SlicerY + SlicerHeight-də bitir
-                GridLines.Add(new GridLineViewModel { X1 = x, Y1 = SlicerY, X2 = x, Y2 = SlicerY + SlicerHeight });
+                GridLines.Add(new GridLineViewModel
+                {
+                    X1 = x,
+                    Y1 = SlicerY,
+                    X2 = x,
+                    Y2 = SlicerY + SlicerHeight,
+                    IsVertical = true // <--- VACİB
+                });
             }
 
-            // 2. Üfüqi (Horizontal) Xətləri çək
+            // Üfüqi Xətlər (Horizontal)
             for (int i = 1; i < Rows; i++)
             {
-                // Xəttin Y koordinatı SlicerY-dən başlayaraq hesablanır
                 double y = SlicerY + (i * cellHeight);
-
-                // Xətt SlicerX-dən başlayır və SlicerX + SlicerWidth-də bitir
-                GridLines.Add(new GridLineViewModel { X1 = SlicerX, Y1 = y, X2 = SlicerX + SlicerWidth, Y2 = y });
+                GridLines.Add(new GridLineViewModel
+                {
+                    X1 = SlicerX,
+                    Y1 = y,
+                    X2 = SlicerX + SlicerWidth,
+                    Y2 = y,
+                    IsVertical = false // <--- VACİB
+                });
             }
         }
 
@@ -192,23 +200,23 @@ namespace SpriteEditor.ViewModels
                     {
                         if (UseAutoDetection)
                         {
-                            // === YENİ: Avtomatik tapılanları kəs ===
                             _imageService.SliceByRects(_loadedImagePath, DetectedRects.ToList(), outputDirectory);
                         }
                         else
                         {
-                            // === KÖHNƏ: Grid ilə kəs ===
-                            _imageService.SliceSpriteSheet(
-                                _loadedImagePath, Columns, Rows,
-                                (int)SlicerX, (int)SlicerY, (int)SlicerWidth, (int)SlicerHeight,
-                                outputDirectory
-                            );
+                            // === YENİ MƏNTİQ: Xətlərə görə Rect-ləri hesabla ===
+                            var rects = GenerateRectsFromGridLines();
+                            _imageService.SliceByRects(_loadedImagePath, rects, outputDirectory);
                         }
                     });
 
                     // Qovluğu yenilə (Shell Notify)
                     SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH, Marshal.StringToHGlobalAuto(outputDirectory), IntPtr.Zero);
-                    MessageBox.Show("Uğurla kəsildi!", "Hazırdır");
+                    CustomMessageBox.Show(
+    App.GetStr("Str_Msg_SuccessSlice"),
+    "Str_Title_Completed",
+    MessageBoxButton.OK,
+    MsgImage.Info);
                 }
                 catch (Exception ex)
                 {
@@ -219,6 +227,43 @@ namespace SpriteEditor.ViewModels
                     IsSlicing = false;
                 }
             }
+        }
+
+        // Bu yeni köməkçi metodu ViewModel-ə əlavə edin:
+        private List<Int32Rect> GenerateRectsFromGridLines()
+        {
+            // 1. Bütün X koordinatlarını yığ (Sol kənar + Xətlər + Sağ kənar)
+            var xCoords = new List<double> { SlicerX };
+            xCoords.AddRange(GridLines.Where(l => l.IsVertical).Select(l => l.X1));
+            xCoords.Add(SlicerX + SlicerWidth);
+            xCoords.Sort();
+
+            // 2. Bütün Y koordinatlarını yığ (Üst kənar + Xətlər + Alt kənar)
+            var yCoords = new List<double> { SlicerY };
+            yCoords.AddRange(GridLines.Where(l => !l.IsVertical).Select(l => l.Y1));
+            yCoords.Add(SlicerY + SlicerHeight);
+            yCoords.Sort();
+
+            var rects = new List<Int32Rect>();
+
+            // 3. Toru gəz və düzbucaqlıları yarat
+            for (int y = 0; y < yCoords.Count - 1; y++)
+            {
+                for (int x = 0; x < xCoords.Count - 1; x++)
+                {
+                    double left = xCoords[x];
+                    double top = yCoords[y];
+                    double width = xCoords[x + 1] - xCoords[x];
+                    double height = yCoords[y + 1] - yCoords[y];
+
+                    // Çox kiçik səhvləri və ya sıfır ölçülü səhvləri yoxla
+                    if (width > 0 && height > 0)
+                    {
+                        rects.Add(new Int32Rect((int)left, (int)top, (int)width, (int)height));
+                    }
+                }
+            }
+            return rects;
         }
 
 

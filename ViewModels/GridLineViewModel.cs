@@ -3,15 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace SpriteEditor.ViewModels
 {
-    // Bu sinif, UI-da bir xətt çəkmək üçün lazım olan məlumatları saxlayır
-    public class GridLineViewModel
+    // Artıq sadə klass yox, ObservableObject olur ki, UI yenilənsin
+    public partial class GridLineViewModel : ObservableObject
     {
-        public double X1 { get; set; }
-        public double Y1 { get; set; }
-        public double X2 { get; set; }
-        public double Y2 { get; set; }
+        [ObservableProperty] private double _x1;
+        [ObservableProperty] private double _y1;
+        [ObservableProperty] private double _x2;
+        [ObservableProperty] private double _y2;
+
+        // Xəttin şaquli yoxsa üfüqi olduğunu bilmək üçün
+        public bool IsVertical { get; set; }
     }
 }

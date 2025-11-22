@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives; // Thumb və DragDeltaEventArgs üçün vacibdir
+using System.Windows.Input;
 using SpriteEditor.ViewModels; // MainViewModel-i tanımaq üçün
 
 namespace SpriteEditor.Views
@@ -15,6 +16,8 @@ namespace SpriteEditor.Views
         private SpriteSlicerViewModel _viewModel;
         private const double ThumbSize = 10.0; // Stilimizdə (Style) təyin etdiyimiz ölçü
         private const double MinSlicerSize = 10.0; // Slicer Box-un minimum eni/hündürlüyü
+        private const double MinLineSpacing = 8.0;   // qonşu xətlə minimum məsafə
+        private const double GridSnapSize = 2.0;     // grid ölçüsü (snap bu dəyərə olacaq)
 
         public SpriteSlicerView()
         {
@@ -201,6 +204,111 @@ namespace SpriteEditor.Views
             _viewModel.SlicerY = y;
             _viewModel.SlicerWidth = width;
             _viewModel.SlicerHeight = height;
+        }
+
+        // Bu metodu SpriteSlicerView.xaml.cs faylinda yeniləyin
+
+        private void GridLine_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
+        {
+            if (_viewModel == null || SlicerCanvas == null)
+                return;
+
+            var thumb = sender as System.Windows.Controls.Primitives.Thumb;
+            var lineVM = thumb?.DataContext as GridLineViewModel;
+            if (lineVM == null)
+                return;
+
+            // Mouse-un Canvas üzərindəki mövqeyi (Viewbox olsa da, Canvas.ActualWidth/Həqiqi ölçü ilə gəlir)
+            Point pos = Mouse.GetPosition(SlicerCanvas);
+
+            // Canvas ölçüsünü şəkil piksel ölçüsünə map edirik
+            double scaleX = _viewModel.ImagePixelWidth / SlicerCanvas.ActualWidth;
+            double scaleY = _viewModel.ImagePixelHeight / SlicerCanvas.ActualHeight;
+
+            // Slicer Box sərhədləri (şəkil koordinatlarında)
+            double slicerLeft = _viewModel.SlicerX;
+            double slicerRight = _viewModel.SlicerX + _viewModel.SlicerWidth;
+            double slicerTop = _viewModel.SlicerY;
+            double slicerBottom = _viewModel.SlicerY + _viewModel.SlicerHeight;
+
+            if (lineVM.IsVertical)
+            {
+                // 1) Mouse X -> şəkil koordinatı
+                double newX = pos.X * scaleX;
+
+                // 2) Slicer sərhədlərinə görə clamp
+                newX = Math.Max(slicerLeft + 1, Math.Min(newX, slicerRight - 1));
+
+                // 3) Qonşu vertical xətləri tap (özündən başqa)
+                var otherLines = _viewModel.GridLines
+                    .Where(l => l.IsVertical && !ReferenceEquals(l, lineVM))
+                    .ToList();
+
+                double leftLimit = slicerLeft;
+                double rightLimit = slicerRight;
+
+                foreach (var l in otherLines)
+                {
+                    if (l.X1 < newX && l.X1 > leftLimit)
+                        leftLimit = l.X1;
+
+                    if (l.X1 > newX && l.X1 < rightLimit)
+                        rightLimit = l.X1;
+                }
+
+                // 4) Qonşularla minimum məsafəni saxla
+                newX = Math.Max(leftLimit + MinLineSpacing, Math.Min(newX, rightLimit - MinLineSpacing));
+
+                // 5) Grid snap (8 px)
+                newX = Math.Round(newX / GridSnapSize) * GridSnapSize;
+
+                // Snap-dan sonra yenə safety clamp
+                newX = Math.Max(leftLimit + MinLineSpacing, Math.Min(newX, rightLimit - MinLineSpacing));
+
+                lineVM.X1 = newX;
+                lineVM.X2 = newX;
+            }
+            else
+            {
+                // Üfüqi xətt
+
+                // 1) Mouse Y -> şəkil koordinatı
+                double newY = pos.Y * scaleY;
+
+                // 2) Slicer sərhədlərinə görə clamp
+                newY = Math.Max(slicerTop + 1, Math.Min(newY, slicerBottom - 1));
+
+                // 3) Qonşu horizontal xətləri tap
+                var otherLines = _viewModel.GridLines
+                    .Where(l => !l.IsVertical && !ReferenceEquals(l, lineVM))
+                    .ToList();
+
+                double topLimit = slicerTop;
+                double bottomLimit = slicerBottom;
+
+                foreach (var l in otherLines)
+                {
+                    if (l.Y1 < newY && l.Y1 > topLimit)
+                        topLimit = l.Y1;
+
+                    if (l.Y1 > newY && l.Y1 < bottomLimit)
+                        bottomLimit = l.Y1;
+                }
+
+                // 4) Qonşularla minimum məsafə
+                newY = Math.Max(topLimit + MinLineSpacing, Math.Min(newY, bottomLimit - MinLineSpacing));
+
+                // 5) Grid snap
+                newY = Math.Round(newY / GridSnapSize) * GridSnapSize;
+
+                // Snap-dan sonra yenə clamp
+                newY = Math.Max(topLimit + MinLineSpacing, Math.Min(newY, bottomLimit - MinLineSpacing));
+
+                lineVM.Y1 = newY;
+                lineVM.Y2 = newY;
+            }
+
+            e.Handled = true;
         }
     }
 }

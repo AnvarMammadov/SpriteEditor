@@ -120,6 +120,16 @@
     <system:String x:Key="Str_BtnExportGif">GIF kimi ixrac et</system:String>
     <system:String x:Key="Str_Msg_GifSaved">GIF uğurla yadda saxlanıldı!</system:String>
 
+    <system:String x:Key="Str_TexturePacker">Texture Packer</system:String>
+    <system:String x:Key="Str_DescPacker">Atlas Generator – Spriteləri bir teksturada birləşdirin</system:String>
+    <system:String x:Key="Str_HeaderPacker">ATLAS AYARLARI</system:String>
+    <system:String x:Key="Str_AtlasSize">Atlas Ölçüsü:</system:String>
+    <system:String x:Key="Str_Padding">Boşluq (px):</system:String>
+    <system:String x:Key="Str_BtnPack">Atlası Yığ</system:String>
+    <system:String x:Key="Str_BtnExportAtlas">Atlas &amp; JSON ixrac et</system:String>
+    <system:String x:Key="Str_Msg_AtlasFull">Atlasda kifayət qədər yer yoxdur! Ölçünü artırmağı sınayın.</system:String>
+
+
 
     <system:String x:Key="Str_MsgBtnOk">Tamam</system:String>
     <system:String x:Key="Str_MsgBtnYes">Bəli</system:String>

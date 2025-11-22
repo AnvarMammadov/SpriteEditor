@@ -120,6 +120,16 @@
     <system:String x:Key="Str_BtnExportGif">GIF Olarak Dışa Aktar</system:String>
     <system:String x:Key="Str_Msg_GifSaved">GIF başarıyla kaydedildi!</system:String>
 
+    <system:String x:Key="Str_TexturePacker">Doku Paketleyici</system:String>
+    <system:String x:Key="Str_DescPacker">Atlas Oluşturucu – Spriteleri tek bir dokuda birleştir</system:String>
+    <system:String x:Key="Str_HeaderPacker">ATLAS AYARLARI</system:String>
+    <system:String x:Key="Str_AtlasSize">Atlas Boyutu:</system:String>
+    <system:String x:Key="Str_Padding">Boşluk (px):</system:String>
+    <system:String x:Key="Str_BtnPack">Atlası Paketle</system:String>
+    <system:String x:Key="Str_BtnExportAtlas">Atlas ve JSON Dışa Aktar</system:String>
+    <system:String x:Key="Str_Msg_AtlasFull">Atlas içerisinde yeterli alan yok! Boyutu artırmayı deneyin.</system:String>
+
+
 
     <system:String x:Key="Str_MsgBtnOk">Tamam</system:String>
     <system:String x:Key="Str_MsgBtnYes">Evet</system:String>

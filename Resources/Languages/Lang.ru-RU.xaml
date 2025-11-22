@@ -120,6 +120,16 @@
     <system:String x:Key="Str_BtnExportGif">Экспорт в GIF</system:String>
     <system:String x:Key="Str_Msg_GifSaved">GIF успешно сохранён!</system:String>
 
+    <system:String x:Key="Str_TexturePacker">Упаковщик Текстур</system:String>
+    <system:String x:Key="Str_DescPacker">Генератор Атласа — Объединение спрайтов в одну текстуру</system:String>
+    <system:String x:Key="Str_HeaderPacker">НАСТРОЙКИ АТЛАСА</system:String>
+    <system:String x:Key="Str_AtlasSize">Размер Атласа:</system:String>
+    <system:String x:Key="Str_Padding">Отступ (px):</system:String>
+    <system:String x:Key="Str_BtnPack">Упаковать Атлас</system:String>
+    <system:String x:Key="Str_BtnExportAtlas">Экспорт Атласа и JSON</system:String>
+    <system:String x:Key="Str_Msg_AtlasFull">Недостаточно места в Атласе! Попробуйте увеличить размер.</system:String>
+
+
 
     <system:String x:Key="Str_MsgBtnOk">Ок</system:String>
     <system:String x:Key="Str_MsgBtnYes">Да</system:String>

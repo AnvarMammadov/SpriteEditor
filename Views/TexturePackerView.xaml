@@ -1,0 +1,198 @@
+﻿<UserControl x:Class="SpriteEditor.Views.TexturePackerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="900">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <ControlTemplate x:Key="ComboBoxToggleButton" TargetType="ToggleButton">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="30" />
+                </Grid.ColumnDefinitions>
+                <Border x:Name="Border" Grid.ColumnSpan="2" CornerRadius="4" Background="{StaticResource Brush.Bg.Input}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" />
+                <Border Grid.Column="0" CornerRadius="4,0,0,4" Margin="1" Background="Transparent" />
+                <Path x:Name="Arrow" Grid.Column="1" Fill="{StaticResource Brush.Text.Secondary}" HorizontalAlignment="Center" VerticalAlignment="Center" Data="M0,0 L4,4 L8,0 Z"/>
+            </Grid>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="true">
+                    <Setter TargetName="Border" Property="Background" Value="#4B5563" />
+                </Trigger>
+                <Trigger Property="IsChecked" Value="true">
+                    <Setter TargetName="Border" Property="Background" Value="#4B5563" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <ControlTemplate x:Key="ComboBoxTextBox" TargetType="TextBox">
+            <Border x:Name="PART_ContentHost" Focusable="False" Background="{TemplateBinding Background}" />
+        </ControlTemplate>
+
+        <Style x:Key="DarkComboBoxStyle" TargetType="{x:Type ComboBox}">
+            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}"/>
+            <Setter Property="Background" Value="{StaticResource Brush.Bg.Input}"/>
+            <Setter Property="SnapsToDevicePixels" Value="true"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.CanContentScroll" Value="true"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBox}">
+                        <Grid>
+                            <ToggleButton Name="ToggleButton" Template="{StaticResource ComboBoxToggleButton}" Grid.Column="2" Focusable="false" IsChecked="{Binding Path=IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press"/>
+                            <ContentPresenter Name="ContentSite" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" Margin="10,3,23,3" VerticalAlignment="Center" HorizontalAlignment="Left" />
+                            <TextBox x:Name="PART_EditableTextBox" Style="{x:Null}" Template="{StaticResource ComboBoxTextBox}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="3,3,23,3" Focusable="True" Background="Transparent" Visibility="Hidden" IsReadOnly="{TemplateBinding IsReadOnly}"/>
+                            <Popup Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                                <Grid Name="DropDown" SnapsToDevicePixels="True" MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border x:Name="DropDownBorder" Background="{StaticResource Brush.Bg.Panel}" BorderThickness="1" BorderBrush="{StaticResource Brush.Border}" CornerRadius="4"/>
+                                    <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
+                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
+                                    </ScrollViewer>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="HasItems" Value="false">
+                                <Setter TargetName="DropDownBorder" Property="MinHeight" Value="95"/>
+                            </Trigger>
+                            <Trigger Property="IsGrouping" Value="true">
+                                <Setter Property="ScrollViewer.CanContentScroll" Value="false"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Resources>
+                <Style TargetType="ComboBoxItem">
+                    <Setter Property="SnapsToDevicePixels" Value="true"/>
+                    <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}"/>
+                    <Setter Property="HorizontalContentAlignment" Value="{Binding HorizontalContentAlignment, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"/>
+                    <Setter Property="VerticalContentAlignment" Value="{Binding VerticalContentAlignment, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Padding" Value="10,8"/>
+                    <Setter Property="Margin" Value="0,2"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ComboBoxItem">
+                                <Border Name="Border" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="true" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                                    <ContentPresenter />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsHighlighted" Value="true">
+                                        <Setter TargetName="Border" Property="Background" Value="{StaticResource Brush.Accent.Blue}"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Style.Resources>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource Brush.Bg.Deep}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Background="{StaticResource Brush.Bg.Panel}" 
+                BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,1,0" Padding="20">
+            <StackPanel>
+                <TextBlock Text="{DynamicResource Str_HeaderPacker}" FontWeight="Bold" 
+                           Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12" Margin="0,0,0,15"/>
+
+                <Button Command="{Binding LoadImagesCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,10">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📂 "/>
+                        <TextBlock Text="{DynamicResource Str_BtnLoadImage}"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Command="{Binding ClearListCommand}" Content="Clear List" 
+                        Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,20" Opacity="0.8"/>
+
+                <TextBlock Foreground="Gray" FontSize="11" Margin="0,0,0,5">
+                    <Run Text="Files Loaded: "/>
+                    <Run Text="{Binding LoadedFiles.Count, Mode=OneWay}"/>
+                </TextBlock>
+
+                <ListBox ItemsSource="{Binding LoadedFiles}" Height="100" 
+                         Background="{StaticResource Brush.Bg.Input}" BorderThickness="0" 
+                         Foreground="{StaticResource Brush.Text.Secondary}" FontSize="10" Margin="0,0,0,20"/>
+
+                <Separator Background="{StaticResource Brush.Border}" Margin="0,0,0,20" Opacity="0.3"/>
+
+                <TextBlock Text="{DynamicResource Str_AtlasSize}" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11"/>
+
+                <Grid Margin="0,5,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <ComboBox Grid.Column="0" ItemsSource="{Binding AtlasSizes}" SelectedItem="{Binding SelectedWidth}" 
+                              Style="{StaticResource DarkComboBoxStyle}" Height="30"/>
+                    <TextBlock Grid.Column="1" Text="x" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="Gray"/>
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding AtlasSizes}" SelectedItem="{Binding SelectedHeight}" 
+                              Style="{StaticResource DarkComboBoxStyle}" Height="30"/>
+                </Grid>
+
+                <TextBlock Text="{DynamicResource Str_Padding}" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11"/>
+                <TextBox Text="{Binding Padding}" Margin="0,5,0,20"/>
+
+                <Button Command="{Binding PackCommand}" Content="{DynamicResource Str_BtnPack}" 
+                        Style="{StaticResource Style.Button.Accent}" Margin="0,0,0,10" Height="40" FontWeight="Bold"/>
+
+                <Button Command="{Binding SaveAtlasCommand}" Content="{DynamicResource Str_BtnExportAtlas}" 
+                        Style="{StaticResource Style.Button.Primary}"/>
+
+                <ProgressBar IsIndeterminate="True" Height="4" Margin="0,15,0,0" 
+                             Visibility="{Binding IsProcessing, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Column="1" ClipToBounds="True">
+            <Grid.Background>
+                <DrawingBrush Viewport="0,0,20,20" ViewportUnits="Absolute" TileMode="Tile">
+                    <DrawingBrush.Drawing>
+                        <GeometryDrawing>
+                            <GeometryDrawing.Pen>
+                                <Pen Brush="#1F2937" Thickness="1"/>
+                            </GeometryDrawing.Pen>
+                            <GeometryDrawing.Geometry>
+                                <GeometryGroup>
+                                    <LineGeometry StartPoint="0,0" EndPoint="0,20"/>
+                                    <LineGeometry StartPoint="0,0" EndPoint="20,0"/>
+                                </GeometryGroup>
+                            </GeometryDrawing.Geometry>
+                        </GeometryDrawing>
+                    </DrawingBrush.Drawing>
+                </DrawingBrush>
+            </Grid.Background>
+
+            <Border Margin="20">
+                <Viewbox>
+                    <Image Source="{Binding PreviewAtlas}" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                </Viewbox>
+            </Border>
+
+            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="10">
+                <TextBlock Text="Format: PNG + JSON" Foreground="Gray" FontSize="10" HorizontalAlignment="Right"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -26,6 +26,8 @@ namespace SpriteEditor.ViewModels
 
         private readonly FrameAnimatorViewModel _frameAnimatorViewModel;
 
+        private readonly TexturePackerViewModel _texturePackerViewModel;
+
         public MainViewModel()
         {
             // Bütün səhifələri yaddaşda yaradırıq
@@ -35,6 +37,7 @@ namespace SpriteEditor.ViewModels
             _riggingViewModel = new RiggingViewModel();
             _formatConverterViewModel = new FormatConverterViewModel();
             _frameAnimatorViewModel = new FrameAnimatorViewModel();
+            _texturePackerViewModel = new TexturePackerViewModel();
 
             // Proqram açıldıqda "Home" səhifəsini göstər
             _currentViewModel = _homeViewModel;
@@ -75,6 +78,12 @@ namespace SpriteEditor.ViewModels
         private void GoToFrameAnimator()
         {
             CurrentViewModel = _frameAnimatorViewModel;
+        }
+
+        [RelayCommand]
+        private void GoToTexturePacker()
+        {
+            CurrentViewModel = _texturePackerViewModel;
         }
 
 

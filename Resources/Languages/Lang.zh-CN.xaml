@@ -120,6 +120,16 @@
     <system:String x:Key="Str_BtnExportGif">导出为 GIF</system:String>
     <system:String x:Key="Str_Msg_GifSaved">GIF 已成功保存！</system:String>
 
+    <system:String x:Key="Str_TexturePacker">纹理打包器</system:String>
+    <system:String x:Key="Str_DescPacker">图集生成器 – 将精灵合并为一个纹理</system:String>
+    <system:String x:Key="Str_HeaderPacker">图集设置</system:String>
+    <system:String x:Key="Str_AtlasSize">图集大小：</system:String>
+    <system:String x:Key="Str_Padding">间距 (px)：</system:String>
+    <system:String x:Key="Str_BtnPack">打包图集</system:String>
+    <system:String x:Key="Str_BtnExportAtlas">导出图集和 JSON</system:String>
+    <system:String x:Key="Str_Msg_AtlasFull">图集空间不足！请尝试增大尺寸。</system:String>
+
+
 
     <system:String x:Key="Str_MsgBtnOk">确定</system:String>
     <system:String x:Key="Str_MsgBtnYes">是</system:String>

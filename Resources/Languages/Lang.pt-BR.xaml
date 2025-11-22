@@ -120,6 +120,16 @@
     <system:String x:Key="Str_BtnExportGif">Exportar como GIF</system:String>
     <system:String x:Key="Str_Msg_GifSaved">GIF salvo com sucesso!</system:String>
 
+    <system:String x:Key="Str_TexturePacker">Empacotador de Texturas</system:String>
+    <system:String x:Key="Str_DescPacker">Gerador de Atlas – Combine sprites em uma única textura</system:String>
+    <system:String x:Key="Str_HeaderPacker">CONFIGURAÇÕES DO ATLAS</system:String>
+    <system:String x:Key="Str_AtlasSize">Tamanho do Atlas:</system:String>
+    <system:String x:Key="Str_Padding">Espaçamento (px):</system:String>
+    <system:String x:Key="Str_BtnPack">Empacotar Atlas</system:String>
+    <system:String x:Key="Str_BtnExportAtlas">Exportar Atlas e JSON</system:String>
+    <system:String x:Key="Str_Msg_AtlasFull">Não há espaço suficiente no Atlas! Tente aumentar o tamanho.</system:String>
+
+
 
     <system:String x:Key="Str_MsgBtnOk">OK</system:String>
     <system:String x:Key="Str_MsgBtnYes">Sim</system:String>

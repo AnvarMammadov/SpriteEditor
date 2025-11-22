@@ -120,6 +120,15 @@
     <system:String x:Key="Str_BtnExportGif">Export as GIF</system:String>
     <system:String x:Key="Str_Msg_GifSaved">GIF saved successfully!</system:String>
 
+    <system:String x:Key="Str_TexturePacker">Texture Packer</system:String>
+    <system:String x:Key="Str_DescPacker">Atlas Gen - Combine sprites into one texture</system:String>
+    <system:String x:Key="Str_HeaderPacker">ATLAS SETTINGS</system:String>
+    <system:String x:Key="Str_AtlasSize">Atlas Size:</system:String>
+    <system:String x:Key="Str_Padding">Padding (px):</system:String>
+    <system:String x:Key="Str_BtnPack">Pack Atlas</system:String>
+    <system:String x:Key="Str_BtnExportAtlas">Export Atlas &amp; JSON</system:String>
+    <system:String x:Key="Str_Msg_AtlasFull">Not enough space in Atlas! Try increasing the size.</system:String>
+
     <system:String x:Key="Str_MsgBtnOk">OK</system:String>
     <system:String x:Key="Str_MsgBtnYes">Yes</system:String>
     <system:String x:Key="Str_MsgBtnNo">No</system:String>

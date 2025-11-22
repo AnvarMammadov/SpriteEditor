@@ -10,9 +10,7 @@
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource Brush.Bg.Deep}">
 
-    <!-- YENİ STİLLƏR (Düzəliş edildi: Setter.Value əlavə olundu) -->
     <Window.Resources>
-        <!-- Peşəkar Window Button Stili (Minimize/Maximize) -->
         <Style x:Key="TitleBarButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="46"/>
             <Setter Property="Height" Value="40"/>
@@ -23,33 +21,22 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}">
-                            <!-- Content (Geometry) burada yerləşəcək -->
-                            <Path Data="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
-                                  Fill="{TemplateBinding Foreground}"
-                                  Width="10" Height="10"
-                                  Stretch="Uniform"
-                                  HorizontalAlignment="Center"
-                                  VerticalAlignment="Center"
-                                  SnapsToDevicePixels="True" 
-                                  UseLayoutRounding="True"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <!-- Sizin istədiyiniz: Parlaq mavi yox, zərif şəffaf ağ -->
                     <Setter Property="Background" Value="#1AFFFFFF"/>
                     <Setter Property="Foreground" Value="White"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- Close Button Stili (Xüsusi Qırmızı Hover) -->
         <Style x:Key="TitleBarCloseButtonStyle" TargetType="Button" BasedOn="{StaticResource TitleBarButtonStyle}">
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <!-- Sizin istədiyiniz: Qırmızı fon -->
                     <Setter Property="Background" Value="#E81123"/>
                     <Setter Property="Foreground" Value="White"/>
                 </Trigger>
@@ -59,99 +46,63 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <!-- Custom Title Bar -->
             <RowDefinition Height="40"/>
-            <!-- App Content -->
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- TITLE BAR -->
-        <Border Grid.Row="0"
-                Background="{StaticResource Brush.Bg.Panel}"
-                BorderBrush="{StaticResource Brush.Border}"
-                BorderThickness="0,0,0,1"
-                MouseDown="TitleBar_MouseDown">
+        <Border Grid.Row="0" Background="{StaticResource Brush.Bg.Panel}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1" MouseDown="TitleBar_MouseDown">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- LOGO (Icon.Bone) -->
-                <Path Data="{StaticResource Icon.Bone}"
-                      Fill="{StaticResource Brush.Accent.Primary}"
-                      Width="18"
-                      Height="18"
-                      Stretch="Uniform"
-                      HorizontalAlignment="Left"
-                      VerticalAlignment="Center"
-                      Margin="12,0,0,0"/>
+                <Path Data="{StaticResource Icon.Bone}" Fill="{StaticResource Brush.Accent.Primary}" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="12,0,0,0"/>
 
-                <!-- Window Buttons (YENİLƏNMİŞ HİSSƏ) -->
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Top"
-                            HorizontalAlignment="Right">
-
-                    <!-- Minimize -->
-                    <Button Click="Minimize_Click"
-                            Style="{StaticResource TitleBarButtonStyle}">
-                        <Button.Content>
-                            <!-- Düz xətt (Vektor) -->
-                            <Geometry>M0,5 H10 V6 H0 Z</Geometry>
-                        </Button.Content>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Right">
+                    <Button x:Name="BtnSettings" Width="46" Height="40" Style="{StaticResource TitleBarButtonStyle}" Click="BtnSettings_Click" ToolTip="{DynamicResource Str_Settings}">
+                        <Path Data="{StaticResource Icon.Settings}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="16" Height="16" Stretch="Uniform"/>
+                        <Button.ContextMenu>
+                            <ContextMenu Placement="Bottom" HorizontalOffset="-100">
+                                <MenuItem Header="{DynamicResource Str_Language}" IsEnabled="False" FontWeight="Bold" Opacity="0.5"/>
+                                <Separator Background="{StaticResource Brush.Border}" Margin="0,5"/>
+                                <MenuItem Header="English" Click="Language_Click" Tag="en-US"/>
+                                <MenuItem Header="Azərbaycan" Click="Language_Click" Tag="az-AZ"/>
+                                <MenuItem Header="Русский" Click="Language_Click" Tag="ru-RU"/>
+                                <MenuItem Header="Türkçe" Click="Language_Click" Tag="tr-TR"/>
+                            </ContextMenu>
+                        </Button.ContextMenu>
                     </Button>
 
-                    <!-- Maximize / Restore -->
-                    <Button Click="Maximize_Click"
-                            Style="{StaticResource TitleBarButtonStyle}">
-                        <Button.Content>
-                            <!-- Kvadrat (Vektor) -->
-                            <Geometry>M1,1 H9 V9 H1 Z M0,0 V10 H10 V0 Z</Geometry>
-                        </Button.Content>
+                    <Button Click="Minimize_Click" Style="{StaticResource TitleBarButtonStyle}" ToolTip="Minimize">
+                        <Path Data="{StaticResource Icon.Minimize}" 
+              Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+              Width="10" Height="10" Stretch="Uniform"/>
                     </Button>
 
-                    <!-- Close -->
-                    <Button Click="Close_Click"
-                            Style="{StaticResource TitleBarCloseButtonStyle}">
-                        <Button.Content>
-                            <!-- X işarəsi (Vektor) -->
-                            <Geometry>M0,0 L10,10 M0,10 L10,0</Geometry>
-                        </Button.Content>
-                        <!-- X işarəsini daha qalın və düzgün göstərmək üçün Template override -->
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}">
-                                    <Path Data="M0.7,0 L5,4.3 L9.3,0 L10,0.7 L5.7,5 L10,9.3 L9.3,10 L5,5.7 L0.7,10 L0,9.3 L4.3,5 L0,0.7 Z"
-                                          Fill="{TemplateBinding Foreground}"
-                                          Width="10" Height="10"
-                                          Stretch="Uniform"
-                                          HorizontalAlignment="Center"
-                                          VerticalAlignment="Center"
-                                          SnapsToDevicePixels="True"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
+                    <Button Click="Maximize_Click" Style="{StaticResource TitleBarButtonStyle}" ToolTip="Maximize">
+                        <Path Data="{StaticResource Icon.Maximize}" 
+              Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+              Width="10" Height="10" Stretch="Uniform"/>
                     </Button>
 
+                    <Button Click="Close_Click" Style="{StaticResource TitleBarCloseButtonStyle}" ToolTip="Close">
+                        <Path Data="{StaticResource Icon.Close}" 
+                            Stroke="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                            StrokeThickness="1.5"
+                            Width="10" Height="10" Stretch="Uniform"/>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- MAIN CONTENT -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="240"/>
-                <!-- Sol Menyu -->
                 <ColumnDefinition Width="*"/>
-                <!-- Məzmun -->
             </Grid.ColumnDefinitions>
 
-            <!-- SOL MENYU -->
-            <Border Grid.Column="0"
-                    Background="{StaticResource Brush.Bg.Panel}"
-                    BorderBrush="{StaticResource Brush.Border}"
-                    BorderThickness="0,0,1,0">
+            <Border Grid.Column="0" Background="{StaticResource Brush.Bg.Panel}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,1,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -159,100 +110,55 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Logo Hissəsi -->
                     <StackPanel Grid.Row="0" Margin="20,30,20,30">
-                        <TextBlock Text="SPRITE EDITOR"
-                                   FontSize="18"
-                                   FontWeight="Bold"
-                                   Foreground="{StaticResource Brush.Text.Primary}"/>
-                        <TextBlock Text="Professional Toolset"
-                                   FontSize="12"
-                                   Foreground="{StaticResource Brush.Text.Secondary}"
-                                   Margin="0,2,0,0"/>
+                        <TextBlock Text="{DynamicResource Str_AppTitle}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Primary}"/>
+                        <TextBlock Text="{DynamicResource Str_AppSubtitle}" FontSize="12" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,2,0,0"/>
                     </StackPanel>
 
-                    <!-- Naviqasiya Düymələri -->
                     <StackPanel Grid.Row="1" Margin="10,0">
-                        <TextBlock Text="MENU"
-                                   FontSize="11"
-                                   FontWeight="Bold"
-                                   Foreground="{StaticResource Brush.Border}"
-                                   Margin="10,0,0,10"/>
+                        <TextBlock Text="{DynamicResource Str_Menu}" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Brush.Border}" Margin="10,0,0,10"/>
 
-                        <Button Command="{Binding GoToHomeCommand}"
-                                Style="{StaticResource Style.Button.Nav}">
+                        <Button Command="{Binding GoToHomeCommand}" Style="{StaticResource Style.Button.Nav}">
                             <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource Icon.Home}"
-                                      Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
-                                      Width="14" Height="14"
-                                      Stretch="Uniform"
-                                      Margin="0,0,10,0"/>
-                                <TextBlock Text="Ana Səhifə"/>
+                                <Path Data="{StaticResource Icon.Home}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,10,0"/>
+                                <TextBlock Text="{DynamicResource Str_Home}"/>
                             </StackPanel>
                         </Button>
 
-                        <Button Command="{Binding GoToSpriteSlicerCommand}"
-                                Style="{StaticResource Style.Button.Nav}">
+                        <Button Command="{Binding GoToSpriteSlicerCommand}" Style="{StaticResource Style.Button.Nav}">
                             <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource Icon.Grid}"
-                                      Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
-                                      Width="14" Height="14"
-                                      Stretch="Uniform"
-                                      Margin="0,0,10,0"/>
-                                <TextBlock Text="Sprite Slicer"/>
+                                <Path Data="{StaticResource Icon.Grid}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,10,0"/>
+                                <TextBlock Text="{DynamicResource Str_SpriteSlicer}"/>
                             </StackPanel>
                         </Button>
 
-                        <Button Command="{Binding GoToBackgroundEraserCommand}"
-                                Style="{StaticResource Style.Button.Nav}">
+                        <Button Command="{Binding GoToBackgroundEraserCommand}" Style="{StaticResource Style.Button.Nav}">
                             <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource Icon.Eraser}"
-                                      Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
-                                      Width="14" Height="14"
-                                      Stretch="Uniform"
-                                      Margin="0,0,10,0"/>
-                                <TextBlock Text="BG Eraser"/>
+                                <Path Data="{StaticResource Icon.Eraser}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,10,0"/>
+                                <TextBlock Text="{DynamicResource Str_BGEraser}"/>
                             </StackPanel>
                         </Button>
 
-                        <Button Command="{Binding GoToRiggingCommand}"
-                                Style="{StaticResource Style.Button.Nav}">
+                        <Button Command="{Binding GoToRiggingCommand}" Style="{StaticResource Style.Button.Nav}">
                             <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource Icon.Bone}"
-                                      Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
-                                      Width="14" Height="14"
-                                      Stretch="Uniform"
-                                      Margin="0,0,10,0"/>
-                                <TextBlock Text="Rigging &amp; Skin"/>
+                                <Path Data="{StaticResource Icon.Bone}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,10,0"/>
+                                <TextBlock Text="{DynamicResource Str_Rigging}"/>
                             </StackPanel>
                         </Button>
 
-                        <Button Command="{Binding GoToFormatConverterCommand}"
-                                Style="{StaticResource Style.Button.Nav}">
+                        <Button Command="{Binding GoToFormatConverterCommand}" Style="{StaticResource Style.Button.Nav}">
                             <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource Icon.Convert}"
-                                 Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
-                                 Width="14" Height="14"
-                                 Stretch="Uniform"
-                                 Margin="0,0,10,0"/>
-                                <TextBlock Text="Format Converter"/>
+                                <Path Data="{StaticResource Icon.Convert}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,10,0"/>
+                                <TextBlock Text="{DynamicResource Str_Converter}"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
 
-                    <!-- Footer -->
-                    <TextBlock Grid.Row="2"
-                               Text="v1.0.0 Beta"
-                               HorizontalAlignment="Center"
-                               Foreground="{StaticResource Brush.Border}"
-                               Margin="20"/>
+                    <TextBlock Grid.Row="2" Text="{DynamicResource Str_Version}" HorizontalAlignment="Center" Foreground="{StaticResource Brush.Border}" Margin="20"/>
                 </Grid>
             </Border>
 
-            <!-- SAĞ MƏZMUN (CONTENT) -->
-            <ContentControl Grid.Column="1"
-                            Content="{Binding CurrentViewModel}"
-                            Margin="0"/>
+            <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" Margin="0"/>
         </Grid>
     </Grid>
 </Window>

@@ -13,29 +13,15 @@
         <converters:EnumToBooleanConverter x:Key="EnumToBooleanConverter"/>
         <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
 
-        <!-- XÜSUSİ COMBOBOX STİLİ (DARK THEME) -->
         <ControlTemplate x:Key="ComboBoxToggleButton" TargetType="ToggleButton">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
                     <ColumnDefinition Width="30" />
                 </Grid.ColumnDefinitions>
-                <Border x:Name="Border" 
-                        Grid.ColumnSpan="2"
-                        CornerRadius="4"
-                        Background="{StaticResource Brush.Bg.Input}"
-                        BorderBrush="{StaticResource Brush.Border}"
-                        BorderThickness="1" />
-                <Border Grid.Column="0"
-                        CornerRadius="4,0,0,4" 
-                        Margin="1" 
-                        Background="Transparent" />
-                <Path x:Name="Arrow" 
-                      Grid.Column="1"     
-                      Fill="{StaticResource Brush.Text.Secondary}"
-                      HorizontalAlignment="Center" 
-                      VerticalAlignment="Center"
-                      Data="M0,0 L4,4 L8,0 Z"/>
+                <Border x:Name="Border" Grid.ColumnSpan="2" CornerRadius="4" Background="{StaticResource Brush.Bg.Input}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" />
+                <Border Grid.Column="0" CornerRadius="4,0,0,4" Margin="1" Background="Transparent" />
+                <Path x:Name="Arrow" Grid.Column="1" Fill="{StaticResource Brush.Text.Secondary}" HorizontalAlignment="Center" VerticalAlignment="Center" Data="M0,0 L4,4 L8,0 Z"/>
             </Grid>
             <ControlTemplate.Triggers>
                 <Trigger Property="IsMouseOver" Value="true">
@@ -66,45 +52,12 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ComboBox}">
                         <Grid>
-                            <ToggleButton Name="ToggleButton" 
-                                          Template="{StaticResource ComboBoxToggleButton}" 
-                                          Grid.Column="2" 
-                                          Focusable="false"
-                                          IsChecked="{Binding Path=IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}"
-                                          ClickMode="Press"/>
-                            <ContentPresenter Name="ContentSite"
-                                              IsHitTestVisible="False" 
-                                              Content="{TemplateBinding SelectionBoxItem}"
-                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-                                              Margin="10,3,23,3"
-                                              VerticalAlignment="Center"
-                                              HorizontalAlignment="Left" />
-                            <TextBox x:Name="PART_EditableTextBox"
-                                     Style="{x:Null}" 
-                                     Template="{StaticResource ComboBoxTextBox}" 
-                                     HorizontalAlignment="Left" 
-                                     VerticalAlignment="Center" 
-                                     Margin="3,3,23,3"
-                                     Focusable="True" 
-                                     Background="Transparent"
-                                     Visibility="Hidden"
-                                     IsReadOnly="{TemplateBinding IsReadOnly}"/>
-                            <Popup Name="Popup"
-                                   Placement="Bottom"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   AllowsTransparency="True" 
-                                   Focusable="False"
-                                   PopupAnimation="Slide">
-                                <Grid Name="DropDown"
-                                      SnapsToDevicePixels="True"                
-                                      MinWidth="{TemplateBinding ActualWidth}"
-                                      MaxHeight="{TemplateBinding MaxDropDownHeight}">
-                                    <Border x:Name="DropDownBorder"
-                                            Background="{StaticResource Brush.Bg.Panel}"
-                                            BorderThickness="1"
-                                            BorderBrush="{StaticResource Brush.Border}"
-                                            CornerRadius="4"/>
+                            <ToggleButton Name="ToggleButton" Template="{StaticResource ComboBoxToggleButton}" Grid.Column="2" Focusable="false" IsChecked="{Binding Path=IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press"/>
+                            <ContentPresenter Name="ContentSite" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" Margin="10,3,23,3" VerticalAlignment="Center" HorizontalAlignment="Left" />
+                            <TextBox x:Name="PART_EditableTextBox" Style="{x:Null}" Template="{StaticResource ComboBoxTextBox}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="3,3,23,3" Focusable="True" Background="Transparent" Visibility="Hidden" IsReadOnly="{TemplateBinding IsReadOnly}"/>
+                            <Popup Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                                <Grid Name="DropDown" SnapsToDevicePixels="True" MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border x:Name="DropDownBorder" Background="{StaticResource Brush.Bg.Panel}" BorderThickness="1" BorderBrush="{StaticResource Brush.Border}" CornerRadius="4"/>
                                     <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
                                         <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
                                     </ScrollViewer>
@@ -123,7 +76,6 @@
                 </Setter.Value>
             </Setter>
             <Style.Resources>
-                <!-- ComboBoxItem Style (Açılan siyahıdakı elementlər) -->
                 <Style TargetType="ComboBoxItem">
                     <Setter Property="SnapsToDevicePixels" Value="true"/>
                     <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}"/>
@@ -137,13 +89,7 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ComboBoxItem">
-                                <Border Name="Border"
-                                        Padding="{TemplateBinding Padding}"
-                                        SnapsToDevicePixels="true"
-                                        Background="{TemplateBinding Background}"
-                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                        CornerRadius="4">
+                                <Border Name="Border" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="true" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
                                     <ContentPresenter />
                                 </Border>
                                 <ControlTemplate.Triggers>
@@ -158,7 +104,6 @@
                 </Style>
             </Style.Resources>
         </Style>
-
     </UserControl.Resources>
 
     <Grid Background="{StaticResource Brush.Bg.Deep}">
@@ -167,20 +112,17 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- SOL PANEL: ALƏTLƏR (Yenilənmiş Dizayn) -->
         <Border Grid.Column="0" Background="{StaticResource Brush.Bg.Panel}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,1,0" Padding="20">
             <StackPanel>
-                <TextBlock Text="FORMAT CONVERTER" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12" Margin="0,0,0,15"/>
+                <TextBlock Text="{DynamicResource Str_HeaderConverter}" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12" Margin="0,0,0,15"/>
 
-                <!-- 1. Fayl Yükləmə Kartı -->
                 <Border Background="{StaticResource Brush.Bg.Deep}" CornerRadius="6" Padding="15" Margin="0,0,0,20" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1">
                     <StackPanel>
-                        <TextBlock Text="GİRİŞ FAYLI" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="10" Margin="0,0,0,8"/>
-
+                        <TextBlock Text="{DynamicResource Str_HeaderInputFile}" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="10" Margin="0,0,0,8"/>
                         <Button Command="{Binding LoadImageCommand}" Style="{StaticResource Style.Button.Primary}" HorizontalContentAlignment="Left">
                             <StackPanel Orientation="Horizontal">
                                 <Path Data="M9 12l2-2 4 4 M15 12l-4-4-4 4 M11 3v9" Stroke="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(TextElement.Foreground)}" StrokeThickness="2" Margin="0,0,8,0"/>
-                                <TextBlock Text="Şəkil Seçin..."/>
+                                <TextBlock Text="{DynamicResource Str_BtnSelectImage}"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -188,57 +130,32 @@
 
                 <Separator Background="{StaticResource Brush.Border}" Margin="0,0,0,20" Opacity="0.3"/>
 
-                <!-- 2. Konvertasiya Seçimləri -->
-                <TextBlock Text="PARAMETRLƏR" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
+                <TextBlock Text="{DynamicResource Str_HeaderParams}" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
 
-                <TextBlock Text="Hədəf Format:" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12" Margin="0,0,0,6"/>
+                <TextBlock Text="{DynamicResource Str_LblTargetFormat}" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12" Margin="0,0,0,6"/>
 
-                <!-- Yeni Dark ComboBox -->
-                <ComboBox ItemsSource="{Binding AvailableFormats}" 
-                          SelectedItem="{Binding SelectedFormat}"
-                          Style="{StaticResource DarkComboBoxStyle}"
-                          Height="40" 
-                          Margin="0,0,0,20"/>
+                <ComboBox ItemsSource="{Binding AvailableFormats}" SelectedItem="{Binding SelectedFormat}" Style="{StaticResource DarkComboBoxStyle}" Height="40" Margin="0,0,0,20"/>
 
                 <Button Command="{Binding ConvertCommand}" Style="{StaticResource Style.Button.Accent}" Height="45">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <!-- Convert Icon -->
-                        <Path Data="M4 14h12v-2H4v2z m16-4L16 6v3H8v2h8v3z m-4 8v-3H4v-2h12v-3l4 4z" 
-                              Fill="#111827" Width="16" Height="16" Stretch="Uniform" Margin="0,0,10,0"/>
-                        <TextBlock Text="KONVERTASİYA ET" FontWeight="Bold"/>
+                        <Path Data="M4 14h12v-2H4v2z m16-4L16 6v3H8v2h8v3z m-4 8v-3H4v-2h12v-3l4 4z" Fill="#111827" Width="16" Height="16" Stretch="Uniform" Margin="0,0,10,0"/>
+                        <TextBlock Text="{DynamicResource Str_BtnConvert}" FontWeight="Bold"/>
                     </StackPanel>
                 </Button>
 
                 <Border Background="#22F59E0B" CornerRadius="4" Padding="10" Margin="0,15,0,0" BorderBrush="{StaticResource Brush.Accent.Primary}" BorderThickness="1" Opacity="0.8">
-                    <!-- DÜZƏLİŞ EDİLDİ: StackPanel əvəzinə Grid istifadə olunur -->
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
-                            <!-- İkon üçün avtomatik en -->
                             <ColumnDefinition Width="*"/>
-                            <!-- Mətn üçün qalan en -->
                         </Grid.ColumnDefinitions>
-
-                        <Path Grid.Column="0"
-                              Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" 
-                              Fill="{StaticResource Brush.Accent.Primary}" 
-                              Width="16" Height="16" 
-                              Stretch="Uniform" 
-                              VerticalAlignment="Top" 
-                              Margin="0,2,8,0"/>
-
-                        <TextBlock Grid.Column="1"
-                                   Text="ICO formatı seçildikdə, şəkil avtomatik olaraq uyğun ölçüyə (256x256) gətirilə bilər." 
-                                   TextWrapping="Wrap" 
-                                   Foreground="{StaticResource Brush.Text.Secondary}" 
-                                   FontSize="11"/>
+                        <Path Grid.Column="0" Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" Fill="{StaticResource Brush.Accent.Primary}" Width="16" Height="16" Stretch="Uniform" VerticalAlignment="Top" Margin="0,2,8,0"/>
+                        <TextBlock Grid.Column="1" Text="{DynamicResource Str_NoteIco}" TextWrapping="Wrap" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11"/>
                     </Grid>
                 </Border>
-
             </StackPanel>
         </Border>
 
-        <!-- SAĞ TƏRƏF: PREVIEW (Dizayn Eyni Qalır, sadəcə stili təmizlədik) -->
         <Grid Grid.Column="1" Margin="20">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -247,9 +164,8 @@
 
             <Border Background="{StaticResource Brush.Bg.Panel}" CornerRadius="6,6,0,0" Padding="10,6" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1,1,1,0">
                 <StackPanel Orientation="Horizontal">
-                    <Path Data="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
-                          Fill="{StaticResource Brush.Text.Secondary}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,8,0"/>
-                    <TextBlock Text="PREVIEW (Seçilmiş Şəkil)" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11"/>
+                    <Path Data="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" Fill="{StaticResource Brush.Text.Secondary}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,8,0"/>
+                    <TextBlock Text="{DynamicResource Str_HeaderPreviewSelected}" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11"/>
                 </StackPanel>
             </Border>
 
@@ -275,11 +191,7 @@
 
                     <Image Source="{Binding PreviewSource}" Stretch="Uniform" Margin="10"/>
 
-                    <!-- Mərkəzi Məlumat Mətni -->
-                    <TextBlock Text="Şəkil seçilməyib" 
-                               Foreground="Gray" 
-                               VerticalAlignment="Center" 
-                               HorizontalAlignment="Center">
+                    <TextBlock Text="{DynamicResource Str_MsgNoImage}" Foreground="Gray" VerticalAlignment="Center" HorizontalAlignment="Center">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -291,7 +203,6 @@
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
-
                 </Grid>
             </Border>
         </Grid>

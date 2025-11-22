@@ -1,0 +1,86 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+
+    <system:String x:Key="Str_AppTitle">Sprite Editor</system:String>
+    <system:String x:Key="Str_AppSubtitle">Professional Alətlər</system:String>
+    <system:String x:Key="Str_Menu">MENYU</system:String>
+    <system:String x:Key="Str_Home">Ana Səhifə</system:String>
+    <system:String x:Key="Str_SpriteSlicer">Sprite Slicer</system:String>
+    <system:String x:Key="Str_BGEraser">BG Eraser</system:String>
+    <system:String x:Key="Str_Rigging">Rigging &amp; Skin</system:String>
+    <system:String x:Key="Str_Converter">Format Converter</system:String>
+    <system:String x:Key="Str_Settings">Tənzimləmələr</system:String>
+    <system:String x:Key="Str_Language">Dil</system:String>
+    <system:String x:Key="Str_Version">v1.0.0 Beta</system:String>
+
+    <system:String x:Key="Str_Welcome">Xoş Gəlmisiniz!</system:String>
+    <system:String x:Key="Str_StartPrompt">Layihənizə başlamaq üçün sol paneldən bir alət seçin:</system:String>
+    <system:String x:Key="Str_DescSlicer">Sprite Kəsici - Spritesheet kəsmək üçün</system:String>
+    <system:String x:Key="Str_DescEraser">Arxaplan Silici - Arxa fonu təmizləmək üçün</system:String>
+    <system:String x:Key="Str_DescRigging">Skelet Sistemi - Animasiya və rig üçün</system:String>
+    <system:String x:Key="Str_DescConverter">Konverter - Formatı dəyişmək üçün</system:String>
+
+    <system:String x:Key="Str_BtnLoadImage">Görüntü Yüklə</system:String>
+    <system:String x:Key="Str_BtnSave">Yadda Saxla</system:String>
+    <system:String x:Key="Str_BtnReset">Sıfırla (Yenilə)</system:String>
+
+    <system:String x:Key="Str_HeaderSlicerTools">SLICER ALƏTLƏRİ</system:String>
+    <system:String x:Key="Str_HeaderGridParams">GRID PARAMETRLƏRİ</system:String>
+    <system:String x:Key="Str_ColCount">Sütun (Cols):</system:String>
+    <system:String x:Key="Str_RowCount">Sətr (Rows):</system:String>
+    <system:String x:Key="Str_HeaderAutoDetect">AVTOMATİK TƏSBİT</system:String>
+    <system:String x:Key="Str_BtnAutoDetect">Avto Tap (Auto Detect)</system:String>
+    <system:String x:Key="Str_BtnSlice">Spritları Kəs (Slice)</system:String>
+    <system:String x:Key="Str_HintSlicer">İpucu: Qutunun ölçülərini şəklin üzərində dəyişə bilərsiniz.</system:String>
+
+    <system:String x:Key="Str_HeaderEraserTools">ERASER ALƏTLƏRİ</system:String>
+    <system:String x:Key="Str_HeaderTools">ALƏTLƏR</system:String>
+    <system:String x:Key="Str_ToolPipette">Pipet (Rəng Seç)</system:String>
+    <system:String x:Key="Str_ToolManual">Manual Silgi</system:String>
+    <system:String x:Key="Str_BrushSize">Fırça Ölçüsü:</system:String>
+    <system:String x:Key="Str_HeaderMagicWand">MAGIC WAND</system:String>
+    <system:String x:Key="Str_TargetColor">Hədəf Rəng:</system:String>
+    <system:String x:Key="Str_Tolerance">Həssaslıq (Tolerance):</system:String>
+    <system:String x:Key="Str_BtnMagicPreview">Magic Erase (Preview)</system:String>
+    <system:String x:Key="Str_BtnSaveResult">Nəticəni Yadda Saxla</system:String>
+    <system:String x:Key="Str_PanelOriginal">ORİJİNAL (Redaktə)</system:String>
+    <system:String x:Key="Str_PanelPreview">NƏTİCƏ (Preview)</system:String>
+
+    <system:String x:Key="Str_HeaderRiggingTools">RIGGING ALƏTLƏRİ</system:String>
+    <system:String x:Key="Str_BtnLoadSprite">Sprite Yüklə</system:String>
+    <system:String x:Key="Str_HeaderModes">MODLAR</system:String>
+    <system:String x:Key="Str_ModeCreateBone">+ Sümük Yarat</system:String>
+    <system:String x:Key="Str_ModeEdit">✎ Redaktə (Edit)</system:String>
+    <system:String x:Key="Str_ModeEditMesh">▧ Mesh Redaktə</system:String>
+    <system:String x:Key="Str_ModePose">▶ Pose (Hərəkət)</system:String>
+    <system:String x:Key="Str_HeaderMeshSkin">MESH &amp; SKIN</system:String>
+    <system:String x:Key="Str_BtnAutoVerts">Auto Verts</system:String>
+    <system:String x:Key="Str_BtnAutoTris">Auto Tris</system:String>
+    <system:String x:Key="Str_BtnAutoWeight">Avto Ağırlıq (Weights)</system:String>
+    <system:String x:Key="Str_ExpSkinParams">Skinning Parametrləri</system:String>
+    <system:String x:Key="Str_ParamSigma">Sigma (Qalınlıq):</system:String>
+    <system:String x:Key="Str_ParamRadial">Radial Güc:</system:String>
+    <system:String x:Key="Str_HeaderProps">XÜSUSİYYƏTLƏR</system:String>
+    <system:String x:Key="Str_LblBoneName">Sümük Adı:</system:String>
+    <system:String x:Key="Str_BtnSaveRig">Save Rig</system:String>
+    <system:String x:Key="Str_BtnLoadRig">Load Rig</system:String>
+    <system:String x:Key="Str_CameraInfo">Kamera: Ctrl + Scroll (Zoom), Middle Mouse (Pan)</system:String>
+    <system:String x:Key="Str_BtnAddKeyframe">Keyframe Əlavə Et</system:String>
+
+    <system:String x:Key="Str_HeaderConverter">FORMAT CONVERTER</system:String>
+    <system:String x:Key="Str_HeaderInputFile">GİRİŞ FAYLI</system:String>
+    <system:String x:Key="Str_BtnSelectImage">Şəkil Seçin...</system:String>
+    <system:String x:Key="Str_HeaderParams">PARAMETRLƏR</system:String>
+    <system:String x:Key="Str_LblTargetFormat">Hədəf Format:</system:String>
+    <system:String x:Key="Str_BtnConvert">KONVERTASİYA ET</system:String>
+    <system:String x:Key="Str_NoteIco">Qeyd: ICO formatı seçildikdə, şəkil avtomatik olaraq uyğun ölçüyə (256x256) gətirilə bilər.</system:String>
+    <system:String x:Key="Str_HeaderPreviewSelected">PREVIEW (Seçilmiş Şəkil)</system:String>
+    <system:String x:Key="Str_MsgNoImage">Şəkil seçilməyib</system:String>
+
+    <system:String x:Key="Str_MsgBtnOk">Tamam</system:String>
+    <system:String x:Key="Str_MsgBtnYes">Bəli</system:String>
+    <system:String x:Key="Str_MsgBtnNo">Xeyr</system:String>
+    <system:String x:Key="Str_MsgBtnCancel">Ləğv et</system:String>
+
+</ResourceDictionary>

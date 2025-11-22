@@ -70,6 +70,9 @@
                                 <MenuItem Header="Azərbaycan" Click="Language_Click" Tag="az-AZ"/>
                                 <MenuItem Header="Русский" Click="Language_Click" Tag="ru-RU"/>
                                 <MenuItem Header="Türkçe" Click="Language_Click" Tag="tr-TR"/>
+                                <MenuItem Header="Español" Click="Language_Click" Tag="es-ES"/>
+                                <MenuItem Header="Português" Click="Language_Click" Tag="pt-BR"/>
+                                <MenuItem Header="中文 (简体)" Click="Language_Click" Tag="zh-CN"/>
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>

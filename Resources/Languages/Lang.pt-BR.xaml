@@ -1,0 +1,119 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+
+    <system:String x:Key="Str_AppTitle">Sprite Editor</system:String>
+    <system:String x:Key="Str_AppSubtitle">Ferramentas Profissionais</system:String>
+    <system:String x:Key="Str_Menu">MENU</system:String>
+    <system:String x:Key="Str_Home">Início</system:String>
+    <system:String x:Key="Str_SpriteSlicer">Fatiador de Sprites</system:String>
+    <system:String x:Key="Str_BGEraser">Borracha de Fundo</system:String>
+    <system:String x:Key="Str_Rigging">Rigging &amp; Skin</system:String>
+    <system:String x:Key="Str_Converter">Conversor de Formato</system:String>
+    <system:String x:Key="Str_Settings">Configurações</system:String>
+    <system:String x:Key="Str_Language">Idioma</system:String>
+    <system:String x:Key="Str_Version">v1.0.0 Beta</system:String>
+
+    <system:String x:Key="Str_Welcome">Bem-vindo!</system:String>
+    <system:String x:Key="Str_StartPrompt">Selecione uma ferramenta no painel esquerdo para começar:</system:String>
+    <system:String x:Key="Str_DescSlicer">Fatiador - Para cortar folhas de sprites</system:String>
+    <system:String x:Key="Str_DescEraser">Borracha - Para remover o fundo</system:String>
+    <system:String x:Key="Str_DescRigging">Rigging - Para esqueleto e animação</system:String>
+    <system:String x:Key="Str_DescConverter">Conversor - Para mudar formatos de imagem</system:String>
+
+    <system:String x:Key="Str_BtnLoadImage">Carregar Imagem</system:String>
+    <system:String x:Key="Str_BtnSave">Salvar</system:String>
+    <system:String x:Key="Str_BtnReset">Redefinir</system:String>
+
+    <system:String x:Key="Str_HeaderSlicerTools">FERRAMENTAS DE CORTE</system:String>
+    <system:String x:Key="Str_HeaderGridParams">PARÂMETROS DA GRADE</system:String>
+    <system:String x:Key="Str_ColCount">Colunas (Cols):</system:String>
+    <system:String x:Key="Str_RowCount">Linhas (Rows):</system:String>
+    <system:String x:Key="Str_HeaderAutoDetect">DETECÇÃO AUTOMÁTICA</system:String>
+    <system:String x:Key="Str_BtnAutoDetect">Auto Detectar</system:String>
+    <system:String x:Key="Str_BtnSlice">Fatiar Sprites</system:String>
+    <system:String x:Key="Str_HintSlicer">Dica: Você pode redimensionar a caixa diretamente na imagem.</system:String>
+
+    <system:String x:Key="Str_HeaderEraserTools">FERRAMENTAS DE BORRACHA</system:String>
+    <system:String x:Key="Str_HeaderTools">FERRAMENTAS</system:String>
+    <system:String x:Key="Str_ToolPipette">Conta-gotas (Escolher Cor)</system:String>
+    <system:String x:Key="Str_ToolManual">Borracha Manual</system:String>
+    <system:String x:Key="Str_BrushSize">Tamanho do Pincel:</system:String>
+    <system:String x:Key="Str_HeaderMagicWand">VARINHA MÁGICA</system:String>
+    <system:String x:Key="Str_TargetColor">Cor Alvo:</system:String>
+    <system:String x:Key="Str_Tolerance">Tolerância:</system:String>
+    <system:String x:Key="Str_BtnMagicPreview">Apagar Mágico (Prévia)</system:String>
+    <system:String x:Key="Str_BtnSaveResult">Salvar Resultado</system:String>
+    <system:String x:Key="Str_PanelOriginal">ORIGINAL (Editar)</system:String>
+    <system:String x:Key="Str_PanelPreview">RESULTADO (Prévia)</system:String>
+
+    <system:String x:Key="Str_HeaderRiggingTools">FERRAMENTAS DE RIGGING</system:String>
+    <system:String x:Key="Str_BtnLoadSprite">Carregar Sprite</system:String>
+    <system:String x:Key="Str_HeaderModes">MODOS</system:String>
+    <system:String x:Key="Str_ModeCreateBone">+ Criar Osso</system:String>
+    <system:String x:Key="Str_ModeEdit">✎ Editar</system:String>
+    <system:String x:Key="Str_ModeEditMesh">▧ Editar Malha</system:String>
+    <system:String x:Key="Str_ModePose">▶ Pose (Animar)</system:String>
+    <system:String x:Key="Str_HeaderMeshSkin">MALHA E PELE</system:String>
+    <system:String x:Key="Str_BtnAutoVerts">Auto Vértices</system:String>
+    <system:String x:Key="Str_BtnAutoTris">Auto Triângulos</system:String>
+    <system:String x:Key="Str_BtnAutoWeight">Auto Pesos (Weights)</system:String>
+    <system:String x:Key="Str_ExpSkinParams">Parâmetros de Skinning</system:String>
+    <system:String x:Key="Str_ParamSigma">Sigma (Espessura):</system:String>
+    <system:String x:Key="Str_ParamRadial">Poder Radial:</system:String>
+    <system:String x:Key="Str_HeaderProps">PROPRIEDADES</system:String>
+    <system:String x:Key="Str_LblBoneName">Nome do Osso:</system:String>
+    <system:String x:Key="Str_BtnSaveRig">Salvar Rig</system:String>
+    <system:String x:Key="Str_BtnLoadRig">Carregar Rig</system:String>
+    <system:String x:Key="Str_CameraInfo">Câmera: Ctrl + Scroll (Zoom), Botão do Meio (Pan)</system:String>
+    <system:String x:Key="Str_BtnAddKeyframe">Adicionar Keyframe</system:String>
+
+    <system:String x:Key="Str_HeaderConverter">CONVERSOR DE FORMATO</system:String>
+    <system:String x:Key="Str_HeaderInputFile">ARQUIVO DE ENTRADA</system:String>
+    <system:String x:Key="Str_BtnSelectImage">Selecionar Imagem...</system:String>
+    <system:String x:Key="Str_HeaderParams">PARÂMETROS</system:String>
+    <system:String x:Key="Str_LblTargetFormat">Formato de Destino:</system:String>
+    <system:String x:Key="Str_BtnConvert">CONVERTER</system:String>
+    <system:String x:Key="Str_NoteIco">Nota: Se ICO for selecionado, a imagem pode ser redimensionada para 256x256.</system:String>
+    <system:String x:Key="Str_HeaderPreviewSelected">PRÉVIA (Imagem Selecionada)</system:String>
+    <system:String x:Key="Str_MsgNoImage">Nenhuma imagem selecionada</system:String>
+
+    <system:String x:Key="Str_Title_Error">Erro</system:String>
+    <system:String x:Key="Str_Title_Success">Sucesso</system:String>
+    <system:String x:Key="Str_Title_Warning">Aviso</system:String>
+    <system:String x:Key="Str_Title_Info">Informação</system:String>
+    <system:String x:Key="Str_Title_Completed">Concluído</system:String>
+
+    <system:String x:Key="Str_Msg_ErrLoadImage">Erro ao carregar imagem: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrSaveImage">Erro ao salvar: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrGeneral">Ocorreu um erro: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrFormatNotSupported">Infelizmente, o formato '{0}' não é suportado nesta versão.</system:String>
+    <system:String x:Key="Str_Err_FileCorrupt">Formato de arquivo não suportado ou arquivo corrompido.</system:String>
+    <system:String x:Key="Str_Err_JsonInvalid">A estrutura do arquivo JSON é inválida.</system:String>
+    <system:String x:Key="Str_Msg_ErrRigLoad">Erro ao carregar rig: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrTriangulation">Erro de triangulação: {0}&#x0a;&#x0a;Certifique-se de que os pontos estejam posicionados corretamente.</system:String>
+
+    <system:String x:Key="Str_Msg_SuccessSave">Imagem salva com sucesso!</system:String>
+    <system:String x:Key="Str_Msg_SuccessConvert">Conversão concluída com sucesso!</system:String>
+    <system:String x:Key="Str_Msg_SuccessAutoWeight">Pesagem automática concluída (baseada em segmentos)!</system:String>
+    <system:String x:Key="Str_Msg_SuccessRigLoad">Esqueleto e Malha carregados com sucesso.</system:String>
+    <system:String x:Key="Str_Msg_SuccessRigSave">Esqueleto e Malha salvos com sucesso!</system:String>
+    <system:String x:Key="Str_Msg_AutoTriResult">{0} triângulos criados automaticamente.</system:String>
+    <system:String x:Key="Str_Msg_KeyframeAdded">Keyframe adicionado: {0:F2}s</system:String>
+    <system:String x:Key="Str_Msg_SpritesFound">{0} sprites encontrados.</system:String>
+
+    <system:String x:Key="Str_Msg_WarnSmoothing">Pesagem concluída, mas a 'Suavização' foi pulada porque não foram encontrados triângulos. O resultado pode ser nítido.</system:String>
+    <system:String x:Key="Str_Msg_WarnRigMismatch">Este arquivo de rig ('{0}') foi criado para uma imagem diferente da carregada ('{1}').&#x0a;&#x0a;Deseja continuar?</system:String>
+
+    <system:String x:Key="Str_Filter_Images">Arquivos de Imagem</system:String>
+    <system:String x:Key="Str_Filter_AllFiles">Todos os Arquivos</system:String>
+    <system:String x:Key="Str_Filter_RigJson">Arquivo JSON de Rig</system:String>
+    <system:String x:Key="Str_Dlg_LoadRig">Carregar Dados do Esqueleto</system:String>
+    <system:String x:Key="Str_Dlg_SaveRig">Salvar Dados do Esqueleto</system:String>
+
+    <system:String x:Key="Str_MsgBtnOk">OK</system:String>
+    <system:String x:Key="Str_MsgBtnYes">Sim</system:String>
+    <system:String x:Key="Str_MsgBtnNo">Não</system:String>
+    <system:String x:Key="Str_MsgBtnCancel">Cancelar</system:String>
+
+</ResourceDictionary>

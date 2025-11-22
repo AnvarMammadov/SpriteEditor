@@ -1,0 +1,119 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+
+    <system:String x:Key="Str_AppTitle">Sprite Editor</system:String>
+    <system:String x:Key="Str_AppSubtitle">专业工具集</system:String>
+    <system:String x:Key="Str_Menu">菜单</system:String>
+    <system:String x:Key="Str_Home">首页</system:String>
+    <system:String x:Key="Str_SpriteSlicer">精灵切片器</system:String>
+    <system:String x:Key="Str_BGEraser">背景擦除</system:String>
+    <system:String x:Key="Str_Rigging">骨骼绑定 &amp; 蒙皮</system:String>
+    <system:String x:Key="Str_Converter">格式转换</system:String>
+    <system:String x:Key="Str_Settings">设置</system:String>
+    <system:String x:Key="Str_Language">语言</system:String>
+    <system:String x:Key="Str_Version">v1.0.0 Beta</system:String>
+
+    <system:String x:Key="Str_Welcome">欢迎！</system:String>
+    <system:String x:Key="Str_StartPrompt">请从左侧面板选择一个工具开始您的项目：</system:String>
+    <system:String x:Key="Str_DescSlicer">切片器 - 用于切割精灵表 (Spritesheet)</system:String>
+    <system:String x:Key="Str_DescEraser">擦除器 - 用于去除背景</system:String>
+    <system:String x:Key="Str_DescRigging">绑定 - 用于骨骼和动画制作</system:String>
+    <system:String x:Key="Str_DescConverter">转换器 - 用于更改图像格式</system:String>
+
+    <system:String x:Key="Str_BtnLoadImage">加载图片</system:String>
+    <system:String x:Key="Str_BtnSave">保存</system:String>
+    <system:String x:Key="Str_BtnReset">重置</system:String>
+
+    <system:String x:Key="Str_HeaderSlicerTools">切片工具</system:String>
+    <system:String x:Key="Str_HeaderGridParams">网格参数</system:String>
+    <system:String x:Key="Str_ColCount">列数 (Cols):</system:String>
+    <system:String x:Key="Str_RowCount">行数 (Rows):</system:String>
+    <system:String x:Key="Str_HeaderAutoDetect">自动检测</system:String>
+    <system:String x:Key="Str_BtnAutoDetect">自动查找</system:String>
+    <system:String x:Key="Str_BtnSlice">切割精灵</system:String>
+    <system:String x:Key="Str_HintSlicer">提示：您可以直接在图像上调整框的大小。</system:String>
+
+    <system:String x:Key="Str_HeaderEraserTools">擦除工具</system:String>
+    <system:String x:Key="Str_HeaderTools">工具栏</system:String>
+    <system:String x:Key="Str_ToolPipette">吸管 (拾色)</system:String>
+    <system:String x:Key="Str_ToolManual">手动橡皮擦</system:String>
+    <system:String x:Key="Str_BrushSize">画笔大小:</system:String>
+    <system:String x:Key="Str_HeaderMagicWand">魔棒工具</system:String>
+    <system:String x:Key="Str_TargetColor">目标颜色:</system:String>
+    <system:String x:Key="Str_Tolerance">容差 (Tolerance):</system:String>
+    <system:String x:Key="Str_BtnMagicPreview">魔术擦除 (预览)</system:String>
+    <system:String x:Key="Str_BtnSaveResult">保存结果</system:String>
+    <system:String x:Key="Str_PanelOriginal">原图 (编辑)</system:String>
+    <system:String x:Key="Str_PanelPreview">结果 (预览)</system:String>
+
+    <system:String x:Key="Str_HeaderRiggingTools">绑定工具</system:String>
+    <system:String x:Key="Str_BtnLoadSprite">加载精灵</system:String>
+    <system:String x:Key="Str_HeaderModes">模式</system:String>
+    <system:String x:Key="Str_ModeCreateBone">+ 创建骨骼</system:String>
+    <system:String x:Key="Str_ModeEdit">✎ 编辑</system:String>
+    <system:String x:Key="Str_ModeEditMesh">▧ 编辑网格</system:String>
+    <system:String x:Key="Str_ModePose">▶ 姿势 (动画)</system:String>
+    <system:String x:Key="Str_HeaderMeshSkin">网格与蒙皮</system:String>
+    <system:String x:Key="Str_BtnAutoVerts">自动顶点</system:String>
+    <system:String x:Key="Str_BtnAutoTris">自动三角化</system:String>
+    <system:String x:Key="Str_BtnAutoWeight">自动权重</system:String>
+    <system:String x:Key="Str_ExpSkinParams">蒙皮参数</system:String>
+    <system:String x:Key="Str_ParamSigma">Sigma (厚度):</system:String>
+    <system:String x:Key="Str_ParamRadial">径向强度:</system:String>
+    <system:String x:Key="Str_HeaderProps">属性</system:String>
+    <system:String x:Key="Str_LblBoneName">骨骼名称:</system:String>
+    <system:String x:Key="Str_BtnSaveRig">保存骨架</system:String>
+    <system:String x:Key="Str_BtnLoadRig">加载骨架</system:String>
+    <system:String x:Key="Str_CameraInfo">相机: Ctrl + 滚轮 (缩放), 中键 (平移)</system:String>
+    <system:String x:Key="Str_BtnAddKeyframe">添加关键帧</system:String>
+
+    <system:String x:Key="Str_HeaderConverter">格式转换器</system:String>
+    <system:String x:Key="Str_HeaderInputFile">输入文件</system:String>
+    <system:String x:Key="Str_BtnSelectImage">选择图片...</system:String>
+    <system:String x:Key="Str_HeaderParams">参数</system:String>
+    <system:String x:Key="Str_LblTargetFormat">目标格式:</system:String>
+    <system:String x:Key="Str_BtnConvert">转换</system:String>
+    <system:String x:Key="Str_NoteIco">注意：如果选择 ICO 格式，图片可能会自动调整为 256x256 大小。</system:String>
+    <system:String x:Key="Str_HeaderPreviewSelected">预览 (已选图片)</system:String>
+    <system:String x:Key="Str_MsgNoImage">未选择图片</system:String>
+
+    <system:String x:Key="Str_Title_Error">错误</system:String>
+    <system:String x:Key="Str_Title_Success">成功</system:String>
+    <system:String x:Key="Str_Title_Warning">警告</system:String>
+    <system:String x:Key="Str_Title_Info">信息</system:String>
+    <system:String x:Key="Str_Title_Completed">完成</system:String>
+
+    <system:String x:Key="Str_Msg_ErrLoadImage">加载图片时发生错误: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrSaveImage">保存时发生错误: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrGeneral">发生错误: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrFormatNotSupported">很遗憾，当前版本不支持 '{0}' 格式。</system:String>
+    <system:String x:Key="Str_Err_FileCorrupt">文件格式不支持或文件已损坏。</system:String>
+    <system:String x:Key="Str_Err_JsonInvalid">JSON 文件结构无效。</system:String>
+    <system:String x:Key="Str_Msg_ErrRigLoad">加载骨架时发生错误: {0}</system:String>
+    <system:String x:Key="Str_Msg_ErrTriangulation">三角化错误: {0}&#x0a;&#x0a;请确保点的位置正确。</system:String>
+
+    <system:String x:Key="Str_Msg_SuccessSave">图片保存成功！</system:String>
+    <system:String x:Key="Str_Msg_SuccessConvert">转换成功完成！</system:String>
+    <system:String x:Key="Str_Msg_SuccessAutoWeight">自动权重计算完成（基于分段）！</system:String>
+    <system:String x:Key="Str_Msg_SuccessRigLoad">骨架和网格加载成功。</system:String>
+    <system:String x:Key="Str_Msg_SuccessRigSave">骨架和网格保存成功！</system:String>
+    <system:String x:Key="Str_Msg_AutoTriResult">自动创建了 {0} 个三角形。</system:String>
+    <system:String x:Key="Str_Msg_KeyframeAdded">关键帧已添加: {0:F2}s</system:String>
+    <system:String x:Key="Str_Msg_SpritesFound">发现了 {0} 个精灵。</system:String>
+
+    <system:String x:Key="Str_Msg_WarnSmoothing">权重计算完成，但由于未找到三角形（网格），已跳过“平滑”处理。结果可能会比较生硬。</system:String>
+    <system:String x:Key="Str_Msg_WarnRigMismatch">此骨架文件 ('{0}') 是为另一张图片创建的，与当前加载的图片 ('{1}') 不同。&#x0a;&#x0a;是否继续？</system:String>
+
+    <system:String x:Key="Str_Filter_Images">图像文件</system:String>
+    <system:String x:Key="Str_Filter_AllFiles">所有文件</system:String>
+    <system:String x:Key="Str_Filter_RigJson">Rig JSON 文件</system:String>
+    <system:String x:Key="Str_Dlg_LoadRig">加载骨架数据</system:String>
+    <system:String x:Key="Str_Dlg_SaveRig">保存骨架数据</system:String>
+
+    <system:String x:Key="Str_MsgBtnOk">确定</system:String>
+    <system:String x:Key="Str_MsgBtnYes">是</system:String>
+    <system:String x:Key="Str_MsgBtnNo">否</system:String>
+    <system:String x:Key="Str_MsgBtnCancel">取消</system:String>
+
+</ResourceDictionary>

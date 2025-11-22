@@ -128,6 +128,8 @@
     <system:String x:Key="Str_BtnPack">Empacotar Atlas</system:String>
     <system:String x:Key="Str_BtnExportAtlas">Exportar Atlas e JSON</system:String>
     <system:String x:Key="Str_Msg_AtlasFull">Não há espaço suficiente no Atlas! Tente aumentar o tamanho.</system:String>
+    <system:String x:Key="Str_TrimTransparency">Cortar Transparência (Recorte Inteligente)</system:String>
+
 
 
 

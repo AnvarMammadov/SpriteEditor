@@ -128,6 +128,8 @@
     <system:String x:Key="Str_BtnPack">Atlası Yığ</system:String>
     <system:String x:Key="Str_BtnExportAtlas">Atlas &amp; JSON ixrac et</system:String>
     <system:String x:Key="Str_Msg_AtlasFull">Atlasda kifayət qədər yer yoxdur! Ölçünü artırmağı sınayın.</system:String>
+    <system:String x:Key="Str_TrimTransparency">Şəffaflığı Kəs (Ağıllı Krop)</system:String>
+
 
 
 

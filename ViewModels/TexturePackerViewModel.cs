@@ -52,6 +52,10 @@ namespace SpriteEditor.ViewModels
         [NotifyCanExecuteChangedFor(nameof(SaveAtlasCommand))]
         private bool _isProcessing;
 
+
+        [ObservableProperty]
+        private bool _isTrimEnabled = true; // Default olaraq aktiv edə bilərik
+
         public TexturePackerViewModel()
         {
             _packerService = new TexturePackerService();
@@ -107,7 +111,8 @@ namespace SpriteEditor.ViewModels
                     LoadedFiles.ToList(),
                     SelectedWidth,
                     SelectedHeight,
-                    Padding);
+                    Padding,
+                    IsTrimEnabled);
 
                 _generatedAtlasBytes = result.AtlasImage;
                 _generatedMap = result.Map;

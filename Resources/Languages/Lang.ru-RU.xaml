@@ -128,6 +128,8 @@
     <system:String x:Key="Str_BtnPack">Упаковать Атлас</system:String>
     <system:String x:Key="Str_BtnExportAtlas">Экспорт Атласа и JSON</system:String>
     <system:String x:Key="Str_Msg_AtlasFull">Недостаточно места в Атласе! Попробуйте увеличить размер.</system:String>
+    <system:String x:Key="Str_TrimTransparency">Обрезать Прозрачность (Умное Кадрирование)</system:String>
+
 
 
 

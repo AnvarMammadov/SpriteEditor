@@ -152,6 +152,9 @@
 
                 <TextBlock Text="{DynamicResource Str_Padding}" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11"/>
                 <TextBox Text="{Binding Padding}" Margin="0,5,0,20"/>
+                <CheckBox IsChecked="{Binding IsTrimEnabled}" Margin="0,0,0,20">
+                    <TextBlock Text="{DynamicResource Str_TrimTransparency}" Foreground="{StaticResource Brush.Text.Primary}" FontSize="12"/>
+                </CheckBox>
 
                 <Button Command="{Binding PackCommand}" Content="{DynamicResource Str_BtnPack}" 
                         Style="{StaticResource Style.Button.Accent}" Margin="0,0,0,10" Height="40" FontWeight="Bold"/>

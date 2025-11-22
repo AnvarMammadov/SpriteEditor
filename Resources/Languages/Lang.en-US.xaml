@@ -129,6 +129,7 @@
     <system:String x:Key="Str_BtnPack">Pack Atlas</system:String>
     <system:String x:Key="Str_BtnExportAtlas">Export Atlas &amp; JSON</system:String>
     <system:String x:Key="Str_Msg_AtlasFull">Not enough space in Atlas! Try increasing the size.</system:String>
+    <system:String x:Key="Str_TrimTransparency">Trim Transparency (Smart Crop)</system:String>
 
     <system:String x:Key="Str_MsgBtnOk">OK</system:String>
     <system:String x:Key="Str_MsgBtnYes">Yes</system:String>

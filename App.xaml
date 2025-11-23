@@ -17,6 +17,7 @@
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
             <converters:OffsetConverter x:Key="OffsetConverter"/>
+            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
 
             <DropShadowEffect x:Key="NodeShadowEffect" 
                               BlurRadius="15" 

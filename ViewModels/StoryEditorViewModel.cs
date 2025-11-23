@@ -13,13 +13,20 @@ using SpriteEditor.Views;
 namespace SpriteEditor.ViewModels
 {
     // Xəttin çəkilməsi üçün köməkçi klass
-    public class NodeConnection
+    public class NodeConnection : ObservableObject
     {
         public StoryNode Source { get; set; }
         public StoryNode Target { get; set; }
-        // Xəttin başlanğıc və son nöqtələri (UI tərəfindən yenilənəcək)
-        public Point StartPoint => new Point(Source.X + 150, Source.Y + 50); // Node eni 150, hündürlük yarısı
-        public Point EndPoint => new Point(Target.X, Target.Y + 50);
+
+        // XAML-da Node eni 180-dir.
+        // Y koordinatını +42 edirik ki, yeni sabit portlarla üst-üstə düşsün.
+        public Point StartPoint => new Point(Source.X + 180, Source.Y + 42);
+
+        public Point EndPoint => new Point(Target.X, Target.Y + 42);
+
+        // Əyrilik (Bezier) nöqtələri
+        public Point ControlPoint1 => new Point(StartPoint.X + 80, StartPoint.Y);
+        public Point ControlPoint2 => new Point(EndPoint.X - 80, EndPoint.Y);
     }
 
     public partial class StoryEditorViewModel : ObservableObject
@@ -130,5 +137,40 @@ namespace SpriteEditor.ViewModels
             Connections.Clear();
             foreach (var item in temp) Connections.Add(item);
         }
+
+        // === YENİ ƏLAVƏ: Play Preview Komandası ===
+        [RelayCommand]
+        public void PlayStory()
+        {
+            // 1. Əgər hekayədə heç bir düyün yoxdursa, xəbərdarlıq et
+            if (Nodes.Count == 0)
+            {
+                MessageBox.Show("Hekayə boşdur! Zəhmət olmasa, ən azı bir düyün (node) əlavə edin.", "Xəbərdarlıq");
+                return;
+            }
+
+            // 2. Mövcud qrafı toplayırıq (Editor-dakı məlumatlardan StoryGraph yaradırıq)
+            var storyGraph = new StoryGraph
+            {
+                Nodes = Nodes.ToList(),
+                // Hələlik ilk düyünü "Start Node" kimi qəbul edirik
+                // (Gələcəkdə bunu "Set Start Node" düyməsi ilə seçilən edə bilərik)
+                StartNodeId = Nodes.First().Id
+            };
+
+            // 3. Player ViewModel-i yaradıb məlumatı yükləyirik
+            var playerVm = new StoryPlayerViewModel();
+            playerVm.LoadStory(storyGraph);
+
+            // 4. Player Pəncərəsini açırıq
+            var playerWindow = new StoryPlayerWindow
+            {
+                DataContext = playerVm,
+                Owner = Application.Current.MainWindow // Əsas pəncərənin üstündə açılsın
+            };
+
+            playerWindow.ShowDialog(); // Dialog kimi aç (istifadəçi bağlayana qədər arxadakı pəncərəyə toxunmaq olmasın)
+        }
+
     }
 }

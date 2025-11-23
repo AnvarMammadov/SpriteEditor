@@ -20,7 +20,7 @@
 
                 <Separator Opacity="0.3" Background="{StaticResource Brush.Border}" Margin="0,0,0,20"/>
 
-                <StackPanel Visibility="{Binding SelectedNode, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}">
+                <StackPanel Visibility="{Binding SelectedNode, Converter={StaticResource NullToVisibilityConverter}}">
                     <TextBlock Text="Speaker Name" Foreground="Gray" FontSize="10"/>
                     <TextBox Text="{Binding SelectedNode.SpeakerName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
 
@@ -34,13 +34,21 @@
                     <ItemsControl ItemsSource="{Binding SelectedNode.Choices}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid Margin="0,2">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="30"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" ToolTip="Text on the button"/>
-                                </Grid>
+                                <Border Background="#2D3748" CornerRadius="4" Margin="0,2" Padding="5">
+                                    <StackPanel>
+                                        <TextBlock Text="Button Text:" FontSize="9" Foreground="Gray"/>
+                                        <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5"/>
+
+                                        <TextBlock Text="Target Node ID (və ya adı):" FontSize="9" Foreground="Gray"/>
+                                        <TextBox Text="{Binding TargetNodeId, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True" Opacity="0.5"/>
+
+                                        <Button Content="Remove Link" 
+                                                Command="{Binding DataContext.DeleteLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource Style.Button.Primary}" 
+                                                Height="20" FontSize="10" Margin="0,5,0,0" Background="#7F1D1D"/>
+                                    </StackPanel>
+                                </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -50,7 +58,7 @@
             </StackPanel>
         </Border>
 
-        <Grid Grid.Column="1" ClipToBounds="True" MouseMove="Canvas_MouseMove" MouseUp="Canvas_MouseUp">
+        <Grid  x:Name="EditorCanvas" Grid.Column="1" ClipToBounds="True" MouseMove="Canvas_MouseMove" MouseUp="Canvas_MouseUp">
             <Grid.Background>
                 <DrawingBrush Viewport="0,0,40,40" ViewportUnits="Absolute" TileMode="Tile">
                     <DrawingBrush.Drawing>
@@ -77,17 +85,41 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Path Stroke="{StaticResource Brush.Text.Secondary}" StrokeThickness="2">
-                            <Path.Data>
-                                <PathGeometry>
-                                    <PathFigure StartPoint="{Binding StartPoint}">
-                                        <BezierSegment Point1="{Binding StartPoint, Converter={StaticResource OffsetConverter}, ConverterParameter=50}"
-                                                       Point2="{Binding EndPoint, Converter={StaticResource OffsetConverter}, ConverterParameter=-50}"
-                                                       Point3="{Binding EndPoint}"/>
-                                    </PathFigure>
-                                </PathGeometry>
-                            </Path.Data>
-                        </Path>
+                        <Grid>
+                            <Path Stroke="Black" StrokeThickness="4" Opacity="0.3">
+                                <Path.Data>
+                                    <PathGeometry>
+                                        <PathFigure StartPoint="{Binding StartPoint}">
+                                            <BezierSegment Point1="{Binding ControlPoint1}"
+                                                           Point2="{Binding ControlPoint2}"
+                                                           Point3="{Binding EndPoint}"/>
+                                        </PathFigure>
+                                    </PathGeometry>
+                                </Path.Data>
+                                <Path.Effect>
+                                    <BlurEffect Radius="5"/>
+                                </Path.Effect>
+                            </Path>
+
+                            <Path StrokeThickness="3">
+                                <Path.Stroke>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#EAB308" Offset="0.0"/>
+                                        <GradientStop Color="#3B82F6" Offset="1.0"/>
+                                    </LinearGradientBrush>
+                                </Path.Stroke>
+                                <Path.Data>
+                                    <PathGeometry>
+                                        <PathFigure StartPoint="{Binding StartPoint}">
+                                            <BezierSegment Point1="{Binding ControlPoint1}"
+                                                           Point2="{Binding ControlPoint2}"
+                                                           Point3="{Binding EndPoint}"/>
+                                        </PathFigure>
+                                    </PathGeometry>
+                                </Path.Data>
+                            </Path>
+
+                        </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -139,9 +171,14 @@
                                 </StackPanel>
                             </Border>
 
-                            <Ellipse Width="12" Height="12" Fill="#4B5563" Stroke="Black" StrokeThickness="1" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="-6,0,0,0"/>
+                            <Ellipse Width="12" Height="12" 
+                                     Fill="#4B5563" Stroke="Black" StrokeThickness="1" 
+                                     HorizontalAlignment="Left" VerticalAlignment="Top" 
+                                     Margin="-6,35,0,0"/>
 
-                            <Button Width="16" Height="16" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,-8,0"
+                            <Button Width="16" Height="16" 
+                                    HorizontalAlignment="Right" VerticalAlignment="Top" 
+                                    Margin="0,33,-8,0"
                                     Style="{StaticResource Style.Button.Primary}" Padding="0"
                                     PreviewMouseDown="Port_MouseDown"
                                     Tag="{Binding}">

@@ -13,24 +13,30 @@ using SpriteEditor.Views;
 namespace SpriteEditor.ViewModels
 {
     // Xəttin çəkilməsi üçün köməkçi klass
-    public class NodeConnection : ObservableObject
+    public partial class NodeConnection : ObservableObject
     {
         public StoryNode Source { get; set; }
         public StoryNode Target { get; set; }
 
-        // XAML-da Node eni 180-dir.
-        // Y koordinatını +42 edirik ki, yeni sabit portlarla üst-üstə düşsün.
         public Point StartPoint => new Point(Source.X + 180, Source.Y + 42);
-
         public Point EndPoint => new Point(Target.X, Target.Y + 42);
 
-        // Əyrilik (Bezier) nöqtələri
         public Point ControlPoint1 => new Point(StartPoint.X + 80, StartPoint.Y);
         public Point ControlPoint2 => new Point(EndPoint.X - 80, EndPoint.Y);
     }
 
     public partial class StoryEditorViewModel : ObservableObject
     {
+
+        // === YENİ: Zoom və Pan üçün dəyişənlər ===
+        [ObservableProperty] private double _zoomLevel = 1.0;
+        [ObservableProperty] private double _panX = 0;
+        [ObservableProperty] private double _panY = 0;
+
+        // Zoom üçün minimum və maksimum hədlər
+        public const double MinZoom = 0.2;
+        public const double MaxZoom = 3.0;
+
         public ObservableCollection<StoryNode> Nodes { get; } = new();
 
         // Ekranda görünən xətlər
@@ -47,6 +53,9 @@ namespace SpriteEditor.ViewModels
 
         public StoryEditorViewModel()
         {
+            ZoomLevel = 1.0;    
+            PanX = 0;   
+            PanY = 0;
             // Test üçün 2 node
             var n1 = new StoryNode { Title = "Start", SpeakerName = "System", Text = "Game Starts", X = 100, Y = 100 };
             var n2 = new StoryNode { Title = "Scene 1", SpeakerName = "Alex", Text = "Hello!", X = 400, Y = 100 };
@@ -61,8 +70,9 @@ namespace SpriteEditor.ViewModels
             {
                 Title = $"Node {Nodes.Count + 1}",
                 SpeakerName = "Narrator",
-                X = 200 + (Nodes.Count * 20),
-                Y = 200 + (Nodes.Count * 20)
+                // Ekranın ortasında yaranması üçün:
+                X = (-PanX + 250) / ZoomLevel,
+                Y = (-PanY + 250) / ZoomLevel
             });
         }
 

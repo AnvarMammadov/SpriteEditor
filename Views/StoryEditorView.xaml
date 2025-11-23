@@ -38,10 +38,8 @@
                                     <StackPanel>
                                         <TextBlock Text="Button Text:" FontSize="9" Foreground="Gray"/>
                                         <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5"/>
-
-                                        <TextBlock Text="Target Node ID (və ya adı):" FontSize="9" Foreground="Gray"/>
+                                        <TextBlock Text="Target Node ID:" FontSize="9" Foreground="Gray"/>
                                         <TextBox Text="{Binding TargetNodeId, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True" Opacity="0.5"/>
-
                                         <Button Content="Remove Link" 
                                                 Command="{Binding DataContext.DeleteLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
                                                 CommandParameter="{Binding}"
@@ -58,7 +56,14 @@
             </StackPanel>
         </Border>
 
-        <Grid  x:Name="EditorCanvas" Grid.Column="1" ClipToBounds="True" MouseMove="Canvas_MouseMove" MouseUp="Canvas_MouseUp">
+        <Grid x:Name="EditorCanvas" 
+              Grid.Column="1" 
+              ClipToBounds="True" 
+              MouseDown="EditorCanvas_MouseDown"
+              MouseMove="Canvas_MouseMove" 
+              MouseUp="Canvas_MouseUp"
+              MouseWheel="EditorCanvas_MouseWheel">
+
             <Grid.Background>
                 <DrawingBrush Viewport="0,0,40,40" ViewportUnits="Absolute" TileMode="Tile">
                     <DrawingBrush.Drawing>
@@ -77,117 +82,122 @@
                 </DrawingBrush>
             </Grid.Background>
 
-            <ItemsControl ItemsSource="{Binding Connections}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <Canvas IsItemsHost="True"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Grid>
-                            <Path Stroke="Black" StrokeThickness="4" Opacity="0.3">
-                                <Path.Data>
-                                    <PathGeometry>
-                                        <PathFigure StartPoint="{Binding StartPoint}">
-                                            <BezierSegment Point1="{Binding ControlPoint1}"
-                                                           Point2="{Binding ControlPoint2}"
-                                                           Point3="{Binding EndPoint}"/>
-                                        </PathFigure>
-                                    </PathGeometry>
-                                </Path.Data>
-                                <Path.Effect>
-                                    <BlurEffect Radius="5"/>
-                                </Path.Effect>
-                            </Path>
+            <Canvas x:Name="WorldLayer">
+                <Canvas.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform ScaleX="{Binding ZoomLevel, FallbackValue=1.0}" 
+                                        ScaleY="{Binding ZoomLevel, FallbackValue=1.0}"/>
+                        <TranslateTransform X="{Binding PanX}" Y="{Binding PanY}"/>
+                    </TransformGroup>
+                </Canvas.RenderTransform>
 
-                            <Path StrokeThickness="3">
-                                <Path.Stroke>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Color="#EAB308" Offset="0.0"/>
-                                        <GradientStop Color="#3B82F6" Offset="1.0"/>
-                                    </LinearGradientBrush>
-                                </Path.Stroke>
-                                <Path.Data>
-                                    <PathGeometry>
-                                        <PathFigure StartPoint="{Binding StartPoint}">
-                                            <BezierSegment Point1="{Binding ControlPoint1}"
-                                                           Point2="{Binding ControlPoint2}"
-                                                           Point3="{Binding EndPoint}"/>
-                                        </PathFigure>
-                                    </PathGeometry>
-                                </Path.Data>
-                            </Path>
+                <ItemsControl ItemsSource="{Binding Connections}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas IsItemsHost="True"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Path Stroke="Black" StrokeThickness="4" Opacity="0.3">
+                                    <Path.Data>
+                                        <PathGeometry>
+                                            <PathFigure StartPoint="{Binding StartPoint}">
+                                                <BezierSegment Point1="{Binding ControlPoint1}" Point2="{Binding ControlPoint2}" Point3="{Binding EndPoint}"/>
+                                            </PathFigure>
+                                        </PathGeometry>
+                                    </Path.Data>
+                                    <Path.Effect>
+                                        <BlurEffect Radius="5"/>
+                                    </Path.Effect>
+                                </Path>
+                                <Path StrokeThickness="3">
+                                    <Path.Stroke>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#EAB308" Offset="0.0"/>
+                                            <GradientStop Color="#3B82F6" Offset="1.0"/>
+                                        </LinearGradientBrush>
+                                    </Path.Stroke>
+                                    <Path.Data>
+                                        <PathGeometry>
+                                            <PathFigure StartPoint="{Binding StartPoint}">
+                                                <BezierSegment Point1="{Binding ControlPoint1}" Point2="{Binding ControlPoint2}" Point3="{Binding EndPoint}"/>
+                                            </PathFigure>
+                                        </PathGeometry>
+                                    </Path.Data>
+                                </Path>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
-                        </Grid>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                <Path Stroke="#EAB308" StrokeThickness="2" StrokeDashArray="4 2" 
+                      Visibility="{Binding IsDraggingConnection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Path.Data>
+                        <PathGeometry>
+                            <PathFigure StartPoint="{Binding TempConnectionStart}">
+                                <BezierSegment Point1="{Binding TempConnectionStart}" Point2="{Binding TempConnectionEnd}" Point3="{Binding TempConnectionEnd}"/>
+                            </PathFigure>
+                        </PathGeometry>
+                    </Path.Data>
+                </Path>
 
-            <Path Stroke="#EAB308" StrokeThickness="2" StrokeDashArray="4 2" Visibility="{Binding IsDraggingConnection, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <Path.Data>
-                    <PathGeometry>
-                        <PathFigure StartPoint="{Binding TempConnectionStart}">
-                            <BezierSegment Point1="{Binding TempConnectionStart}" Point2="{Binding TempConnectionEnd}" Point3="{Binding TempConnectionEnd}"/>
-                        </PathFigure>
-                    </PathGeometry>
-                </Path.Data>
-            </Path>
+                <ListBox ItemsSource="{Binding Nodes}" SelectedItem="{Binding SelectedNode}" 
+                         Background="Transparent" BorderThickness="0">
 
-            <ListBox ItemsSource="{Binding Nodes}" SelectedItem="{Binding SelectedNode}" Background="Transparent" BorderThickness="0">
-                <ListBox.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <Canvas IsItemsHost="True"/>
-                    </ItemsPanelTemplate>
-                </ListBox.ItemsPanel>
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
-                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ListBoxItem">
-                                    <ContentPresenter/>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </ListBox.ItemContainerStyle>
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Grid Width="180">
-                            <Border Background="#1F2937" BorderBrush="#111827" BorderThickness="1" CornerRadius="8" Effect="{StaticResource NodeShadowEffect}">
-                                <StackPanel>
-                                    <Border Background="{StaticResource Brush.Accent.Blue}" CornerRadius="8,8,0,0" Padding="10,5" MouseDown="Node_MouseDown" Cursor="SizeAll">
-                                        <TextBlock Text="{Binding SpeakerName}" Foreground="White" FontWeight="Bold" FontSize="12"/>
-                                    </Border>
+                    <ListBox.Template>
+                        <ControlTemplate TargetType="ListBox">
+                            <ItemsPresenter />
+                        </ControlTemplate>
+                    </ListBox.Template>
 
-                                    <Border Padding="10">
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Title}" Foreground="{StaticResource Brush.Accent.Primary}" FontSize="10" Margin="0,0,0,5"/>
-                                            <TextBlock Text="{Binding Text}" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" TextWrapping="Wrap" MaxHeight="60" TextTrimming="CharacterEllipsis"/>
-                                        </StackPanel>
-                                    </Border>
-                                </StackPanel>
-                            </Border>
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas IsItemsHost="True"/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
 
-                            <Ellipse Width="12" Height="12" 
-                                     Fill="#4B5563" Stroke="Black" StrokeThickness="1" 
-                                     HorizontalAlignment="Left" VerticalAlignment="Top" 
-                                     Margin="-6,35,0,0"/>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                            <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
 
-                            <Button Width="16" Height="16" 
-                                    HorizontalAlignment="Right" VerticalAlignment="Top" 
-                                    Margin="0,33,-8,0"
-                                    Style="{StaticResource Style.Button.Primary}" Padding="0"
-                                    PreviewMouseDown="Port_MouseDown"
-                                    Tag="{Binding}">
-                                <Ellipse Width="10" Height="10" Fill="White" Stroke="{StaticResource Brush.Accent.Primary}" StrokeThickness="2"/>
-                            </Button>
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Width="180">
+                                <Border Background="#1F2937" BorderBrush="#111827" BorderThickness="1" CornerRadius="8" Effect="{StaticResource NodeShadowEffect}">
+                                    <StackPanel>
+                                        <Border Background="{StaticResource Brush.Accent.Blue}" CornerRadius="8,8,0,0" Padding="10,5" MouseDown="Node_MouseDown" Cursor="SizeAll">
+                                            <TextBlock Text="{Binding SpeakerName}" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                                        </Border>
+                                        <Border Padding="10">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Title}" Foreground="{StaticResource Brush.Accent.Primary}" FontSize="10" Margin="0,0,0,5"/>
+                                                <TextBlock Text="{Binding Text}" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" TextWrapping="Wrap" MaxHeight="60" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                                <Ellipse Width="12" Height="12" Fill="#4B5563" Stroke="Black" StrokeThickness="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-6,35,0,0"/>
+                                <Button Width="16" Height="16" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,33,-8,0" Style="{StaticResource Style.Button.Primary}" Padding="0" PreviewMouseDown="Port_MouseDown" Tag="{Binding}">
+                                    <Ellipse Width="10" Height="10" Fill="White" Stroke="{StaticResource Brush.Accent.Primary}" StrokeThickness="2"/>
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+            </Canvas>
         </Grid>
     </Grid>
 </UserControl>

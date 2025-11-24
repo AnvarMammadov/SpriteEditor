@@ -7,14 +7,44 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace SpriteEditor.Data.Story
 {
-    // 1. Seçim (Button)
-    public class StoryChoice
+    // 1. Müqayisə Operatorları
+    public enum ConditionOperator
     {
-        public string Text { get; set; } = "Next";
-        public string TargetNodeId { get; set; } // Hansı qutuya gedəcək?
+        None,           // Şərt yoxdur
+        Equals,         // Bərabərdir (==)
+        NotEquals,      // Bərabər deyil (!=)
+        GreaterThan,    // Böyükdür (>) - Yalnız Integer üçün
+        LessThan        // Kiçikdir (<) - Yalnız Integer üçün
     }
 
-    // 2. Düyün (Hekayənin bir parçası)
+    // 2. Dəyişən Tipləri (Sadəlik üçün hələlik 3 əsas tip)
+    public enum VariableType
+    {
+        Boolean, // True/False (Məs: HasKey)
+        Integer, // Rəqəm (Məs: Gold, Health)
+        String   // Mətn (Məs: PlayerName)
+    }
+
+    // 3. Seçim (Button)
+    public partial class StoryChoice : ObservableObject
+    {
+        [ObservableProperty] private string _text = "Next";
+        [ObservableProperty] private string _targetNodeId; // Hansı qutuya gedəcək?
+
+        // === YENİ: Şərt Sistemi ===
+
+        // Hansı dəyişəni yoxlayırıq? (Dəyişənin Adı)
+        // Qeyd: Birbaşa StoryVariable obyektini saxlamırıq, çünki Save/Load zamanı ad (string) daha etibarlıdır.
+        [ObservableProperty] private string _conditionVariableName;
+
+        // Necə yoxlayırıq? (==, !=, >, <)
+        [ObservableProperty] private ConditionOperator _operator = ConditionOperator.None;
+
+        // Hansı dəyərlə müqayisə edirik? (Məsələn: "True", "5", "RedKey")
+        [ObservableProperty] private string _conditionValue;
+    }
+
+    // 4. Düyün (Hekayənin bir parçası)
     // ObservableObject edirik ki, Editor-da yazanda UI dərhal yenilənsin
     public partial class StoryNode : ObservableObject
     {
@@ -39,7 +69,7 @@ namespace SpriteEditor.Data.Story
         public List<StoryChoice> Choices { get; set; } = new List<StoryChoice>();
     }
 
-    // 3. Bütün Hekayə Qrafı
+    // 5. Bütün Hekayə Qrafı
     public class StoryGraph
     {
         public string Name { get; set; } = "My Story";
@@ -52,16 +82,7 @@ namespace SpriteEditor.Data.Story
     }
 
 
-
-    // 1. Dəyişən Tipləri (Sadəlik üçün hələlik 3 əsas tip)
-    public enum VariableType
-    {
-        Boolean, // True/False (Məs: HasKey)
-        Integer, // Rəqəm (Məs: Gold, Health)
-        String   // Mətn (Məs: PlayerName)
-    }
-
-    // 2. Dəyişən Modeli
+    // 6. Dəyişən Modeli
     public partial class StoryVariable : ObservableObject
     {
         [ObservableProperty]

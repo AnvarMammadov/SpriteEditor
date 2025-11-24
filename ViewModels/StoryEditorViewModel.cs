@@ -68,6 +68,7 @@ namespace SpriteEditor.ViewModels
 
         public ObservableCollection<StoryVariable> GlobalVariables { get; } = new();
         public List<VariableType> VariableTypes { get; } = Enum.GetValues(typeof(VariableType)).Cast<VariableType>().ToList();
+        public List<ConditionOperator> ConditionOperators { get; } = Enum.GetValues(typeof(ConditionOperator)).Cast<ConditionOperator>().ToList();
 
         public StoryEditorViewModel()
         {
@@ -219,10 +220,11 @@ namespace SpriteEditor.ViewModels
             var storyGraph = new StoryGraph
             {
                 Nodes = Nodes.ToList(),
+                // Başlanğıc Node
+                StartNodeId = Nodes.FirstOrDefault(n => n.IsStartNode)?.Id ?? Nodes.FirstOrDefault()?.Id,
 
-                // --- DÜZƏLİŞ BURADADIR ---
-                // "IsStartNode"u true olanı tap. Əgər heç biri seçilməyibsə, birincini götür.
-                StartNodeId = Nodes.FirstOrDefault(n => n.IsStartNode)?.Id ?? Nodes.FirstOrDefault()?.Id
+                // !!! VACİB: Dəyişənləri də bura əlavə etməliydik !!!
+                Variables = GlobalVariables.ToList()
             };
 
             var playerVm = new StoryPlayerViewModel();

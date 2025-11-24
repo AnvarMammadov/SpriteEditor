@@ -4,15 +4,29 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:converters="clr-namespace:SpriteEditor.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1000">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <x:Array x:Key="BooleanOptions" Type="sys:String">
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <converters:VariableTypeToVisibilityConverter x:Key="VariableTypeToVisibilityConverter"/>
+
+        <x:Array x:Key="BooleanOptions" Type="{x:Type sys:String}">
             <sys:String>True</sys:String>
             <sys:String>False</sys:String>
         </x:Array>
+
+        <Style x:Key="ScrollThumStyle" TargetType="{x:Type Thumb}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Border CornerRadius="4" Background="#4B5563" BorderThickness="0"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
         <Style x:Key="ModernScrollBar" TargetType="{x:Type ScrollBar}">
             <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false"/>
@@ -33,15 +47,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="ScrollThumStyle" TargetType="{x:Type Thumb}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type Thumb}">
-                        <Border CornerRadius="4" Background="#4B5563" BorderThickness="0"/>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+
         <Style TargetType="{x:Type ScrollViewer}">
             <Setter Property="Template">
                 <Setter.Value>
@@ -72,12 +78,12 @@
         </Grid.ColumnDefinitions>
 
         <Border x:Name="ToolsPanelBorder" 
-        Grid.Column="0" 
-        Background="{StaticResource Brush.Bg.Panel}" 
-        BorderBrush="{StaticResource Brush.Border}" 
-        BorderThickness="0,0,1,0" 
-        ClipToBounds="True"
-        Padding="15">
+                Grid.Column="0" 
+                Background="{StaticResource Brush.Bg.Panel}" 
+                BorderBrush="{StaticResource Brush.Border}" 
+                BorderThickness="0,0,1,0" 
+                ClipToBounds="True"
+                Padding="15">
             <Border.Style>
                 <Style TargetType="Border">
                     <Setter Property="Width" Value="300"/>
@@ -137,10 +143,10 @@
 
                 <Grid Grid.Row="1" Margin="0,0,0,15">
                     <Expander Header="GLOBAL VARIABLES" 
-                      Foreground="{StaticResource Brush.Text.Secondary}" 
-                      FontWeight="Bold" 
-                      IsExpanded="True"
-                      BorderThickness="0">
+                              Foreground="{StaticResource Brush.Text.Secondary}" 
+                              FontWeight="Bold" 
+                              IsExpanded="True"
+                              BorderThickness="0">
 
                         <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,5,0">
                             <StackPanel Margin="0,10,0,0">
@@ -166,20 +172,20 @@
                                                     </Grid.RowDefinitions>
 
                                                     <TextBox Grid.Row="0" Grid.Column="0" 
-                                                     Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
-                                                     Foreground="{StaticResource Brush.Accent.Primary}"
-                                                     FontWeight="SemiBold" FontSize="12" Height="30"
-                                                     VerticalContentAlignment="Center" Padding="5,0"
-                                                     Background="{StaticResource Brush.Bg.Input}"
-                                                     BorderBrush="{StaticResource Brush.Border}" BorderThickness="1"
-                                                     Margin="0,0,5,8"/>
+                                                             Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
+                                                             Foreground="{StaticResource Brush.Accent.Primary}"
+                                                             FontWeight="SemiBold" FontSize="12" Height="30"
+                                                             VerticalContentAlignment="Center" Padding="5,0"
+                                                             Background="{StaticResource Brush.Bg.Input}"
+                                                             BorderBrush="{StaticResource Brush.Border}" BorderThickness="1"
+                                                             Margin="0,0,5,8"/>
 
                                                     <Button Grid.Row="0" Grid.Column="1" Content="✕" 
-                                                    Command="{Binding DataContext.DeleteVariableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                    CommandParameter="{Binding}"
-                                                    Width="30" Height="30" Margin="0,0,0,8"
-                                                    Style="{StaticResource Style.Button.Primary}"
-                                                    Background="#33EF4444" BorderBrush="#EF4444" Foreground="#EF4444" FontWeight="Bold"/>
+                                                            Command="{Binding DataContext.DeleteVariableCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" 
+                                                            CommandParameter="{Binding}"
+                                                            Width="30" Height="30" Margin="0,0,0,8"
+                                                            Style="{StaticResource Style.Button.Primary}"
+                                                            Background="#33EF4444" BorderBrush="#EF4444" Foreground="#EF4444" FontWeight="Bold"/>
 
                                                     <Grid Grid.Row="1" Grid.ColumnSpan="2">
                                                         <Grid.ColumnDefinitions>
@@ -188,15 +194,15 @@
                                                         </Grid.ColumnDefinitions>
 
                                                         <ComboBox Grid.Column="0" SelectedItem="{Binding Type}" 
-                                                          ItemsSource="{Binding DataContext.VariableTypes, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                          Height="30" FontSize="11" VerticalContentAlignment="Center"
-                                                          Margin="0,0,5,0" Style="{StaticResource DarkComboBoxStyle}"/>
+                                                                  ItemsSource="{Binding DataContext.VariableTypes, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                                                                  Height="30" FontSize="11" VerticalContentAlignment="Center"
+                                                                  Margin="0,0,5,0" Style="{StaticResource DarkComboBoxStyle}"/>
 
                                                         <Grid Grid.Column="1">
                                                             <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" 
-                                                             Height="30" FontSize="12" VerticalContentAlignment="Center" Padding="5,0"
-                                                             Background="{StaticResource Brush.Bg.Input}" Foreground="White"
-                                                             BorderBrush="{StaticResource Brush.Border}" BorderThickness="1">
+                                                                     Height="30" FontSize="12" VerticalContentAlignment="Center" Padding="5,0"
+                                                                     Background="{StaticResource Brush.Bg.Input}" Foreground="White"
+                                                                     BorderBrush="{StaticResource Brush.Border}" BorderThickness="1">
                                                                 <TextBox.Style>
                                                                     <Style TargetType="TextBox">
                                                                         <Setter Property="Visibility" Value="Visible"/>
@@ -210,8 +216,8 @@
                                                             </TextBox>
 
                                                             <ComboBox SelectedItem="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                              ItemsSource="{StaticResource BooleanOptions}"
-                                                              Height="30" FontSize="12" VerticalContentAlignment="Center">
+                                                                      ItemsSource="{StaticResource BooleanOptions}"
+                                                                      Height="30" FontSize="12" VerticalContentAlignment="Center">
                                                                 <ComboBox.Style>
                                                                     <Style TargetType="ComboBox" BasedOn="{StaticResource DarkComboBoxStyle}">
                                                                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -253,20 +259,82 @@
                                 <TextBox Text="{Binding SelectedNode.BackgroundImagePath, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
 
                                 <TextBlock Text="Choice Buttons" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,10,0,5"/>
+
                                 <ItemsControl ItemsSource="{Binding SelectedNode.Choices}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="#2D3748" CornerRadius="4" Margin="0,2" Padding="5">
+                                            <Border Background="#2D3748" CornerRadius="4" Margin="0,2" Padding="8">
                                                 <StackPanel>
-                                                    <TextBlock Text="Button Text:" FontSize="9" Foreground="Gray"/>
-                                                    <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5"/>
-                                                    <TextBlock Text="Target Node ID:" FontSize="9" Foreground="Gray"/>
-                                                    <TextBox Text="{Binding TargetNodeId, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True" Opacity="0.5"/>
+                                                    <TextBlock Text="Button Text:" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,2"/>
+                                                    <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+
+                                                    <TextBlock Text="Target Node ID:" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,2"/>
+                                                    <TextBox Text="{Binding TargetNodeId, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True" Opacity="0.5" Background="Transparent" BorderThickness="0" Foreground="Gray" FontSize="10" Margin="0,0,0,8"/>
+
+                                                    <Separator Background="{StaticResource Brush.Border}" Opacity="0.3" Margin="0,0,0,8"/>
+
+                                                    <TextBlock Text="Condition (Optional):" FontWeight="Bold" FontSize="10" Foreground="{StaticResource Brush.Accent.Primary}" Margin="0,0,0,5"/>
+
+                                                    <Grid Margin="0,0,0,5">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="Var:" VerticalAlignment="Center" Foreground="Gray" FontSize="10" Margin="0,0,5,0"/>
+
+                                                        <ComboBox Grid.Column="1"
+                                                                  ItemsSource="{Binding DataContext.GlobalVariables, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                                                                  DisplayMemberPath="Name"
+                                                                  SelectedValuePath="Name"
+                                                                  SelectedValue="{Binding ConditionVariableName}"
+                                                                  Style="{StaticResource DarkComboBoxStyle}"
+                                                                  Height="25" FontSize="11"/>
+                                                    </Grid>
+
+                                                    <Grid Margin="0,0,0,10">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <ComboBox Grid.Column="0"
+                                                                  ItemsSource="{Binding DataContext.ConditionOperators, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                                                                  SelectedItem="{Binding Operator}"
+                                                                  Style="{StaticResource DarkComboBoxStyle}"
+                                                                  Height="25" FontSize="11" Margin="0,0,2,0"/>
+
+                                                        <Grid Grid.Column="1" Margin="2,0,0,0">
+                                                            <TextBox Text="{Binding ConditionValue, UpdateSourceTrigger=PropertyChanged}"
+                                                                     Height="25" FontSize="11" VerticalContentAlignment="Center"
+                                                                     Padding="5,0"
+                                                                     Background="{StaticResource Brush.Bg.Input}" Foreground="White" BorderBrush="{StaticResource Brush.Border}">
+                                                                <TextBox.Visibility>
+                                                                    <MultiBinding Converter="{StaticResource VariableTypeToVisibilityConverter}" ConverterParameter="Other">
+                                                                        <Binding Path="ConditionVariableName"/>
+                                                                        <Binding Path="DataContext.GlobalVariables" RelativeSource="{RelativeSource AncestorType={x:Type UserControl}}"/>
+                                                                    </MultiBinding>
+                                                                </TextBox.Visibility>
+                                                            </TextBox>
+
+                                                            <ComboBox SelectedItem="{Binding ConditionValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                      ItemsSource="{StaticResource BooleanOptions}"
+                                                                      Height="25" FontSize="11" VerticalContentAlignment="Center"
+                                                                      Style="{StaticResource DarkComboBoxStyle}">
+                                                                <ComboBox.Visibility>
+                                                                    <MultiBinding Converter="{StaticResource VariableTypeToVisibilityConverter}" ConverterParameter="Boolean">
+                                                                        <Binding Path="ConditionVariableName"/>
+                                                                        <Binding Path="DataContext.GlobalVariables" RelativeSource="{RelativeSource AncestorType={x:Type UserControl}}"/>
+                                                                    </MultiBinding>
+                                                                </ComboBox.Visibility>
+                                                            </ComboBox>
+                                                        </Grid>
+                                                    </Grid>
+
                                                     <Button Content="Remove Link" 
-                                                    Command="{Binding DataContext.DeleteLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                    CommandParameter="{Binding}"
-                                                    Style="{StaticResource Style.Button.Primary}" 
-                                                    Height="20" FontSize="10" Margin="0,5,0,0" Background="#7F1D1D"/>
+                                                            Command="{Binding DataContext.DeleteLinkCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" 
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource Style.Button.Primary}" 
+                                                            Height="24" FontSize="10" Background="#33EF4444" BorderBrush="#EF4444" Foreground="#EF4444"/>
                                                 </StackPanel>
                                             </Border>
                                         </DataTemplate>
@@ -415,7 +483,7 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid Width="180">
-                                <Border Background="#1F2937" BorderBrush="#111827" BorderThickness="1" CornerRadius="8" Effect="{StaticResource NodeShadowEffect}" Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                <Border Background="#1F2937" BorderBrush="#111827" BorderThickness="1" CornerRadius="8" Effect="{StaticResource NodeShadowEffect}" Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}">
                                     <Border.ContextMenu>
                                         <ContextMenu>
                                             <MenuItem Header="Set as Start Node" Command="{Binding PlacementTarget.Tag.SetAsStartNodeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>

@@ -16,13 +16,11 @@ namespace SpriteEditor.ViewModels
     {
         private StoryGraph _currentStory;
 
-        // Ekranda görünən elementlər
         [ObservableProperty] private string _displayText;
         [ObservableProperty] private string _speakerName;
         [ObservableProperty] private ImageSource _backgroundImage;
         [ObservableProperty] private ImageSource _characterImage;
 
-        // Seçimlər (Düymələr)
         public ObservableCollection<StoryChoice> CurrentChoices { get; } = new ObservableCollection<StoryChoice>();
 
         public void LoadStory(StoryGraph story)
@@ -37,36 +35,28 @@ namespace SpriteEditor.ViewModels
         private void GoToNode(string nodeId)
         {
             var node = _currentStory.Nodes.FirstOrDefault(n => n.Id == nodeId);
-            if (node == null) return; // Oyun bitdi və ya xəta
+            if (node == null) return;
 
-            // 1. Mətni yenilə
+            // 1. YENİ: Düyünə girən kimi Hadisələri İcra Et (Actions)
+            // Bu, mətni göstərməzdən əvvəl baş verməlidir ki, şərtlər dərhal düzgün işləsin.
+            ExecuteActions(node);
+
+            // 2. Mətni və Şəkilləri yenilə
             DisplayText = node.Text;
             SpeakerName = node.SpeakerName;
 
-            // 2. Şəkilləri yenilə (Əgər yol varsa)
             if (!string.IsNullOrEmpty(node.BackgroundImagePath))
-            {
-                try { BackgroundImage = new BitmapImage(new Uri(node.BackgroundImagePath)); } catch { }
-            }
-            else
-            {
-                BackgroundImage = null; // Yoxdursa təmizlə
-            }
+                try { BackgroundImage = new BitmapImage(new Uri(node.BackgroundImagePath)); } catch { BackgroundImage = null; }
+            else BackgroundImage = null;
 
             if (!string.IsNullOrEmpty(node.CharacterImagePath))
-            {
-                try { CharacterImage = new BitmapImage(new Uri(node.CharacterImagePath)); } catch { }
-            }
-            else
-            {
-                CharacterImage = null;
-            }
+                try { CharacterImage = new BitmapImage(new Uri(node.CharacterImagePath)); } catch { CharacterImage = null; }
+            else CharacterImage = null;
 
-            // 3. Seçimləri yenilə (ŞƏRTLİ MƏNTİQ BURADADIR)
+            // 3. Seçimləri yenilə (Şərtləri yoxlayaraq)
             CurrentChoices.Clear();
             foreach (var choice in node.Choices)
             {
-                // Yalnız şərti ödəyən düymələri siyahıya əlavə et
                 if (EvaluateCondition(choice))
                 {
                     CurrentChoices.Add(choice);
@@ -74,48 +64,82 @@ namespace SpriteEditor.ViewModels
             }
         }
 
-        // === YENİ: Şərtləri Yoxlayan "Beyin" ===
+        // === YENİ: Hadisələri İcra Edən Metod ===
+        private void ExecuteActions(StoryNode node)
+        {
+            if (node.OnEnterActions == null) return;
+
+            foreach (var action in node.OnEnterActions)
+            {
+                // Hədəf dəyişəni tap
+                var variable = _currentStory.Variables.FirstOrDefault(v => v.Name == action.TargetVariableName);
+                if (variable == null) continue; // Dəyişən tapılmadısa ötür
+
+                try
+                {
+                    switch (action.Operation)
+                    {
+                        case ActionOperation.Set:
+                            // Dəyəri birbaşa mənimsət
+                            variable.Value = action.Value;
+                            break;
+
+                        case ActionOperation.Toggle:
+                            // Yalnız Boolean üçün: True -> False, False -> True
+                            if (bool.TryParse(variable.Value, out bool currentBool))
+                            {
+                                variable.Value = (!currentBool).ToString();
+                            }
+                            break;
+
+                        case ActionOperation.Add:
+                            // Rəqəmlər üçün toplama (Integer)
+                            if (int.TryParse(variable.Value, out int currentIntAdd) && int.TryParse(action.Value, out int valAdd))
+                            {
+                                variable.Value = (currentIntAdd + valAdd).ToString();
+                            }
+                            break;
+
+                        case ActionOperation.Subtract:
+                            // Rəqəmlər üçün çıxma (Integer)
+                            if (int.TryParse(variable.Value, out int currentIntSub) && int.TryParse(action.Value, out int valSub))
+                            {
+                                variable.Value = (currentIntSub - valSub).ToString();
+                            }
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Səhv olsa belə oyun dayanmasın, sadəcə log yaza bilərik
+                    System.Diagnostics.Debug.WriteLine($"Action Error: {ex.Message}");
+                }
+            }
+        }
+
+        // === Şərtləri Yoxlayan Metod (Olduğu kimi qalır) ===
         private bool EvaluateCondition(StoryChoice choice)
         {
-            // 1. Əgər heç bir şərt qoyulmayıbsa və ya Operator "None" seçilibsə -> Həmişə Göstər
             if (string.IsNullOrEmpty(choice.ConditionVariableName) || choice.Operator == ConditionOperator.None)
-            {
                 return true;
-            }
 
-            // 2. Qlobal dəyişənlər siyahısından lazım olanı tap
             var variable = _currentStory.Variables.FirstOrDefault(v => v.Name == choice.ConditionVariableName);
-
-            // Əgər dəyişən tapılmadısa (məsələn silinib), təhlükəsizlik üçün düyməni gizlət (və ya göstər, strategiyadan asılıdır)
             if (variable == null) return false;
 
-            // 3. Dəyərləri müqayisə et
-            // String müqayisəsi üçün hər ikisini kiçik hərfə çeviririk (Case-insensitive)
             string varValue = variable.Value?.ToString().ToLower() ?? "";
             string targetValue = choice.ConditionValue?.ToString().ToLower() ?? "";
 
             switch (choice.Operator)
             {
-                case ConditionOperator.Equals:
-                    return varValue == targetValue;
-
-                case ConditionOperator.NotEquals:
-                    return varValue != targetValue;
-
+                case ConditionOperator.Equals: return varValue == targetValue;
+                case ConditionOperator.NotEquals: return varValue != targetValue;
                 case ConditionOperator.GreaterThan:
-                    // Yalnız rəqəmlər üçün
-                    if (double.TryParse(varValue, out double vNumGt) && double.TryParse(targetValue, out double tNumGt))
-                        return vNumGt > tNumGt;
+                    if (double.TryParse(varValue, out double vG) && double.TryParse(targetValue, out double tG)) return vG > tG;
                     return false;
-
                 case ConditionOperator.LessThan:
-                    // Yalnız rəqəmlər üçün
-                    if (double.TryParse(varValue, out double vNumLt) && double.TryParse(targetValue, out double tNumLt))
-                        return vNumLt < tNumLt;
+                    if (double.TryParse(varValue, out double vL) && double.TryParse(targetValue, out double tL)) return vL < tL;
                     return false;
-
-                default:
-                    return true;
+                default: return true;
             }
         }
 

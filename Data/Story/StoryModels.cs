@@ -4,9 +4,34 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using System.Collections.ObjectModel;
 
 namespace SpriteEditor.Data.Story
 {
+
+    // === YENİ: Əməliyyat Növləri ===
+    public enum ActionOperation
+    {
+        Set,      // = (Mənimsət, Məs: Açar = True)
+        Add,      // + (Topla, Məs: Gold += 10)
+        Subtract, // - (Çıx, Məs: HP -= 20)
+        Toggle    // ! (Tərsinə çevir, yalnız Boolean üçün. True->False)
+    }
+
+    // === YENİ: Düyün Hadisəsi (Action) ===
+    public partial class StoryNodeAction : ObservableObject
+    {
+        // Hansı dəyişən dəyişəcək?
+        [ObservableProperty] private string _targetVariableName;
+
+        // Nə baş verəcək? (=, +, -)
+        [ObservableProperty] private ActionOperation _operation = ActionOperation.Set;
+
+        // Yeni dəyər nədir? (Məs: "True", "50")
+        // Toggle əməliyyatı üçün bu boş qala bilər.
+        [ObservableProperty] private string _value;
+    }
+
     // 1. Müqayisə Operatorları
     public enum ConditionOperator
     {
@@ -50,23 +75,21 @@ namespace SpriteEditor.Data.Story
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
 
-        // Editor üçün Koordinatlar (JSON-da saxlanacaq)
         [ObservableProperty] private double _x;
         [ObservableProperty] private double _y;
-
         [ObservableProperty] private bool _isStartNode;
-
-        // Məzmun
         [ObservableProperty] private string _title = "New Node";
         [ObservableProperty] private string _text = "Dialogue text goes here...";
         [ObservableProperty] private string _speakerName = "Character";
-
-        // Resurslar (Fayl yolları)
         [ObservableProperty] private string _backgroundImagePath;
         [ObservableProperty] private string _characterImagePath;
 
         // Seçimlər
-        public List<StoryChoice> Choices { get; set; } = new List<StoryChoice>();
+        public ObservableCollection<StoryChoice> Choices { get; set; } = new ObservableCollection<StoryChoice>();
+
+        // === YENİ ƏLAVƏ: Giriş Hadisələri (Actions) ===
+        // Oyunçu bu düyünə girən kimi bu siyahıdakı əməliyyatlar icra olunacaq.
+        public ObservableCollection<StoryNodeAction> OnEnterActions { get; set; } = new ObservableCollection<StoryNodeAction>();
     }
 
     // 5. Bütün Hekayə Qrafı

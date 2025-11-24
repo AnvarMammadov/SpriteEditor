@@ -35,10 +35,28 @@ namespace SpriteEditor.ViewModels
         [ObservableProperty]
         private bool _isToolsPanelOpen = true;
 
+        [ObservableProperty]
+        private bool _isPropertiesPanelOpen = false;
+
         [RelayCommand]
         public void ToggleToolsPanel()
         {
             IsToolsPanelOpen = !IsToolsPanelOpen;
+        }
+
+        [RelayCommand]
+        public void TogglePropertiesPanel()
+        {
+            IsPropertiesPanelOpen = !IsPropertiesPanelOpen;
+        }
+
+        partial void OnSelectedNodeChanged(StoryNode value)
+        {
+            // Əgər bir Node seçilibsə, Sağ Paneli avtomatik aç
+            if (value != null)
+            {
+                IsPropertiesPanelOpen = true;
+            }
         }
 
 
@@ -69,6 +87,7 @@ namespace SpriteEditor.ViewModels
         public ObservableCollection<StoryVariable> GlobalVariables { get; } = new();
         public List<VariableType> VariableTypes { get; } = Enum.GetValues(typeof(VariableType)).Cast<VariableType>().ToList();
         public List<ConditionOperator> ConditionOperators { get; } = Enum.GetValues(typeof(ConditionOperator)).Cast<ConditionOperator>().ToList();
+        public List<ActionOperation> ActionOperations { get; } = Enum.GetValues(typeof(ActionOperation)).Cast<ActionOperation>().ToList();
 
         public StoryEditorViewModel()
         {
@@ -100,13 +119,22 @@ namespace SpriteEditor.ViewModels
         {
             if (SelectedNode == null) return;
 
-            // 1. Əlaqələri təmizlə
+            // 1. Vizual Əlaqələri (Xətləri) təmizlə
             var linksToRemove = Connections.Where(c => c.Source == SelectedNode || c.Target == SelectedNode).ToList();
             foreach (var link in linksToRemove) Connections.Remove(link);
 
-            // 2. Digər node-ların içindən seçimi sil
-            foreach (var node in Nodes) node.Choices.RemoveAll(c => c.TargetNodeId == SelectedNode.Id);
+            // 2. Digər node-ların içindən bu node-a gedən seçimləri (Button-ları) sil
+            foreach (var node in Nodes)
+            {
+                // RemoveAll əvəzinə bu üsuldan istifadə edirik:
+                var choicesToRemove = node.Choices.Where(c => c.TargetNodeId == SelectedNode.Id).ToList();
+                foreach (var choice in choicesToRemove)
+                {
+                    node.Choices.Remove(choice);
+                }
+            }
 
+            // 3. Node-un özünü sil
             Nodes.Remove(SelectedNode);
             SelectedNode = null;
         }
@@ -381,6 +409,33 @@ namespace SpriteEditor.ViewModels
             if (variable != null)
             {
                 GlobalVariables.Remove(variable);
+            }
+        }
+
+        [RelayCommand]
+        public void AddAction()
+        {
+            if (SelectedNode == null) return;
+
+            // Yeni hadisə yaradanda, ilk dəyişəni (əgər varsa) default olaraq seçək ki, boş qalmasın
+            string defaultVar = GlobalVariables.FirstOrDefault()?.Name ?? "";
+
+            var newAction = new StoryNodeAction
+            {
+                TargetVariableName = defaultVar,
+                Operation = ActionOperation.Set,
+                Value = "True" // Başlanğıc dəyər
+            };
+
+            SelectedNode.OnEnterActions.Add(newAction);
+        }
+
+        [RelayCommand]
+        public void DeleteAction(StoryNodeAction action)
+        {
+            if (SelectedNode != null && action != null)
+            {
+                SelectedNode.OnEnterActions.Remove(action);
             }
         }
 

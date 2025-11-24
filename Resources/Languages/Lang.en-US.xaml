@@ -131,6 +131,30 @@
     <system:String x:Key="Str_Msg_AtlasFull">Not enough space in Atlas! Try increasing the size.</system:String>
     <system:String x:Key="Str_TrimTransparency">Trim Transparency (Smart Crop)</system:String>
 
+    <system:String x:Key="Str_StoryEditor">Story Editor</system:String>
+    <system:String x:Key="Str_DescStory">Visual Novel - Build narrative graphs</system:String>
+    <system:String x:Key="Str_HeaderStoryTools">STORY TOOLS</system:String>
+    <system:String x:Key="Str_BtnAddNode">+ Add Node</system:String>
+    <system:String x:Key="Str_BtnPlayPreview">▶ Play Preview</system:String>
+    <system:String x:Key="Str_HeaderGlobalVars">GLOBAL VARIABLES</system:String>
+    <system:String x:Key="Str_BtnCreateVar">+ Create Variable</system:String>
+    <system:String x:Key="Str_HeaderNodeProps">NODE PROPERTIES</system:String>
+    <system:String x:Key="Str_LblSpeaker">Speaker Name:</system:String>
+    <system:String x:Key="Str_LblDialogue">Dialogue Text:</system:String>
+    <system:String x:Key="Str_LblBgImage">Background Image</system:String>
+    <system:String x:Key="Str_LblCharImage">Character Image</system:String>
+    <system:String x:Key="Str_LblAudio">Audio / Music</system:String>
+    <system:String x:Key="Str_HeaderChoices">CHOICE BUTTONS</system:String>
+    <system:String x:Key="Str_LblBtnText">Button Text:</system:String>
+    <system:String x:Key="Str_LblTargetNode">Target Node ID:</system:String>
+    <system:String x:Key="Str_LblCondition">Condition (Optional):</system:String>
+    <system:String x:Key="Str_LblVar">Var:</system:String>
+    <system:String x:Key="Str_BtnRemoveLink">Remove Link</system:String>
+    <system:String x:Key="Str_HeaderActions">ON ENTER ACTIONS</system:String>
+    <system:String x:Key="Str_BtnDeleteNode">Delete Node</system:String>
+    <system:String x:Key="Str_MsgStorySaved">Story saved successfully!</system:String>
+    <system:String x:Key="Str_MsgStoryLoaded">Story loaded successfully.</system:String>
+
     <system:String x:Key="Str_MsgBtnOk">OK</system:String>
     <system:String x:Key="Str_MsgBtnYes">Yes</system:String>
     <system:String x:Key="Str_MsgBtnNo">No</system:String>

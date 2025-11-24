@@ -439,5 +439,47 @@ namespace SpriteEditor.ViewModels
             }
         }
 
+
+        // === YENİ: Multimedia Seçim Əmrləri ===
+
+        [RelayCommand]
+        public void SelectBackgroundImage()
+        {
+            if (SelectedNode == null) return;
+            BrowseFile("Images|*.png;*.jpg;*.jpeg;*.bmp;*.webp", path => SelectedNode.BackgroundImagePath = path);
+        }
+
+        [RelayCommand]
+        public void SelectCharacterImage()
+        {
+            if (SelectedNode == null) return;
+            BrowseFile("Images|*.png;*.jpg;*.jpeg;*.bmp;*.webp", path => SelectedNode.CharacterImagePath = path);
+        }
+
+        [RelayCommand]
+        public void SelectAudio()
+        {
+            if (SelectedNode == null) return;
+            // Audio formatları
+            BrowseFile("Audio|*.mp3;*.wav;*.ogg;*.m4a", path => SelectedNode.AudioPath = path);
+        }
+
+        // Köməkçi Metod (Təkrarçılığın qarşısını almaq üçün)
+        private void BrowseFile(string filter, Action<string> onPathSelected)
+        {
+            OpenFileDialog openDialog = new OpenFileDialog
+            {
+                Filter = filter,
+                Title = "Select Asset"
+            };
+
+            if (openDialog.ShowDialog() == true)
+            {
+                // Tam yolu (Absolute Path) götürürük. 
+                // Gələcəkdə bunu "Relative Path" (Layihəyə görə nisbi yol) etmək daha yaxşı olar.
+                onPathSelected(openDialog.FileName);
+            }
+        }
+
     }
 }

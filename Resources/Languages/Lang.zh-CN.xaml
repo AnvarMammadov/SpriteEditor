@@ -130,6 +130,30 @@
     <system:String x:Key="Str_Msg_AtlasFull">图集空间不足！请尝试增大尺寸。</system:String>
     <system:String x:Key="Str_TrimTransparency">裁剪透明区域（智能裁剪）</system:String>
 
+    <system:String x:Key="Str_StoryEditor">故事编辑器</system:String>
+    <system:String x:Key="Str_DescStory">视觉小说 - 构建叙事图</system:String>
+    <system:String x:Key="Str_HeaderStoryTools">故事工具</system:String>
+    <system:String x:Key="Str_BtnAddNode">+ 添加节点</system:String>
+    <system:String x:Key="Str_BtnPlayPreview">▶ 播放预览</system:String>
+    <system:String x:Key="Str_HeaderGlobalVars">全局变量</system:String>
+    <system:String x:Key="Str_BtnCreateVar">+ 创建变量</system:String>
+    <system:String x:Key="Str_HeaderNodeProps">节点属性</system:String>
+    <system:String x:Key="Str_LblSpeaker">说话者姓名:</system:String>
+    <system:String x:Key="Str_LblDialogue">对话文本:</system:String>
+    <system:String x:Key="Str_LblBgImage">背景图片</system:String>
+    <system:String x:Key="Str_LblCharImage">角色图片</system:String>
+    <system:String x:Key="Str_LblAudio">音频 / 音乐</system:String>
+    <system:String x:Key="Str_HeaderChoices">选择按钮</system:String>
+    <system:String x:Key="Str_LblBtnText">按钮文本:</system:String>
+    <system:String x:Key="Str_LblTargetNode">目标 ID:</system:String>
+    <system:String x:Key="Str_LblCondition">条件 (可选):</system:String>
+    <system:String x:Key="Str_LblVar">变量:</system:String>
+    <system:String x:Key="Str_BtnRemoveLink">移除链接</system:String>
+    <system:String x:Key="Str_HeaderActions">进入时动作</system:String>
+    <system:String x:Key="Str_BtnDeleteNode">删除节点</system:String>
+    <system:String x:Key="Str_MsgStorySaved">故事保存成功！</system:String>
+    <system:String x:Key="Str_MsgStoryLoaded">故事加载成功。</system:String>
+
 
 
 

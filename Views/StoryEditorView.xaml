@@ -445,8 +445,45 @@
                         <TextBlock Text="Dialogue Text" Foreground="Gray" FontSize="10"/>
                         <TextBox Text="{Binding SelectedNode.Text, UpdateSourceTrigger=PropertyChanged}" Height="80" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,10"/>
 
-                        <TextBlock Text="Background Image Path" Foreground="Gray" FontSize="10"/>
-                        <TextBox Text="{Binding SelectedNode.BackgroundImagePath, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                        <TextBlock Text="Background Image" Foreground="Gray" FontSize="10" Margin="0,5,0,0"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="30"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding SelectedNode.BackgroundImagePath, UpdateSourceTrigger=PropertyChanged}" 
+             Height="25" FontSize="11" VerticalContentAlignment="Center" Padding="5,0"
+             Background="{StaticResource Brush.Bg.Input}" Foreground="White" BorderBrush="{StaticResource Brush.Border}"/>
+                            <Button Grid.Column="1" Content="..." Command="{Binding SelectBackgroundImageCommand}" 
+            Style="{StaticResource Style.Button.Primary}" Padding="0" Margin="2,0,0,0"/>
+                        </Grid>
+
+                        <TextBlock Text="Character Image" Foreground="Gray" FontSize="10"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="30"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding SelectedNode.CharacterImagePath, UpdateSourceTrigger=PropertyChanged}" 
+             Height="25" FontSize="11" VerticalContentAlignment="Center" Padding="5,0"
+             Background="{StaticResource Brush.Bg.Input}" Foreground="White" BorderBrush="{StaticResource Brush.Border}"/>
+                            <Button Grid.Column="1" Content="..." Command="{Binding SelectCharacterImageCommand}" 
+            Style="{StaticResource Style.Button.Primary}" Padding="0" Margin="2,0,0,0"/>
+                        </Grid>
+
+                        <TextBlock Text="Audio / Music" Foreground="Gray" FontSize="10"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="30"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding SelectedNode.AudioPath, UpdateSourceTrigger=PropertyChanged}" 
+             Height="25" FontSize="11" VerticalContentAlignment="Center" Padding="5,0"
+             Background="{StaticResource Brush.Bg.Input}" Foreground="White" BorderBrush="{StaticResource Brush.Border}"/>
+                            <Button Grid.Column="1" Content="♪" Command="{Binding SelectAudioCommand}" 
+            Style="{StaticResource Style.Button.Primary}" Padding="0" Margin="2,0,0,0"
+            ToolTip="Select Audio File"/>
+                        </Grid>
 
                         <TextBlock Text="Choice Buttons" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,10,0,5"/>
                         <ItemsControl ItemsSource="{Binding SelectedNode.Choices}">

@@ -130,6 +130,30 @@
     <system:String x:Key="Str_Msg_AtlasFull">Недостаточно места в Атласе! Попробуйте увеличить размер.</system:String>
     <system:String x:Key="Str_TrimTransparency">Обрезать Прозрачность (Умное Кадрирование)</system:String>
 
+    <system:String x:Key="Str_StoryEditor">Редактор Сюжета</system:String>
+    <system:String x:Key="Str_DescStory">Визуальная Новелла - Создание сценария</system:String>
+    <system:String x:Key="Str_HeaderStoryTools">ИНСТРУМЕНТЫ СЮЖЕТА</system:String>
+    <system:String x:Key="Str_BtnAddNode">+ Добавить Узел</system:String>
+    <system:String x:Key="Str_BtnPlayPreview">▶ Предпросмотр</system:String>
+    <system:String x:Key="Str_HeaderGlobalVars">ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ</system:String>
+    <system:String x:Key="Str_BtnCreateVar">+ Создать Переменную</system:String>
+    <system:String x:Key="Str_HeaderNodeProps">СВОЙСТВА УЗЛА</system:String>
+    <system:String x:Key="Str_LblSpeaker">Имя Говорящего:</system:String>
+    <system:String x:Key="Str_LblDialogue">Текст Диалога:</system:String>
+    <system:String x:Key="Str_LblBgImage">Фоновое Изображение</system:String>
+    <system:String x:Key="Str_LblCharImage">Изображение Персонажа</system:String>
+    <system:String x:Key="Str_LblAudio">Аудио / Музыка</system:String>
+    <system:String x:Key="Str_HeaderChoices">КНОПКИ ВЫБОРА</system:String>
+    <system:String x:Key="Str_LblBtnText">Текст Кнопки:</system:String>
+    <system:String x:Key="Str_LblTargetNode">ID Цели:</system:String>
+    <system:String x:Key="Str_LblCondition">Условие (Опционально):</system:String>
+    <system:String x:Key="Str_LblVar">Пер.:</system:String>
+    <system:String x:Key="Str_BtnRemoveLink">Удалить Связь</system:String>
+    <system:String x:Key="Str_HeaderActions">ДЕЙСТВИЯ ПРИ ВХОДЕ</system:String>
+    <system:String x:Key="Str_BtnDeleteNode">Удалить Узел</system:String>
+    <system:String x:Key="Str_MsgStorySaved">Сюжет успешно сохранен!</system:String>
+    <system:String x:Key="Str_MsgStoryLoaded">Сюжет успешно загружен.</system:String>
+
 
 
 

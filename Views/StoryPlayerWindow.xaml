@@ -6,7 +6,9 @@
         mc:Ignorable="d"
         Title="Story Preview" Height="600" Width="900"
         WindowStartupLocation="CenterScreen"
-        Background="Black">
+        Background="Black"
+        MouseDown="Window_MouseDown"
+        >
 
     <Grid>
         <Image Source="{Binding BackgroundImage}" Stretch="UniformToFill"/>

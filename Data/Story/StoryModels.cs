@@ -83,6 +83,7 @@ namespace SpriteEditor.Data.Story
         [ObservableProperty] private string _speakerName = "Character";
         [ObservableProperty] private string _backgroundImagePath;
         [ObservableProperty] private string _characterImagePath;
+        [ObservableProperty] private string _audioPath;
 
         // Seçimlər
         public ObservableCollection<StoryChoice> Choices { get; set; } = new ObservableCollection<StoryChoice>();

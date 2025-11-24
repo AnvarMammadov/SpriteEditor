@@ -131,6 +131,30 @@
     <system:String x:Key="Str_TrimTransparency">Şəffaflığı Kəs (Ağıllı Krop)</system:String>
 
 
+    <system:String x:Key="Str_StoryEditor">Hekayə Redaktoru</system:String>
+    <system:String x:Key="Str_DescStory">Vizual Novel - Hekayə qurun və skript yazın</system:String>
+    <system:String x:Key="Str_HeaderStoryTools">HEKAYƏ ALƏTLƏRİ</system:String>
+    <system:String x:Key="Str_BtnAddNode">+ Düyün (Node) Əlavə Et</system:String>
+    <system:String x:Key="Str_BtnPlayPreview">▶ Sınaqdan Keçir</system:String>
+    <system:String x:Key="Str_HeaderGlobalVars">QLOBAL DƏYİŞƏNLƏR</system:String>
+    <system:String x:Key="Str_BtnCreateVar">+ Dəyişən Yarat</system:String>
+    <system:String x:Key="Str_HeaderNodeProps">DÜYÜN XÜSUSİYYƏTLƏRİ</system:String>
+    <system:String x:Key="Str_LblSpeaker">Danışan Adı:</system:String>
+    <system:String x:Key="Str_LblDialogue">Dialoq Mətni:</system:String>
+    <system:String x:Key="Str_LblBgImage">Arxa Fon Şəkli</system:String>
+    <system:String x:Key="Str_LblCharImage">Personaj Şəkli</system:String>
+    <system:String x:Key="Str_LblAudio">Səs / Musiqi</system:String>
+    <system:String x:Key="Str_HeaderChoices">SEÇİM DÜYMƏLƏRİ</system:String>
+    <system:String x:Key="Str_LblBtnText">Düymə Mətni:</system:String>
+    <system:String x:Key="Str_LblTargetNode">Hədəf ID:</system:String>
+    <system:String x:Key="Str_LblCondition">Şərt (Opsional):</system:String>
+    <system:String x:Key="Str_LblVar">Dəyişən:</system:String>
+    <system:String x:Key="Str_BtnRemoveLink">Əlaqəni Sil</system:String>
+    <system:String x:Key="Str_HeaderActions">GİRİŞ HADİSƏLƏRİ (ACTIONS)</system:String>
+    <system:String x:Key="Str_BtnDeleteNode">Düyünü Sil</system:String>
+    <system:String x:Key="Str_MsgStorySaved">Hekayə uğurla yadda saxlanıldı!</system:String>
+    <system:String x:Key="Str_MsgStoryLoaded">Hekayə uğurla yükləndi.</system:String>
+
 
 
     <system:String x:Key="Str_MsgBtnOk">Tamam</system:String>

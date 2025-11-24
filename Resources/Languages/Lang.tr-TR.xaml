@@ -130,6 +130,30 @@
     <system:String x:Key="Str_Msg_AtlasFull">Atlas içerisinde yeterli alan yok! Boyutu artırmayı deneyin.</system:String>
     <system:String x:Key="Str_TrimTransparency">Şeffaflığı Kırp (Akıllı Kırpma)</system:String>
 
+    <system:String x:Key="Str_StoryEditor">Hikaye Editörü</system:String>
+    <system:String x:Key="Str_DescStory">Görsel Roman - Hikaye akışı oluşturun</system:String>
+    <system:String x:Key="Str_HeaderStoryTools">HİKAYE ARAÇLARI</system:String>
+    <system:String x:Key="Str_BtnAddNode">+ Düğüm Ekle</system:String>
+    <system:String x:Key="Str_BtnPlayPreview">▶ Önizlemeyi Oynat</system:String>
+    <system:String x:Key="Str_HeaderGlobalVars">GLOBAL DEĞİŞKENLER</system:String>
+    <system:String x:Key="Str_BtnCreateVar">+ Değişken Oluştur</system:String>
+    <system:String x:Key="Str_HeaderNodeProps">DÜĞÜM ÖZELLİKLERİ</system:String>
+    <system:String x:Key="Str_LblSpeaker">Konuşmacı Adı:</system:String>
+    <system:String x:Key="Str_LblDialogue">Diyalog Metni:</system:String>
+    <system:String x:Key="Str_LblBgImage">Arkaplan Resmi</system:String>
+    <system:String x:Key="Str_LblCharImage">Karakter Resmi</system:String>
+    <system:String x:Key="Str_LblAudio">Ses / Müzik</system:String>
+    <system:String x:Key="Str_HeaderChoices">SEÇİM BUTONLARI</system:String>
+    <system:String x:Key="Str_LblBtnText">Buton Metni:</system:String>
+    <system:String x:Key="Str_LblTargetNode">Hedef ID:</system:String>
+    <system:String x:Key="Str_LblCondition">Koşul (İsteğe Bağlı):</system:String>
+    <system:String x:Key="Str_LblVar">Değişken:</system:String>
+    <system:String x:Key="Str_BtnRemoveLink">Bağlantıyı Sil</system:String>
+    <system:String x:Key="Str_HeaderActions">GİRİŞ EYLEMLERİ (ACTIONS)</system:String>
+    <system:String x:Key="Str_BtnDeleteNode">Düğümü Sil</system:String>
+    <system:String x:Key="Str_MsgStorySaved">Hikaye başarıyla kaydedildi!</system:String>
+    <system:String x:Key="Str_MsgStoryLoaded">Hikaye başarıyla yüklendi.</system:String>
+
 
 
 

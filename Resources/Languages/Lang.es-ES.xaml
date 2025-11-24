@@ -130,6 +130,30 @@
     <system:String x:Key="Str_Msg_AtlasFull">¡No hay suficiente espacio en el Atlas! Prueba aumentar su tamaño.</system:String>
     <system:String x:Key="Str_TrimTransparency">Recortar Transparencia (Corte Inteligente)</system:String>
 
+    <system:String x:Key="Str_StoryEditor">Editor de Historia</system:String>
+    <system:String x:Key="Str_DescStory">Novela Visual - Crear narrativa</system:String>
+    <system:String x:Key="Str_HeaderStoryTools">HERRAMIENTAS DE HISTORIA</system:String>
+    <system:String x:Key="Str_BtnAddNode">+ Añadir Nodo</system:String>
+    <system:String x:Key="Str_BtnPlayPreview">▶ Vista Previa</system:String>
+    <system:String x:Key="Str_HeaderGlobalVars">VARIABLES GLOBALES</system:String>
+    <system:String x:Key="Str_BtnCreateVar">+ Crear Variable</system:String>
+    <system:String x:Key="Str_HeaderNodeProps">PROPIEDADES DEL NODO</system:String>
+    <system:String x:Key="Str_LblSpeaker">Nombre del Hablante:</system:String>
+    <system:String x:Key="Str_LblDialogue">Texto del Diálogo:</system:String>
+    <system:String x:Key="Str_LblBgImage">Imagen de Fondo</system:String>
+    <system:String x:Key="Str_LblCharImage">Imagen del Personaje</system:String>
+    <system:String x:Key="Str_LblAudio">Audio / Música</system:String>
+    <system:String x:Key="Str_HeaderChoices">BOTONES DE ELECCIÓN</system:String>
+    <system:String x:Key="Str_LblBtnText">Texto del Botón:</system:String>
+    <system:String x:Key="Str_LblTargetNode">ID del Destino:</system:String>
+    <system:String x:Key="Str_LblCondition">Condición (Opcional):</system:String>
+    <system:String x:Key="Str_LblVar">Var:</system:String>
+    <system:String x:Key="Str_BtnRemoveLink">Eliminar Enlace</system:String>
+    <system:String x:Key="Str_HeaderActions">ACCIONES AL ENTRAR</system:String>
+    <system:String x:Key="Str_BtnDeleteNode">Eliminar Nodo</system:String>
+    <system:String x:Key="Str_MsgStorySaved">¡Historia guardada con éxito!</system:String>
+    <system:String x:Key="Str_MsgStoryLoaded">Historia cargada con éxito.</system:String>
+
 
     <system:String x:Key="Str_MsgBtnOk">Aceptar</system:String>
     <system:String x:Key="Str_MsgBtnYes">Sí</system:String>

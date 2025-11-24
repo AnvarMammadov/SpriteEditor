@@ -6,7 +6,7 @@
         mc:Ignorable="d"
         WindowStyle="None"
         ResizeMode="CanResize"
-        Title="Sprite Editor Pro" Height="700" Width="1100"
+        Title="Sprite Editor Pro" Height="720" Width="1280"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource Brush.Bg.Deep}">
 

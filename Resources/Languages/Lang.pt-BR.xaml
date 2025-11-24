@@ -130,6 +130,30 @@
     <system:String x:Key="Str_Msg_AtlasFull">Não há espaço suficiente no Atlas! Tente aumentar o tamanho.</system:String>
     <system:String x:Key="Str_TrimTransparency">Cortar Transparência (Recorte Inteligente)</system:String>
 
+    <system:String x:Key="Str_StoryEditor">Editor de História</system:String>
+    <system:String x:Key="Str_DescStory">Visual Novel - Criar narrativa</system:String>
+    <system:String x:Key="Str_HeaderStoryTools">FERRAMENTAS DE HISTÓRIA</system:String>
+    <system:String x:Key="Str_BtnAddNode">+ Adicionar Nó</system:String>
+    <system:String x:Key="Str_BtnPlayPreview">▶ Reproduzir Prévia</system:String>
+    <system:String x:Key="Str_HeaderGlobalVars">VARIÁVEIS GLOBAIS</system:String>
+    <system:String x:Key="Str_BtnCreateVar">+ Criar Variável</system:String>
+    <system:String x:Key="Str_HeaderNodeProps">PROPRIEDADES DO NÓ</system:String>
+    <system:String x:Key="Str_LblSpeaker">Nome do Falante:</system:String>
+    <system:String x:Key="Str_LblDialogue">Texto do Diálogo:</system:String>
+    <system:String x:Key="Str_LblBgImage">Imagem de Fundo</system:String>
+    <system:String x:Key="Str_LblCharImage">Imagem do Personagem</system:String>
+    <system:String x:Key="Str_LblAudio">Áudio / Música</system:String>
+    <system:String x:Key="Str_HeaderChoices">BOTÕES DE ESCOLHA</system:String>
+    <system:String x:Key="Str_LblBtnText">Texto do Botão:</system:String>
+    <system:String x:Key="Str_LblTargetNode">ID do Destino:</system:String>
+    <system:String x:Key="Str_LblCondition">Condição (Opcional):</system:String>
+    <system:String x:Key="Str_LblVar">Var:</system:String>
+    <system:String x:Key="Str_BtnRemoveLink">Remover Link</system:String>
+    <system:String x:Key="Str_HeaderActions">AÇÕES AO ENTRAR</system:String>
+    <system:String x:Key="Str_BtnDeleteNode">Excluir Nó</system:String>
+    <system:String x:Key="Str_MsgStorySaved">História salva com sucesso!</system:String>
+    <system:String x:Key="Str_MsgStoryLoaded">História carregada com sucesso.</system:String>
+
 
 
 

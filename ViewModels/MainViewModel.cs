@@ -14,6 +14,10 @@ namespace SpriteEditor.ViewModels
         [ObservableProperty]
         private ObservableObject _currentViewModel;
 
+        // Menyu açıqdırmı? (Default: True)
+        [ObservableProperty]
+        private bool _isMenuExpanded = true;
+
         // 2. Digər ViewModel-lərin instanslarını saxlayaq
         private readonly HomeViewModel _homeViewModel;
         private readonly SpriteSlicerViewModel _spriteSlicerViewModel;
@@ -43,6 +47,12 @@ namespace SpriteEditor.ViewModels
 
             // Proqram açıldıqda "Home" səhifəsini göstər
             _currentViewModel = _homeViewModel;
+        }
+
+        [RelayCommand]
+        public void ToggleMenu()
+        {
+            IsMenuExpanded = !IsMenuExpanded;
         }
 
         // 3. Naviqasiya üçün Əmrlər (Commands)

@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 using SpriteEditor.Data.Story;
 using SpriteEditor.Views;
 
@@ -27,6 +30,17 @@ namespace SpriteEditor.ViewModels
 
     public partial class StoryEditorViewModel : ObservableObject
     {
+
+
+        [ObservableProperty]
+        private bool _isToolsPanelOpen = true;
+
+        [RelayCommand]
+        public void ToggleToolsPanel()
+        {
+            IsToolsPanelOpen = !IsToolsPanelOpen;
+        }
+
 
         // === YENİ: Zoom və Pan üçün dəyişənlər ===
         [ObservableProperty] private double _zoomLevel = 1.0;
@@ -50,6 +64,10 @@ namespace SpriteEditor.ViewModels
         [ObservableProperty] private bool _isDraggingConnection;
 
         private StoryNode _dragSourceNode; // Hansı node-dan xətt çəkməyə başladıq?
+
+
+        public ObservableCollection<StoryVariable> GlobalVariables { get; } = new();
+        public List<VariableType> VariableTypes { get; } = Enum.GetValues(typeof(VariableType)).Cast<VariableType>().ToList();
 
         public StoryEditorViewModel()
         {
@@ -90,6 +108,46 @@ namespace SpriteEditor.ViewModels
 
             Nodes.Remove(SelectedNode);
             SelectedNode = null;
+        }
+
+
+        [RelayCommand]
+        public void DeleteLink(StoryChoice choice)
+        {
+            // Əgər seçim edilməyibsə və ya choice boşdursa, dayan
+            if (SelectedNode == null || choice == null) return;
+
+            // 1. Vizual əlaqəni (Xətti) tapıb silirik
+            // Məntiq: Mənbəyi "SelectedNode" olan və Hədəfi silinən seçimin "TargetNodeId"-si olan xətti tap
+            var connectionToRemove = Connections.FirstOrDefault(c => c.Source == SelectedNode && c.Target.Id == choice.TargetNodeId);
+
+            if (connectionToRemove != null)
+            {
+                Connections.Remove(connectionToRemove);
+            }
+
+            // 2. Məlumatı (Seçimi) siyahıdan silirik
+            // Bu, düyünün "Choices" siyahısından həmin düyməni ləğv edir
+            SelectedNode.Choices.Remove(choice);
+        }
+
+
+        [RelayCommand]
+        public void SetAsStartNode(StoryNode targetNode) // Parametr əlavə olundu
+        {
+            // Əgər parametr gəlməyibsə, SelectedNode-u yoxla
+            var nodeToSet = targetNode ?? SelectedNode;
+
+            if (nodeToSet == null) return;
+
+            // 1. Hamısından statusu al
+            foreach (var node in Nodes)
+            {
+                node.IsStartNode = false;
+            }
+
+            // 2. Hədəf düyünü Start et
+            nodeToSet.IsStartNode = true;
         }
 
         // === VİZUAL SCRIPTING MƏNTİQİ ===
@@ -152,34 +210,176 @@ namespace SpriteEditor.ViewModels
         [RelayCommand]
         public void PlayStory()
         {
-            // 1. Əgər hekayədə heç bir düyün yoxdursa, xəbərdarlıq et
             if (Nodes.Count == 0)
             {
-                MessageBox.Show("Hekayə boşdur! Zəhmət olmasa, ən azı bir düyün (node) əlavə edin.", "Xəbərdarlıq");
+                MessageBox.Show("Hekayə boşdur!", "Xəbərdarlıq");
                 return;
             }
 
-            // 2. Mövcud qrafı toplayırıq (Editor-dakı məlumatlardan StoryGraph yaradırıq)
             var storyGraph = new StoryGraph
             {
                 Nodes = Nodes.ToList(),
-                // Hələlik ilk düyünü "Start Node" kimi qəbul edirik
-                // (Gələcəkdə bunu "Set Start Node" düyməsi ilə seçilən edə bilərik)
-                StartNodeId = Nodes.First().Id
+
+                // --- DÜZƏLİŞ BURADADIR ---
+                // "IsStartNode"u true olanı tap. Əgər heç biri seçilməyibsə, birincini götür.
+                StartNodeId = Nodes.FirstOrDefault(n => n.IsStartNode)?.Id ?? Nodes.FirstOrDefault()?.Id
             };
 
-            // 3. Player ViewModel-i yaradıb məlumatı yükləyirik
             var playerVm = new StoryPlayerViewModel();
             playerVm.LoadStory(storyGraph);
 
-            // 4. Player Pəncərəsini açırıq
             var playerWindow = new StoryPlayerWindow
             {
                 DataContext = playerVm,
-                Owner = Application.Current.MainWindow // Əsas pəncərənin üstündə açılsın
+                Owner = Application.Current.MainWindow
             };
 
-            playerWindow.ShowDialog(); // Dialog kimi aç (istifadəçi bağlayana qədər arxadakı pəncərəyə toxunmaq olmasın)
+            playerWindow.ShowDialog();
+        }
+
+
+        [RelayCommand]
+        public async Task SaveStory()
+        {
+            // 1. Yadda saxlanacaq əsas obyekti (StoryGraph) yaradırıq
+            var storyGraph = new StoryGraph
+            {
+                Nodes = Nodes.ToList(),
+                // StartNodeId hələlik ilk düyün və ya xüsusi seçilmiş düyün ola bilər
+                StartNodeId = Nodes.FirstOrDefault(n => n.IsStartNode)?.Id ?? Nodes.FirstOrDefault()?.Id,
+                Variables = GlobalVariables.ToList()
+            };
+
+            // 2. "Save File" pəncərəsini açırıq
+            SaveFileDialog saveDialog = new SaveFileDialog
+            {
+                Filter = "Story JSON (*.story.json)|*.story.json",
+                FileName = "MyStory.story.json",
+                Title = "Hekayəni Yadda Saxla"
+            };
+
+            if (saveDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    // 3. JSON Serializasiyası (Indented = oxunaqlı format)
+                    var options = new JsonSerializerOptions { WriteIndented = true };
+                    string jsonString = JsonSerializer.Serialize(storyGraph, options);
+
+                    // 4. Faylı fiziki olaraq yazırıq
+                    await File.WriteAllTextAsync(saveDialog.FileName, jsonString);
+
+                    // Uğurlu mesajı
+                    CustomMessageBox.Show("Hekayə uğurla yadda saxlanıldı!", "Uğurlu", MessageBoxButton.OK, MsgImage.Success);
+                }
+                catch (Exception ex)
+                {
+                    CustomMessageBox.Show($"Yadda saxlama zamanı xəta: {ex.Message}", "Xəta", MessageBoxButton.OK, MsgImage.Error);
+                }
+            }
+        }
+
+        [RelayCommand]
+        public async Task LoadStory()
+        {
+            // 1. "Open File" pəncərəsini açırıq
+            OpenFileDialog openDialog = new OpenFileDialog
+            {
+                Filter = "Story JSON (*.story.json)|*.story.json",
+                Title = "Hekayəni Yüklə"
+            };
+
+            if (openDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    // 2. Faylı oxuyuruq
+                    string jsonString = await File.ReadAllTextAsync(openDialog.FileName);
+
+                    // 3. JSON-u obyektə çeviririk (Deserialize)
+                    var storyGraph = JsonSerializer.Deserialize<StoryGraph>(jsonString);
+
+                    if (storyGraph == null) return;
+
+                    // 4. Mövcud səhnəni təmizləyirik (Köhnə düyünləri silirik)
+                    Nodes.Clear();
+                    Connections.Clear(); // Vizual xətləri də silirik
+                    GlobalVariables.Clear();
+
+                    if (storyGraph.Variables != null)
+                    {
+                        foreach (var v in storyGraph.Variables)
+                        {
+                            GlobalVariables.Add(v);
+                        }
+                    }
+
+                    // 5. Düyünləri bərpa edirik
+                    foreach (var node in storyGraph.Nodes)
+                    {
+                        // Əgər bu düyünün ID-si qrafın StartNodeId-si ilə eynidirsə,
+                        // onun bayrağını qaldırırıq (IsStartNode = true).
+                        if (node.Id == storyGraph.StartNodeId)
+                        {
+                            node.IsStartNode = true;
+                        }
+                        else
+                        {
+                            node.IsStartNode = false;
+                        }
+
+                        Nodes.Add(node);
+                    }
+
+                    // 6. Əlaqələri (Vizual Xətləri) bərpa edirik
+                    // QEYD: JSON-da yalnız "TargetNodeId" var. Biz bunu tapıb vizual xəttə (Connection) çevirməliyik.
+                    foreach (var sourceNode in Nodes)
+                    {
+                        foreach (var choice in sourceNode.Choices)
+                        {
+                            if (!string.IsNullOrEmpty(choice.TargetNodeId))
+                            {
+                                // Hədəf düyünü ID-sinə görə tapırıq
+                                var targetNode = Nodes.FirstOrDefault(n => n.Id == choice.TargetNodeId);
+
+                                if (targetNode != null)
+                                {
+                                    // Vizual əlaqəni yaradırıq
+                                    Connections.Add(new NodeConnection
+                                    {
+                                        Source = sourceNode,
+                                        Target = targetNode
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    CustomMessageBox.Show("Hekayə uğurla yükləndi.", "Tamamlandı", MessageBoxButton.OK, MsgImage.Info);
+                }
+                catch (Exception ex)
+                {
+                    CustomMessageBox.Show($"Yükləmə xətası: {ex.Message}", "Xəta", MessageBoxButton.OK, MsgImage.Error);
+                }
+            }
+        }
+
+
+
+        [RelayCommand]
+        public void AddVariable()
+        {
+            // Yeni dəyişən yaradanda adının təkrar olmamasını yoxlaya bilərik, amma hələlik sadə edək
+            GlobalVariables.Add(new StoryVariable { Name = "Variable_" + (GlobalVariables.Count + 1) });
+        }
+
+        [RelayCommand]
+        public void DeleteVariable(StoryVariable variable)
+        {
+            if (variable != null)
+            {
+                GlobalVariables.Remove(variable);
+            }
         }
 
     }

@@ -24,6 +24,8 @@ namespace SpriteEditor.Data.Story
         [ObservableProperty] private double _x;
         [ObservableProperty] private double _y;
 
+        [ObservableProperty] private bool _isStartNode;
+
         // Məzmun
         [ObservableProperty] private string _title = "New Node";
         [ObservableProperty] private string _text = "Dialogue text goes here...";
@@ -42,6 +44,52 @@ namespace SpriteEditor.Data.Story
     {
         public string Name { get; set; } = "My Story";
         public List<StoryNode> Nodes { get; set; } = new List<StoryNode>();
-        public string StartNodeId { get; set; } // Başlanğıc nöqtəsi
+
+        // YENİ ƏLAVƏ: Dəyişənlər Siyahısı
+        public List<StoryVariable> Variables { get; set; } = new List<StoryVariable>();
+
+        public string StartNodeId { get; set; }
     }
+
+
+
+    // 1. Dəyişən Tipləri (Sadəlik üçün hələlik 3 əsas tip)
+    public enum VariableType
+    {
+        Boolean, // True/False (Məs: HasKey)
+        Integer, // Rəqəm (Məs: Gold, Health)
+        String   // Mətn (Məs: PlayerName)
+    }
+
+    // 2. Dəyişən Modeli
+    public partial class StoryVariable : ObservableObject
+    {
+        [ObservableProperty]
+        private string _name = "NewVar";
+
+        [ObservableProperty]
+        private VariableType _type = VariableType.Boolean;
+
+        [ObservableProperty]
+        private string _value = "False";
+
+        // BU HİSSƏ YENİDİR: Tip dəyişdikdə avtomatik işə düşür
+        partial void OnTypeChanged(VariableType value)
+        {
+            switch (value)
+            {
+                case VariableType.Boolean:
+                    Value = "False";
+                    break;
+                case VariableType.Integer:
+                    Value = "0";
+                    break;
+                case VariableType.String:
+                    Value = "Text..";
+                    break;
+            }
+        }
+    }
+
+
 }

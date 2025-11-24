@@ -3,66 +3,287 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
              mc:Ignorable="d" 
-             d:DesignHeight="600" d:DesignWidth="900">
+             d:DesignHeight="700" d:DesignWidth="1000">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <x:Array x:Key="BooleanOptions" Type="sys:String">
+            <sys:String>True</sys:String>
+            <sys:String>False</sys:String>
+        </x:Array>
+
+        <Style x:Key="ModernScrollBar" TargetType="{x:Type ScrollBar}">
+            <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false"/>
+            <Setter Property="Stylus.IsFlicksEnabled" Value="false"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid x:Name="Bg" SnapsToDevicePixels="true">
+                            <Track x:Name="PART_Track" IsDirectionReversed="true">
+                                <Track.Thumb>
+                                    <Thumb Style="{DynamicResource ScrollThumStyle}"/>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ScrollThumStyle" TargetType="{x:Type Thumb}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Border CornerRadius="4" Background="#4B5563" BorderThickness="0"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="{x:Type ScrollViewer}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollViewer}">
+                        <Grid Background="{TemplateBinding Background}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" Grid.Column="0" Grid.Row="0" Margin="{TemplateBinding Padding}" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" CanContentScroll="{TemplateBinding CanContentScroll}"/>
+                            <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1" Grid.Row="0" Maximum="{TemplateBinding ScrollableHeight}" ViewportSize="{TemplateBinding ViewportHeight}" Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" Style="{StaticResource ModernScrollBar}"/>
+                            <ScrollBar x:Name="PART_HorizontalScrollBar" Grid.Column="0" Grid.Row="1" Orientation="Horizontal" Maximum="{TemplateBinding ScrollableWidth}" ViewportSize="{TemplateBinding ViewportWidth}" Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}" Style="{StaticResource ModernScrollBar}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
 
     <Grid Background="{StaticResource Brush.Bg.Deep}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280"/>
+            <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Background="{StaticResource Brush.Bg.Panel}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,1,0" Padding="20">
-            <StackPanel>
-                <TextBlock Text="STORY TOOLS" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,15"/>
-                <Button Command="{Binding AddNodeCommand}" Content="+ Add Node" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,10"/>
-                <Button Command="{Binding PlayStoryCommand}" Content="▶ Play Preview" Style="{StaticResource Style.Button.Accent}" Margin="0,0,0,20"/>
+        <Border x:Name="ToolsPanelBorder" 
+        Grid.Column="0" 
+        Background="{StaticResource Brush.Bg.Panel}" 
+        BorderBrush="{StaticResource Brush.Border}" 
+        BorderThickness="0,0,1,0" 
+        ClipToBounds="True"
+        Padding="15">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Width" Value="300"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsToolsPanelOpen}" Value="False">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Width" To="0" Duration="0:0:0.3">
+                                            <DoubleAnimation.EasingFunction>
+                                                <QuadraticEase EasingMode="EaseInOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Width" To="300" Duration="0:0:0.3">
+                                            <DoubleAnimation.EasingFunction>
+                                                <QuadraticEase EasingMode="EaseInOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.ExitActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
 
-                <Separator Opacity="0.3" Background="{StaticResource Brush.Border}" Margin="0,0,0,20"/>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <StackPanel Visibility="{Binding SelectedNode, Converter={StaticResource NullToVisibilityConverter}}">
-                    <TextBlock Text="Speaker Name" Foreground="Gray" FontSize="10"/>
-                    <TextBox Text="{Binding SelectedNode.SpeakerName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="STORY TOOLS" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,15"/>
 
-                    <TextBlock Text="Dialogue Text" Foreground="Gray" FontSize="10"/>
-                    <TextBox Text="{Binding SelectedNode.Text, UpdateSourceTrigger=PropertyChanged}" Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,10"/>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Command="{Binding SaveStoryCommand}" Content="💾 Save" Style="{StaticResource Style.Button.Primary}" Margin="0,0,5,0"/>
+                        <Button Grid.Column="1" Command="{Binding LoadStoryCommand}" Content="📂 Load" Style="{StaticResource Style.Button.Primary}" Margin="5,0,0,0"/>
+                    </Grid>
 
-                    <TextBlock Text="Background Image Path" Foreground="Gray" FontSize="10"/>
-                    <TextBox Text="{Binding SelectedNode.BackgroundImagePath, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                    <Button Command="{Binding AddNodeCommand}" Content="+ Add Node" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,10"/>
+                    <Button Command="{Binding PlayStoryCommand}" Content="▶ Play Preview" Style="{StaticResource Style.Button.Accent}" Margin="0,0,0,15"/>
 
-                    <TextBlock Text="Choice Buttons Text" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,10,0,5"/>
-                    <ItemsControl ItemsSource="{Binding SelectedNode.Choices}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Background="#2D3748" CornerRadius="4" Margin="0,2" Padding="5">
-                                    <StackPanel>
-                                        <TextBlock Text="Button Text:" FontSize="9" Foreground="Gray"/>
-                                        <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5"/>
-                                        <TextBlock Text="Target Node ID:" FontSize="9" Foreground="Gray"/>
-                                        <TextBox Text="{Binding TargetNodeId, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True" Opacity="0.5"/>
-                                        <Button Content="Remove Link" 
-                                                Command="{Binding DataContext.DeleteLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                CommandParameter="{Binding}"
-                                                Style="{StaticResource Style.Button.Primary}" 
-                                                Height="20" FontSize="10" Margin="0,5,0,0" Background="#7F1D1D"/>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <Button Command="{Binding DeleteNodeCommand}" Content="Delete Node" Background="#EF4444" Foreground="White" BorderThickness="0" Margin="0,20,0,0"/>
+                    <Separator Opacity="0.3" Background="{StaticResource Brush.Border}" Margin="0,0,0,15"/>
                 </StackPanel>
-            </StackPanel>
+
+                <Grid Grid.Row="1" Margin="0,0,0,15">
+                    <Expander Header="GLOBAL VARIABLES" 
+                      Foreground="{StaticResource Brush.Text.Secondary}" 
+                      FontWeight="Bold" 
+                      IsExpanded="True"
+                      BorderThickness="0">
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,5,0">
+                            <StackPanel Margin="0,10,0,0">
+                                <Button Command="{Binding AddVariableCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,10" Height="35">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="+" FontWeight="Bold" Margin="0,0,8,0" Foreground="{StaticResource Brush.Accent.Green}" FontSize="14"/>
+                                        <TextBlock Text="Create Variable" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <ItemsControl ItemsSource="{Binding GlobalVariables}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#252D3B" CornerRadius="6" Margin="0,0,0,8" Padding="8" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+
+                                                    <TextBox Grid.Row="0" Grid.Column="0" 
+                                                     Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
+                                                     Foreground="{StaticResource Brush.Accent.Primary}"
+                                                     FontWeight="SemiBold" FontSize="12" Height="30"
+                                                     VerticalContentAlignment="Center" Padding="5,0"
+                                                     Background="{StaticResource Brush.Bg.Input}"
+                                                     BorderBrush="{StaticResource Brush.Border}" BorderThickness="1"
+                                                     Margin="0,0,5,8"/>
+
+                                                    <Button Grid.Row="0" Grid.Column="1" Content="✕" 
+                                                    Command="{Binding DataContext.DeleteVariableCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                    CommandParameter="{Binding}"
+                                                    Width="30" Height="30" Margin="0,0,0,8"
+                                                    Style="{StaticResource Style.Button.Primary}"
+                                                    Background="#33EF4444" BorderBrush="#EF4444" Foreground="#EF4444" FontWeight="Bold"/>
+
+                                                    <Grid Grid.Row="1" Grid.ColumnSpan="2">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="90"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <ComboBox Grid.Column="0" SelectedItem="{Binding Type}" 
+                                                          ItemsSource="{Binding DataContext.VariableTypes, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                          Height="30" FontSize="11" VerticalContentAlignment="Center"
+                                                          Margin="0,0,5,0" Style="{StaticResource DarkComboBoxStyle}"/>
+
+                                                        <Grid Grid.Column="1">
+                                                            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" 
+                                                             Height="30" FontSize="12" VerticalContentAlignment="Center" Padding="5,0"
+                                                             Background="{StaticResource Brush.Bg.Input}" Foreground="White"
+                                                             BorderBrush="{StaticResource Brush.Border}" BorderThickness="1">
+                                                                <TextBox.Style>
+                                                                    <Style TargetType="TextBox">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding Type}" Value="Boolean">
+                                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBox.Style>
+                                                            </TextBox>
+
+                                                            <ComboBox SelectedItem="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              ItemsSource="{StaticResource BooleanOptions}"
+                                                              Height="30" FontSize="12" VerticalContentAlignment="Center">
+                                                                <ComboBox.Style>
+                                                                    <Style TargetType="ComboBox" BasedOn="{StaticResource DarkComboBoxStyle}">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding Type}" Value="Boolean">
+                                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </ComboBox.Style>
+                                                            </ComboBox>
+                                                        </Grid>
+                                                    </Grid>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Expander>
+                </Grid>
+
+                <Grid Grid.Row="2">
+                    <StackPanel Visibility="{Binding SelectedNode, Converter={StaticResource NullToVisibilityConverter}}">
+                        <Separator Opacity="0.3" Background="{StaticResource Brush.Border}" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="NODE PROPERTIES" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,10"/>
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="250" Padding="0,0,5,0">
+                            <StackPanel>
+                                <TextBlock Text="Speaker Name" Foreground="Gray" FontSize="10"/>
+                                <TextBox Text="{Binding SelectedNode.SpeakerName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+                                <TextBlock Text="Dialogue Text" Foreground="Gray" FontSize="10"/>
+                                <TextBox Text="{Binding SelectedNode.Text, UpdateSourceTrigger=PropertyChanged}" Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,10"/>
+
+                                <TextBlock Text="Background Image Path" Foreground="Gray" FontSize="10"/>
+                                <TextBox Text="{Binding SelectedNode.BackgroundImagePath, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+                                <TextBlock Text="Choice Buttons" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,10,0,5"/>
+                                <ItemsControl ItemsSource="{Binding SelectedNode.Choices}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#2D3748" CornerRadius="4" Margin="0,2" Padding="5">
+                                                <StackPanel>
+                                                    <TextBlock Text="Button Text:" FontSize="9" Foreground="Gray"/>
+                                                    <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5"/>
+                                                    <TextBlock Text="Target Node ID:" FontSize="9" Foreground="Gray"/>
+                                                    <TextBox Text="{Binding TargetNodeId, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True" Opacity="0.5"/>
+                                                    <Button Content="Remove Link" 
+                                                    Command="{Binding DataContext.DeleteLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource Style.Button.Primary}" 
+                                                    Height="20" FontSize="10" Margin="0,5,0,0" Background="#7F1D1D"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Button Command="{Binding DeleteNodeCommand}" Content="Delete Node" Background="#EF4444" Foreground="White" BorderThickness="0" Margin="0,20,0,0"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Grid>
+            </Grid>
         </Border>
 
-        <Grid x:Name="EditorCanvas" 
-              Grid.Column="1" 
-              ClipToBounds="True" 
-              MouseDown="EditorCanvas_MouseDown"
-              MouseMove="Canvas_MouseMove" 
-              MouseUp="Canvas_MouseUp"
-              MouseWheel="EditorCanvas_MouseWheel">
+        <Grid x:Name="EditorCanvas" Grid.Column="1" ClipToBounds="True" 
+              MouseDown="EditorCanvas_MouseDown" MouseMove="Canvas_MouseMove" 
+              MouseUp="Canvas_MouseUp" MouseWheel="EditorCanvas_MouseWheel">
 
             <Grid.Background>
                 <DrawingBrush Viewport="0,0,40,40" ViewportUnits="Absolute" TileMode="Tile">
@@ -82,11 +303,36 @@
                 </DrawingBrush>
             </Grid.Background>
 
+            <Button Command="{Binding ToggleToolsPanelCommand}" 
+                    HorizontalAlignment="Left" VerticalAlignment="Top"
+                    Margin="10,10,0,0"
+                    Width="32" Height="32"
+                    Style="{StaticResource Style.Button.Primary}"
+                    Padding="0"
+                    Panel.ZIndex="100">
+                <Button.Content>
+                    <TextBlock FontWeight="Bold" FontSize="14" Foreground="{StaticResource Brush.Accent.Primary}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="❮"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsToolsPanelOpen}" Value="False">
+                                        <Setter Property="Text" Value="❯"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Button.Content>
+                <Button.ToolTip>
+                    <ToolTip Content="Toggle Tools Panel"/>
+                </Button.ToolTip>
+            </Button>
+
             <Canvas x:Name="WorldLayer">
                 <Canvas.RenderTransform>
                     <TransformGroup>
-                        <ScaleTransform ScaleX="{Binding ZoomLevel, FallbackValue=1.0}" 
-                                        ScaleY="{Binding ZoomLevel, FallbackValue=1.0}"/>
+                        <ScaleTransform ScaleX="{Binding ZoomLevel, FallbackValue=1.0}" ScaleY="{Binding ZoomLevel, FallbackValue=1.0}"/>
                         <TranslateTransform X="{Binding PanX}" Y="{Binding PanY}"/>
                     </TransformGroup>
                 </Canvas.RenderTransform>
@@ -132,8 +378,7 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <Path Stroke="#EAB308" StrokeThickness="2" StrokeDashArray="4 2" 
-                      Visibility="{Binding IsDraggingConnection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Path Stroke="#EAB308" StrokeThickness="2" StrokeDashArray="4 2" Visibility="{Binding IsDraggingConnection, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Path.Data>
                         <PathGeometry>
                             <PathFigure StartPoint="{Binding TempConnectionStart}">
@@ -143,21 +388,17 @@
                     </Path.Data>
                 </Path>
 
-                <ListBox ItemsSource="{Binding Nodes}" SelectedItem="{Binding SelectedNode}" 
-                         Background="Transparent" BorderThickness="0">
-
+                <ListBox ItemsSource="{Binding Nodes}" SelectedItem="{Binding SelectedNode}" Background="Transparent" BorderThickness="0">
                     <ListBox.Template>
                         <ControlTemplate TargetType="ListBox">
-                            <ItemsPresenter />
+                            <ItemsPresenter/>
                         </ControlTemplate>
                     </ListBox.Template>
-
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
                             <Canvas IsItemsHost="True"/>
                         </ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
-
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
                             <Setter Property="Canvas.Left" Value="{Binding X}"/>
@@ -171,14 +412,33 @@
                             </Setter>
                         </Style>
                     </ListBox.ItemContainerStyle>
-
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid Width="180">
-                                <Border Background="#1F2937" BorderBrush="#111827" BorderThickness="1" CornerRadius="8" Effect="{StaticResource NodeShadowEffect}">
+                                <Border Background="#1F2937" BorderBrush="#111827" BorderThickness="1" CornerRadius="8" Effect="{StaticResource NodeShadowEffect}" Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Set as Start Node" Command="{Binding PlacementTarget.Tag.SetAsStartNodeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}"/>
+                                            <Separator/>
+                                            <MenuItem Header="Delete" Command="{Binding PlacementTarget.Tag.DeleteNodeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
                                     <StackPanel>
-                                        <Border Background="{StaticResource Brush.Accent.Blue}" CornerRadius="8,8,0,0" Padding="10,5" MouseDown="Node_MouseDown" Cursor="SizeAll">
-                                            <TextBlock Text="{Binding SpeakerName}" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                                        <Border CornerRadius="8,8,0,0" Padding="10,5" MouseDown="Node_MouseDown" Cursor="SizeAll">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="{StaticResource Brush.Accent.Blue}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsStartNode}" Value="True">
+                                                            <Setter Property="Background" Value="{StaticResource Brush.Accent.Green}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Grid>
+                                                <TextBlock Text="{Binding SpeakerName}" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                                                <TextBlock Text="★" Foreground="White" HorizontalAlignment="Right" FontWeight="Bold" Visibility="{Binding IsStartNode, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                            </Grid>
                                         </Border>
                                         <Border Padding="10">
                                             <StackPanel>
@@ -196,7 +456,6 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-
             </Canvas>
         </Grid>
     </Grid>

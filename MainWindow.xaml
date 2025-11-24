@@ -11,6 +11,27 @@
         Background="{StaticResource Brush.Bg.Deep}">
 
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <!-- DÜZƏLİŞ EDİLDİ: Button Style -->
+        <!-- Padding və Alignment oynatmaları ləğv edildi. Layout Grid daxilində idarə olunacaq. -->
+        <Style x:Key="SidebarButtonStyle" TargetType="Button" BasedOn="{StaticResource Style.Button.Nav}">
+            <Setter Property="Height" Value="45"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <!-- Grid tam yayılsın -->
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="0"/>
+            <!-- Padding sıfırlandı -->
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource Self}}" Value="False">
+                    <Setter Property="ToolTipService.IsEnabled" Value="True"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource Self}}" Value="True">
+                    <Setter Property="ToolTipService.IsEnabled" Value="False"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="TitleBarButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="46"/>
             <Setter Property="Height" Value="40"/>
@@ -50,16 +71,31 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+        <!-- TITLE BAR -->
         <Border Grid.Row="0" Background="{StaticResource Brush.Bg.Panel}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1" MouseDown="TitleBar_MouseDown">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Path Data="{StaticResource Icon.Bone}" Fill="{StaticResource Brush.Accent.Primary}" Width="18" Height="18" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                <!-- Hamburger -->
+                <Button Grid.Column="0" Command="{Binding ToggleMenuCommand}"
+                        Style="{StaticResource TitleBarButtonStyle}" Width="50">
+                    <Path Data="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                          Stretch="Uniform" Width="16" Height="16"/>
+                </Button>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Right">
+                <!-- Title + Icon (title bar) -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
+                    <Path Data="{StaticResource Icon.Bone}" Fill="{StaticResource Brush.Accent.Primary}" Width="18" Height="18" Stretch="Uniform"/>
+                    <!--<TextBlock Text="SPRITE EDITOR" Foreground="{StaticResource Brush.Text.Primary}" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="14"/>-->
+                </StackPanel>
+
+                <!-- Right controls -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Right">
                     <Button x:Name="BtnSettings" Width="46" Height="40" Style="{StaticResource TitleBarButtonStyle}" Click="BtnSettings_Click" ToolTip="{DynamicResource Str_Settings}">
                         <Path Data="{StaticResource Icon.Settings}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="16" Height="16" Stretch="Uniform"/>
                         <Button.ContextMenu>
@@ -78,34 +114,64 @@
                     </Button>
 
                     <Button Click="Minimize_Click" Style="{StaticResource TitleBarButtonStyle}" ToolTip="Minimize">
-                        <Path Data="{StaticResource Icon.Minimize}" 
-              Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
-              Width="10" Height="10" Stretch="Uniform"/>
+                        <Path Data="{StaticResource Icon.Minimize}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="10" Height="10" Stretch="Uniform"/>
                     </Button>
-
                     <Button Click="Maximize_Click" Style="{StaticResource TitleBarButtonStyle}" ToolTip="Maximize">
-                        <Path Data="{StaticResource Icon.Maximize}" 
-              Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
-              Width="10" Height="10" Stretch="Uniform"/>
+                        <Path Data="{StaticResource Icon.Maximize}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="10" Height="10" Stretch="Uniform"/>
                     </Button>
-
                     <Button Click="Close_Click" Style="{StaticResource TitleBarCloseButtonStyle}" ToolTip="Close">
-                        <Path Data="{StaticResource Icon.Close}" 
-                            Stroke="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
-                            StrokeThickness="1.5"
-                            Width="10" Height="10" Stretch="Uniform"/>
+                        <Path Data="{StaticResource Icon.Close}" Stroke="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" StrokeThickness="1.5" Width="10" Height="10" Stretch="Uniform"/>
                     </Button>
                 </StackPanel>
             </Grid>
         </Border>
 
+        <!-- MAIN CONTENT -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="240"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="{StaticResource Brush.Bg.Panel}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,1,0">
+            <!-- SIDEBAR -->
+            <Border Grid.Column="0" x:Name="SidebarBorder"
+                    Background="{StaticResource Brush.Bg.Panel}"
+                    BorderBrush="{StaticResource Brush.Border}"
+                    BorderThickness="0,0,1,0"
+                    ClipToBounds="True">
+
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Width" Value="240"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMenuExpanded}" Value="False">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Width" To="60" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <QuadraticEase EasingMode="EaseInOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Width" To="240" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <QuadraticEase EasingMode="EaseInOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -113,83 +179,199 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="0" Margin="20,30,20,30">
-                        <TextBlock Text="{DynamicResource Str_AppTitle}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Primary}"/>
-                        <TextBlock Text="{DynamicResource Str_AppSubtitle}" FontSize="12" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,2,0,0"/>
-                    </StackPanel>
+                    <!-- LOGO HEADER -->
+                    <Grid Grid.Row="0" Height="60">
+                        <!-- Logo icon -->
+                        <Path Data="{StaticResource Icon.Bone}"
+                              Fill="{StaticResource Brush.Accent.Primary}"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center">
+                            <Path.Style>
+                                <Style TargetType="Path">
+                                    <Setter Property="Width" Value="18"/>
+                                    <Setter Property="Height" Value="18"/>
+                                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                                    <Setter Property="Margin" Value="20,0,0,0"/>
 
-                    <StackPanel Grid.Row="1" Margin="10,0">
-                        <TextBlock Text="{DynamicResource Str_Menu}" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Brush.Border}" Margin="10,0,0,10"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsMenuExpanded}" Value="False">
+                                            <Setter Property="Width" Value="24"/>
+                                            <Setter Property="Height" Value="24"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="Margin" Value="0"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Path.Style>
+                        </Path>
 
-                        <Button Command="{Binding GoToHomeCommand}" Style="{StaticResource Style.Button.Nav}">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource Icon.Home}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,10,0"/>
-                                <TextBlock Text="{DynamicResource Str_Home}"/>
-                            </StackPanel>
-                        </Button>
+                        <StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="50,0,0,0"
+                                    Visibility="{Binding IsMenuExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="{DynamicResource Str_AppTitle}" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Primary}"/>
+                            <TextBlock Text="{DynamicResource Str_AppSubtitle}" FontSize="11" Foreground="{StaticResource Brush.Text.Secondary}" Opacity="0.7"/>
+                        </StackPanel>
+                    </Grid>
 
-                        <Button Command="{Binding GoToSpriteSlicerCommand}" Style="{StaticResource Style.Button.Nav}">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource Icon.Grid}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,10,0"/>
-                                <TextBlock Text="{DynamicResource Str_SpriteSlicer}"/>
-                            </StackPanel>
-                        </Button>
+                    <!-- MENU BUTTONLARI (Grid Sistemə keçirildi) -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden" Margin="0,10,0,0">
+                        <StackPanel>
 
-                        <Button Command="{Binding GoToBackgroundEraserCommand}" Style="{StaticResource Style.Button.Nav}">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource Icon.Eraser}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,10,0"/>
-                                <TextBlock Text="{DynamicResource Str_BGEraser}"/>
-                            </StackPanel>
-                        </Button>
+                            <!-- HOME -->
+                            <Button Command="{Binding GoToHomeCommand}" Style="{StaticResource SidebarButtonStyle}" ToolTip="{DynamicResource Str_Home}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <!-- Sabit en (İkon üçün) -->
+                                        <ColumnDefinition Width="*"/>
+                                        <!-- Qalan hissə (Text üçün) -->
+                                    </Grid.ColumnDefinitions>
 
-                        <Button Command="{Binding GoToRiggingCommand}" Style="{StaticResource Style.Button.Nav}">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource Icon.Bone}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,10,0"/>
-                                <TextBlock Text="{DynamicResource Str_Rigging}"/>
-                            </StackPanel>
-                        </Button>
+                                    <Path Grid.Column="0" Data="{StaticResource Icon.Home}" 
+                                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+                                          Width="18" Height="18" Stretch="Uniform"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                        <Button Command="{Binding GoToFormatConverterCommand}" Style="{StaticResource Style.Button.Nav}">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource Icon.Convert}" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,10,0"/>
-                                <TextBlock Text="{DynamicResource Str_Converter}"/>
-                            </StackPanel>
-                        </Button>
+                                    <TextBlock Grid.Column="1" Text="{DynamicResource Str_Home}" VerticalAlignment="Center"
+                                               Visibility="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </Grid>
+                            </Button>
 
-                        <Button Command="{Binding GoToFrameAnimatorCommand}" Style="{StaticResource Style.Button.Nav}">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource Icon.Film}"   Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"   Width="14" Height="14"  Stretch="Uniform"   Margin="0,0,10,0"/>
-                                <TextBlock Text="{DynamicResource Str_FrameAnimator}"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding GoToTexturePackerCommand}" Style="{StaticResource Style.Button.Nav}">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource Icon.Packer}" 
-              Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
-              Width="14" Height="14" 
-              Stretch="Uniform" 
-              Margin="0,0,10,0"/>
+                            <!-- SPRITE SLICER -->
+                            <Button Command="{Binding GoToSpriteSlicerCommand}" Style="{StaticResource SidebarButtonStyle}" ToolTip="{DynamicResource Str_SpriteSlicer}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <TextBlock Text="{DynamicResource Str_TexturePacker}"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding GoToStoryEditorCommand}" Style="{StaticResource Style.Button.Nav}">
-                            <StackPanel Orientation="Horizontal">
-                                <Path Data="{StaticResource Icon.Edit}" 
-              Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
-              Width="14" Height="14" 
-              Stretch="Uniform" 
-              Margin="0,0,10,0"/>
-                                <TextBlock Text="Story Editor"/>
-                            </StackPanel>
-                        </Button>
+                                    <Path Grid.Column="0" Data="{StaticResource Icon.Grid}" 
+                                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+                                          Width="18" Height="18" Stretch="Uniform"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="{DynamicResource Str_SpriteSlicer}" VerticalAlignment="Center"
+                                               Visibility="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </Grid>
+                            </Button>
 
-                    <TextBlock Grid.Row="2" Text="{DynamicResource Str_Version}" HorizontalAlignment="Center" Foreground="{StaticResource Brush.Border}" Margin="20"/>
+                            <!-- BG ERASER -->
+                            <Button Command="{Binding GoToBackgroundEraserCommand}" Style="{StaticResource SidebarButtonStyle}" ToolTip="{DynamicResource Str_BGEraser}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Path Grid.Column="0" Data="{StaticResource Icon.Eraser}" 
+                                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+                                          Width="18" Height="18" Stretch="Uniform"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Column="1" Text="{DynamicResource Str_BGEraser}" VerticalAlignment="Center"
+                                               Visibility="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </Grid>
+                            </Button>
+
+                            <!-- RIGGING -->
+                            <Button Command="{Binding GoToRiggingCommand}" Style="{StaticResource SidebarButtonStyle}" ToolTip="{DynamicResource Str_Rigging}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Path Grid.Column="0" Data="{StaticResource Icon.Bone}" 
+                                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+                                          Width="18" Height="18" Stretch="Uniform"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Column="1" Text="{DynamicResource Str_Rigging}" VerticalAlignment="Center"
+                                               Visibility="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </Grid>
+                            </Button>
+
+                            <!-- CONVERTER -->
+                            <Button Command="{Binding GoToFormatConverterCommand}" Style="{StaticResource SidebarButtonStyle}" ToolTip="{DynamicResource Str_Converter}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Path Grid.Column="0" Data="{StaticResource Icon.Convert}" 
+                                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+                                          Width="18" Height="18" Stretch="Uniform"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Column="1" Text="{DynamicResource Str_Converter}" VerticalAlignment="Center"
+                                               Visibility="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </Grid>
+                            </Button>
+
+                            <!-- FRAME ANIMATOR -->
+                            <Button Command="{Binding GoToFrameAnimatorCommand}" Style="{StaticResource SidebarButtonStyle}" ToolTip="{DynamicResource Str_FrameAnimator}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Path Grid.Column="0" Data="{StaticResource Icon.Film}" 
+                                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+                                          Width="18" Height="18" Stretch="Uniform"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Column="1" Text="{DynamicResource Str_FrameAnimator}" VerticalAlignment="Center"
+                                               Visibility="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </Grid>
+                            </Button>
+
+                            <!-- TEXTURE PACKER -->
+                            <Button Command="{Binding GoToTexturePackerCommand}" Style="{StaticResource SidebarButtonStyle}" ToolTip="{DynamicResource Str_TexturePacker}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Path Grid.Column="0" Data="{StaticResource Icon.Packer}" 
+                                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+                                          Width="18" Height="18" Stretch="Uniform"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Column="1" Text="{DynamicResource Str_TexturePacker}" VerticalAlignment="Center"
+                                               Visibility="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </Grid>
+                            </Button>
+
+                            <!-- STORY EDITOR -->
+                            <Button Command="{Binding GoToStoryEditorCommand}" Style="{StaticResource SidebarButtonStyle}" ToolTip="Story Editor">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Path Grid.Column="0" Data="{StaticResource Icon.Edit}" 
+                                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+                                          Width="18" Height="18" Stretch="Uniform"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Column="1" Text="Story Editor" VerticalAlignment="Center"
+                                               Visibility="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </Grid>
+                            </Button>
+
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Version text -->
+                    <TextBlock Grid.Row="2" Text="{DynamicResource Str_Version}" HorizontalAlignment="Center" Foreground="{StaticResource Brush.Border}" Margin="20"
+                               Visibility="{Binding IsMenuExpanded, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                 </Grid>
             </Border>
 
+            <!-- MAIN CONTENT AREA -->
             <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" Margin="0"/>
         </Grid>
     </Grid>

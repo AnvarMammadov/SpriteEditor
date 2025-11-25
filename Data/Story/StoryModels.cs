@@ -8,7 +8,6 @@ using System.Collections.ObjectModel;
 
 namespace SpriteEditor.Data.Story
 {
-
     // === YENİ: Əməliyyat Növləri ===
     public enum ActionOperation
     {
@@ -32,6 +31,16 @@ namespace SpriteEditor.Data.Story
         [ObservableProperty] private string _value;
     }
 
+    // YENİ: Node Tipləri
+    public enum StoryNodeType
+    {
+        Dialogue,   // Standart: Personaj danışır
+        Event,      // Hadisə: Dəyişənləri dəyişir (Gold += 10)
+        Condition,  // Şərt: Seçim edir (Açar varsa -> A, yoxsa -> B)
+        Start,      // Başlanğıc
+        End         // Son
+    }
+
     // 1. Müqayisə Operatorları
     public enum ConditionOperator
     {
@@ -42,12 +51,12 @@ namespace SpriteEditor.Data.Story
         LessThan        // Kiçikdir (<) - Yalnız Integer üçün
     }
 
-    // 2. Dəyişən Tipləri (Sadəlik üçün hələlik 3 əsas tip)
+    // 2. Dəyişən Tipləri
     public enum VariableType
     {
-        Boolean, // True/False (Məs: HasKey)
-        Integer, // Rəqəm (Məs: Gold, Health)
-        String   // Mətn (Məs: PlayerName)
+        Boolean, // True/False
+        Integer, // Rəqəm
+        String   // Mətn
     }
 
     // 3. Seçim (Button)
@@ -56,21 +65,13 @@ namespace SpriteEditor.Data.Story
         [ObservableProperty] private string _text = "Next";
         [ObservableProperty] private string _targetNodeId; // Hansı qutuya gedəcək?
 
-        // === YENİ: Şərt Sistemi ===
-
-        // Hansı dəyişəni yoxlayırıq? (Dəyişənin Adı)
-        // Qeyd: Birbaşa StoryVariable obyektini saxlamırıq, çünki Save/Load zamanı ad (string) daha etibarlıdır.
+        // === Şərt Sistemi ===
         [ObservableProperty] private string _conditionVariableName;
-
-        // Necə yoxlayırıq? (==, !=, >, <)
         [ObservableProperty] private ConditionOperator _operator = ConditionOperator.None;
-
-        // Hansı dəyərlə müqayisə edirik? (Məsələn: "True", "5", "RedKey")
         [ObservableProperty] private string _conditionValue;
     }
 
     // 4. Düyün (Hekayənin bir parçası)
-    // ObservableObject edirik ki, Editor-da yazanda UI dərhal yenilənsin
     public partial class StoryNode : ObservableObject
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
@@ -85,11 +86,31 @@ namespace SpriteEditor.Data.Story
         [ObservableProperty] private string _characterImagePath;
         [ObservableProperty] private string _audioPath;
 
+        [ObservableProperty]
+        private StoryNodeType _type = StoryNodeType.Dialogue;
+
+        // Tip dəyişəndə təmizlik işləri
+        partial void OnTypeChanged(StoryNodeType value)
+        {
+            // Əgər Event, Condition və ya End seçilibsə, dialoq məlumatlarını təmizləmək olar
+            // Amma istifadəçi səhvən dəyişərsə deyə, hələlik saxlayırıq.
+
+            if (value == StoryNodeType.Start)
+            {
+                Title = "Start";
+                SpeakerName = "System";
+            }
+            else if (value == StoryNodeType.End)
+            {
+                Title = "The End";
+                SpeakerName = "System";
+            }
+        }
+
         // Seçimlər
         public ObservableCollection<StoryChoice> Choices { get; set; } = new ObservableCollection<StoryChoice>();
 
-        // === YENİ ƏLAVƏ: Giriş Hadisələri (Actions) ===
-        // Oyunçu bu düyünə girən kimi bu siyahıdakı əməliyyatlar icra olunacaq.
+        // Giriş Hadisələri (Actions)
         public ObservableCollection<StoryNodeAction> OnEnterActions { get; set; } = new ObservableCollection<StoryNodeAction>();
     }
 
@@ -98,43 +119,25 @@ namespace SpriteEditor.Data.Story
     {
         public string Name { get; set; } = "My Story";
         public List<StoryNode> Nodes { get; set; } = new List<StoryNode>();
-
-        // YENİ ƏLAVƏ: Dəyişənlər Siyahısı
         public List<StoryVariable> Variables { get; set; } = new List<StoryVariable>();
-
         public string StartNodeId { get; set; }
     }
-
 
     // 6. Dəyişən Modeli
     public partial class StoryVariable : ObservableObject
     {
-        [ObservableProperty]
-        private string _name = "NewVar";
+        [ObservableProperty] private string _name = "NewVar";
+        [ObservableProperty] private VariableType _type = VariableType.Boolean;
+        [ObservableProperty] private string _value = "False";
 
-        [ObservableProperty]
-        private VariableType _type = VariableType.Boolean;
-
-        [ObservableProperty]
-        private string _value = "False";
-
-        // BU HİSSƏ YENİDİR: Tip dəyişdikdə avtomatik işə düşür
         partial void OnTypeChanged(VariableType value)
         {
             switch (value)
             {
-                case VariableType.Boolean:
-                    Value = "False";
-                    break;
-                case VariableType.Integer:
-                    Value = "0";
-                    break;
-                case VariableType.String:
-                    Value = "Text..";
-                    break;
+                case VariableType.Boolean: Value = "False"; break;
+                case VariableType.Integer: Value = "0"; break;
+                case VariableType.String: Value = "Text.."; break;
             }
         }
     }
-
-
 }

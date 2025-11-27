@@ -10,12 +10,12 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
-using SpriteEditor.Data.Story;
+using SpriteEditor.Data.Story; // StoryCommand, SetVariableCommand və s. buradadır
 using SpriteEditor.Views;
 
 namespace SpriteEditor.ViewModels
 {
-    // Xəttin çəkilməsi üçün köməkçi klass
+    // Xəttin çəkilməsi üçün köməkçi klass (Dəyişməyib)
     public partial class NodeConnection : ObservableObject
     {
         public StoryNode Source { get; set; }
@@ -30,6 +30,7 @@ namespace SpriteEditor.ViewModels
 
     public partial class StoryEditorViewModel : ObservableObject
     {
+        // === UI Panel İdarəetməsi ===
         [ObservableProperty] private bool _isToolsPanelOpen = true;
         [ObservableProperty] private bool _isPropertiesPanelOpen = false;
 
@@ -44,7 +45,7 @@ namespace SpriteEditor.ViewModels
             if (value != null) IsPropertiesPanelOpen = true;
         }
 
-        // Zoom və Pan
+        // === Zoom və Pan ===
         [ObservableProperty] private double _zoomLevel = 1.0;
         [ObservableProperty] private double _panX = 0;
         [ObservableProperty] private double _panY = 0;
@@ -52,24 +53,24 @@ namespace SpriteEditor.ViewModels
         public const double MinZoom = 0.2;
         public const double MaxZoom = 3.0;
 
+        // === Kolleksiyalar ===
         public ObservableCollection<StoryNode> Nodes { get; } = new();
         public ObservableCollection<NodeConnection> Connections { get; } = new();
 
         [ObservableProperty] private StoryNode _selectedNode;
 
-        // ComboBox üçün Tiplər Siyahısı (View-a ötürmək üçün)
+        // View üçün siyahılar
         public List<StoryNodeType> NodeTypes { get; } = Enum.GetValues(typeof(StoryNodeType)).Cast<StoryNodeType>().ToList();
-
-        // Connection Dragging
-        [ObservableProperty] private Point _tempConnectionStart;
-        [ObservableProperty] private Point _tempConnectionEnd;
-        [ObservableProperty] private bool _isDraggingConnection;
-        private StoryNode _dragSourceNode;
-
         public ObservableCollection<StoryVariable> GlobalVariables { get; } = new();
         public List<VariableType> VariableTypes { get; } = Enum.GetValues(typeof(VariableType)).Cast<VariableType>().ToList();
         public List<ConditionOperator> ConditionOperators { get; } = Enum.GetValues(typeof(ConditionOperator)).Cast<ConditionOperator>().ToList();
         public List<ActionOperation> ActionOperations { get; } = Enum.GetValues(typeof(ActionOperation)).Cast<ActionOperation>().ToList();
+
+        // === Connection Dragging ===
+        [ObservableProperty] private Point _tempConnectionStart;
+        [ObservableProperty] private Point _tempConnectionEnd;
+        [ObservableProperty] private bool _isDraggingConnection;
+        private StoryNode _dragSourceNode;
 
         public StoryEditorViewModel()
         {
@@ -82,6 +83,7 @@ namespace SpriteEditor.ViewModels
             Nodes.Add(n1);
         }
 
+        // === DÜYÜN İDARƏETMƏSİ ===
         [RelayCommand]
         public void AddNode()
         {
@@ -100,9 +102,11 @@ namespace SpriteEditor.ViewModels
         {
             if (SelectedNode == null) return;
 
+            // Əlaqələri təmizlə
             var linksToRemove = Connections.Where(c => c.Source == SelectedNode || c.Target == SelectedNode).ToList();
             foreach (var link in linksToRemove) Connections.Remove(link);
 
+            // Digər düyünlərdən bura gələn seçimləri təmizlə
             foreach (var node in Nodes)
             {
                 var choicesToRemove = node.Choices.Where(c => c.TargetNodeId == SelectedNode.Id).ToList();
@@ -132,11 +136,62 @@ namespace SpriteEditor.ViewModels
 
             foreach (var node in Nodes) node.IsStartNode = false;
             nodeToSet.IsStartNode = true;
-            // Tipini də Start edə bilərik
             nodeToSet.Type = StoryNodeType.Start;
         }
 
-        // === VISUAL SCRIPTING LOGIC ===
+        // === YENİ: COMMAND SYSTEM (Block Based Logic) ===
+
+        // 1. Dəyişən Dəyişmək Əmri (Set Variable)
+        [RelayCommand]
+        public void AddSetVariableCommand()
+        {
+            if (SelectedNode == null) return;
+            string defaultVar = GlobalVariables.FirstOrDefault()?.Name ?? "";
+
+            // StoryNode daxilindəki Commands siyahısına əlavə edirik
+            SelectedNode.Commands.Add(new SetVariableCommand
+            {
+                TargetVariableName = defaultVar,
+                Operation = ActionOperation.Set,
+                Value = "True"
+            });
+        }
+
+        // 2. Gözləmə Əmri (Wait)
+        [RelayCommand]
+        public void AddWaitCommand()
+        {
+            if (SelectedNode == null) return;
+            SelectedNode.Commands.Add(new WaitCommand { DurationSeconds = 1.0 });
+        }
+
+        // 3. Səs Əmri (Sound)
+        [RelayCommand]
+        public void AddSoundCommand()
+        {
+            if (SelectedNode == null) return;
+            SelectedNode.Commands.Add(new PlaySoundCommand { AudioPath = "", Volume = 1.0f });
+        }
+
+        // 4. Əmri Silmək (Generic)
+        [RelayCommand]
+        public void DeleteCommand(StoryCommand command)
+        {
+            if (SelectedNode != null && command != null)
+            {
+                SelectedNode.Commands.Remove(command);
+            }
+        }
+
+        // === DƏYİŞƏN İDARƏETMƏSİ ===
+        [RelayCommand]
+        public void AddVariable() => GlobalVariables.Add(new StoryVariable { Name = "Variable_" + (GlobalVariables.Count + 1) });
+
+        [RelayCommand]
+        public void DeleteVariable(StoryVariable variable) { if (variable != null) GlobalVariables.Remove(variable); }
+
+
+        // === VISUAL SCRIPTING LOGIC (Connection Dragging) ===
         public void StartConnectionDrag(StoryNode source, Point startPos)
         {
             _dragSourceNode = source;
@@ -178,6 +233,7 @@ namespace SpriteEditor.ViewModels
             foreach (var item in temp) Connections.Add(item);
         }
 
+        // === PLAYER & SAVE/LOAD ===
         [RelayCommand]
         public void PlayStory()
         {
@@ -223,6 +279,7 @@ namespace SpriteEditor.ViewModels
                 try
                 {
                     var options = new JsonSerializerOptions { WriteIndented = true };
+                    // Artıq polimorfik tiplər [JsonDerivedType] atributları sayəsində avtomatik serializasiya olunacaq
                     string jsonString = JsonSerializer.Serialize(storyGraph, options);
                     await File.WriteAllTextAsync(saveDialog.FileName, jsonString);
                     CustomMessageBox.Show("Hekayə uğurla yadda saxlanıldı!", "Uğurlu", MessageBoxButton.OK, MsgImage.Success);
@@ -264,6 +321,7 @@ namespace SpriteEditor.ViewModels
                         Nodes.Add(node);
                     }
 
+                    // Əlaqələri bərpa et
                     foreach (var sourceNode in Nodes)
                     {
                         foreach (var choice in sourceNode.Choices)
@@ -287,24 +345,7 @@ namespace SpriteEditor.ViewModels
             }
         }
 
-        [RelayCommand]
-        public void AddVariable() => GlobalVariables.Add(new StoryVariable { Name = "Variable_" + (GlobalVariables.Count + 1) });
-
-        [RelayCommand]
-        public void DeleteVariable(StoryVariable variable) { if (variable != null) GlobalVariables.Remove(variable); }
-
-        [RelayCommand]
-        public void AddAction()
-        {
-            if (SelectedNode == null) return;
-            string defaultVar = GlobalVariables.FirstOrDefault()?.Name ?? "";
-            SelectedNode.OnEnterActions.Add(new StoryNodeAction { TargetVariableName = defaultVar, Operation = ActionOperation.Set, Value = "True" });
-        }
-
-        [RelayCommand]
-        public void DeleteAction(StoryNodeAction action) { if (SelectedNode != null && action != null) SelectedNode.OnEnterActions.Remove(action); }
-
-        // Asset Selection
+        // === ASSET SELECTION ===
         [RelayCommand] public void SelectBackgroundImage() { if (SelectedNode == null) return; BrowseFile("Images|*.png;*.jpg;*.jpeg;*.bmp;*.webp", path => SelectedNode.BackgroundImagePath = path); }
         [RelayCommand] public void SelectCharacterImage() { if (SelectedNode == null) return; BrowseFile("Images|*.png;*.jpg;*.jpeg;*.bmp;*.webp", path => SelectedNode.CharacterImagePath = path); }
         [RelayCommand] public void SelectAudio() { if (SelectedNode == null) return; BrowseFile("Audio|*.mp3;*.wav;*.ogg;*.m4a", path => SelectedNode.AudioPath = path); }

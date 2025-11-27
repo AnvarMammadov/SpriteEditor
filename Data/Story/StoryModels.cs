@@ -5,9 +5,45 @@ using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 
 namespace SpriteEditor.Data.Story
 {
+
+
+    // === 1. ƏSAS COMMAND SİNİFİ (Polimorfik) ===
+    // JSON-da "Type" sahəsinə görə hansı əmr olduğunu biləcəyik
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
+    [JsonDerivedType(typeof(SetVariableCommand), typeDiscriminator: "SetVar")]
+    [JsonDerivedType(typeof(WaitCommand), typeDiscriminator: "Wait")]
+    [JsonDerivedType(typeof(PlaySoundCommand), typeDiscriminator: "PlaySound")]
+    public abstract partial class StoryCommand : ObservableObject
+    {
+        [ObservableProperty] private bool _isBlocking = true; // Oyunçu bunu gözləməlidirmi?
+    }
+
+    // === 2. KONKRET ƏMRLƏR ===
+
+    // Köhnə "Action"un yeni versiyası (Dəyişənlər üçün)
+    public partial class SetVariableCommand : StoryCommand
+    {
+        [ObservableProperty] private string _targetVariableName;
+        [ObservableProperty] private ActionOperation _operation = ActionOperation.Set;
+        [ObservableProperty] private string _value;
+    }
+
+    // Gözləmə Əmri (Məs: 2 saniyə pauza)
+    public partial class WaitCommand : StoryCommand
+    {
+        [ObservableProperty] private double _durationSeconds = 1.0;
+    }
+
+    // Səs Əmri (SFX)
+    public partial class PlaySoundCommand : StoryCommand
+    {
+        [ObservableProperty] private string _audioPath;
+        [ObservableProperty] private float _volume = 1.0f;
+    }
     // === YENİ: Əməliyyat Növləri ===
     public enum ActionOperation
     {
@@ -111,7 +147,7 @@ namespace SpriteEditor.Data.Story
         public ObservableCollection<StoryChoice> Choices { get; set; } = new ObservableCollection<StoryChoice>();
 
         // Giriş Hadisələri (Actions)
-        public ObservableCollection<StoryNodeAction> OnEnterActions { get; set; } = new ObservableCollection<StoryNodeAction>();
+        public ObservableCollection<StoryCommand> Commands { get; set; } = new ObservableCollection<StoryCommand>();
     }
 
     // 5. Bütün Hekayə Qrafı

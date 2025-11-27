@@ -44,27 +44,32 @@ namespace SpriteEditor.ViewModels
             if (!string.IsNullOrEmpty(story.StartNodeId)) GoToNode(story.StartNodeId);
         }
 
-        private void GoToNode(string nodeId)
+        private async void GoToNode(string nodeId)
         {
             var node = _currentStory.Nodes.FirstOrDefault(n => n.Id == nodeId);
             if (node == null) return;
 
-            // 1. Hadisələri İcra Et
-            ExecuteActions(node);
+            // === YENİ HİSSƏ BAŞLADI ===
+            // Düyündəki bütün əmrləri icra et
+            if (node.Commands != null)
+            {
+                foreach (var cmd in node.Commands)
+                {
+                    await ExecuteCommandAsync(cmd);
+                }
+            }
             PlayNodeAudio(node.AudioPath);
 
             // 2. Node Tipinə görə davranış
-            if (node.Type == StoryNodeType.Dialogue || node.Type == StoryNodeType.Start || node.Type == StoryNodeType.End)
+            if (node.Type == StoryNodeType.Dialogue || node.Type == StoryNodeType.Start)
             {
-                // Normal Səhnə
+                // Mətni yazmağa başla
                 StartTypewriter(node.Text);
                 SpeakerName = node.SpeakerName;
 
-                if (!string.IsNullOrEmpty(node.BackgroundImagePath)) try { BackgroundImage = new BitmapImage(new Uri(node.BackgroundImagePath)); } catch { BackgroundImage = null; }
-                else BackgroundImage = null;
-
-                if (!string.IsNullOrEmpty(node.CharacterImagePath)) try { CharacterImage = new BitmapImage(new Uri(node.CharacterImagePath)); } catch { CharacterImage = null; }
-                else CharacterImage = null;
+                // Şəkilləri yüklə (Mövcud kodunuz)
+                if (!string.IsNullOrEmpty(node.BackgroundImagePath)) /* ... Yükləmə kodu ... */;
+                if (!string.IsNullOrEmpty(node.CharacterImagePath)) /* ... Yükləmə kodu ... */;
 
                 RefreshChoices(node);
             }
@@ -82,6 +87,76 @@ namespace SpriteEditor.ViewModels
             }
         }
 
+        // YENİ: Əmrləri tanıyan "Beyin"
+        private async Task ExecuteCommandAsync(StoryCommand command)
+        {
+            switch (command)
+            {
+                case WaitCommand waitCmd:
+                    // Oyunçunu dondurub gözləyirik
+                    await Task.Delay(TimeSpan.FromSeconds(waitCmd.DurationSeconds));
+                    break;
+
+                case SetVariableCommand varCmd:
+                    // Dəyişən məntiqi (Köhnə ExecuteActions kodunuzu bura köçürün)
+                    ApplyVariableChange(varCmd);
+                    break;
+
+                case PlaySoundCommand soundCmd:
+                    // Səs effektini oynat (Musiqini kəsmədən)
+                    PlaySoundEffect(soundCmd.AudioPath);
+                    break;
+            }
+        }
+
+
+        // Dəyişən məntiqini (Köhnə ExecuteActions) bura ayırın
+        private void ApplyVariableChange(SetVariableCommand action)
+        {
+            // Dəyişəni tapırıq
+            var variable = _currentStory.Variables.FirstOrDefault(v => v.Name == action.TargetVariableName);
+            if (variable == null) return;
+
+            try
+            {
+                switch (action.Operation)
+                {
+                    case ActionOperation.Set:
+                        variable.Value = action.Value;
+                        break;
+
+                    case ActionOperation.Toggle:
+                        if (bool.TryParse(variable.Value, out bool b))
+                            variable.Value = (!b).ToString();
+                        break;
+
+                    case ActionOperation.Add:
+                        if (int.TryParse(variable.Value, out int iA) && int.TryParse(action.Value, out int vA))
+                            variable.Value = (iA + vA).ToString();
+                        break;
+
+                    case ActionOperation.Subtract:
+                        if (int.TryParse(variable.Value, out int iS) && int.TryParse(action.Value, out int vS))
+                            variable.Value = (iS - vS).ToString();
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Action Error: {ex.Message}");
+            }
+        }
+
+        // Səs effekti üçün sadə metod (MediaPlayer əlavə edilməlidir)
+        private void PlaySoundEffect(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return;
+            // Yeni bir MediaPlayer yaradıb səsi oyna (Fire and forget)
+            var sfxPlayer = new MediaPlayer();
+            sfxPlayer.Open(new Uri(path));
+            sfxPlayer.Play();
+        }
+
         private void RefreshChoices(StoryNode node)
         {
             CurrentChoices.Clear();
@@ -94,33 +169,6 @@ namespace SpriteEditor.ViewModels
             }
         }
 
-        private void ExecuteActions(StoryNode node)
-        {
-            if (node.OnEnterActions == null) return;
-            foreach (var action in node.OnEnterActions)
-            {
-                var variable = _currentStory.Variables.FirstOrDefault(v => v.Name == action.TargetVariableName);
-                if (variable == null) continue;
-
-                try
-                {
-                    switch (action.Operation)
-                    {
-                        case ActionOperation.Set: variable.Value = action.Value; break;
-                        case ActionOperation.Toggle:
-                            if (bool.TryParse(variable.Value, out bool b)) variable.Value = (!b).ToString();
-                            break;
-                        case ActionOperation.Add:
-                            if (int.TryParse(variable.Value, out int iA) && int.TryParse(action.Value, out int vA)) variable.Value = (iA + vA).ToString();
-                            break;
-                        case ActionOperation.Subtract:
-                            if (int.TryParse(variable.Value, out int iS) && int.TryParse(action.Value, out int vS)) variable.Value = (iS - vS).ToString();
-                            break;
-                    }
-                }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Action Error: {ex.Message}"); }
-            }
-        }
 
         private bool EvaluateCondition(StoryChoice choice)
         {

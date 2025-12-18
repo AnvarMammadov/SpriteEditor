@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -23,6 +23,14 @@ namespace SpriteEditor.ViewModels
         [ObservableProperty] private string _speakerName;
         [ObservableProperty] private ImageSource _backgroundImage;
         [ObservableProperty] private ImageSource _characterImage;
+
+        // === YENİ: Portrait System ===
+        [ObservableProperty] private ImageSource _portraitLeft;
+        [ObservableProperty] private ImageSource _portraitCenter;
+        [ObservableProperty] private ImageSource _portraitRight;
+        [ObservableProperty] private bool _isPortraitLeftVisible;
+        [ObservableProperty] private bool _isPortraitCenterVisible;
+        [ObservableProperty] private bool _isPortraitRightVisible;
 
         private readonly DispatcherTimer _textTimer;
         private string _targetText;
@@ -105,6 +113,21 @@ namespace SpriteEditor.ViewModels
                 case PlaySoundCommand soundCmd:
                     // Səs effektini oynat (Musiqini kəsmədən)
                     PlaySoundEffect(soundCmd.AudioPath);
+                    break;
+
+                case ShowPortraitCommand portraitCmd:
+                    ShowPortrait(portraitCmd);
+                    break;
+
+                case HidePortraitCommand hidePortraitCmd:
+                    HidePortrait(hidePortraitCmd);
+                    break;
+
+                case ShowTextCommand textCmd:
+                    // Narrator mətn göstər
+                    DisplayText = textCmd.Text;
+                    SpeakerName = ""; // Narrator olduğu üçün ad göstərilmir
+                    await Task.Delay(TimeSpan.FromSeconds(textCmd.DisplayDuration));
                     break;
             }
         }
@@ -220,6 +243,63 @@ namespace SpriteEditor.ViewModels
         {
             _targetText = text ?? ""; DisplayText = ""; _charIndex = 0; _textTimer.Stop();
             if (!string.IsNullOrEmpty(_targetText)) _textTimer.Start();
+        }
+
+        // === PORTRAIT SYSTEM METODLARI ===
+        private void ShowPortrait(ShowPortraitCommand cmd)
+        {
+            if (string.IsNullOrEmpty(cmd.CharacterId)) return;
+
+            // Personajı tap
+            var character = _currentStory.Characters?.FirstOrDefault(c => c.Id == cmd.CharacterId);
+            if (character == null) return;
+
+            // Portreti tap
+            var portrait = character.Portraits.FirstOrDefault(p => p.Name == cmd.PortraitName);
+            if (portrait == null || string.IsNullOrEmpty(portrait.ImagePath)) return;
+
+            // Şəkli yüklə
+            try
+            {
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(portrait.ImagePath, UriKind.RelativeOrAbsolute);
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                bitmap.Freeze();
+
+                // Mövqeyə görə yerləşdir
+                switch (cmd.Position)
+                {
+                    case PortraitPosition.Left:
+                        PortraitLeft = bitmap;
+                        IsPortraitLeftVisible = true;
+                        break;
+                    case PortraitPosition.Center:
+                        PortraitCenter = bitmap;
+                        IsPortraitCenterVisible = true;
+                        break;
+                    case PortraitPosition.Right:
+                        PortraitRight = bitmap;
+                        IsPortraitRightVisible = true;
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Portrait load error: {ex.Message}");
+            }
+        }
+
+        private void HidePortrait(HidePortraitCommand cmd)
+        {
+            if (string.IsNullOrEmpty(cmd.CharacterId)) return;
+
+            // Sadə variant: Bütün mövqelərdən personajı sil
+            // Daha mükəmməl variant: CharacterId-yə görə hansı mövqedə olduğunu tap
+            IsPortraitLeftVisible = false;
+            IsPortraitCenterVisible = false;
+            IsPortraitRightVisible = false;
         }
 
         public void Cleanup() { _mediaPlayer.Stop(); _mediaPlayer.Close(); }

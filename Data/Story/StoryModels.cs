@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,6 +17,9 @@ namespace SpriteEditor.Data.Story
     [JsonDerivedType(typeof(SetVariableCommand), typeDiscriminator: "SetVar")]
     [JsonDerivedType(typeof(WaitCommand), typeDiscriminator: "Wait")]
     [JsonDerivedType(typeof(PlaySoundCommand), typeDiscriminator: "PlaySound")]
+    [JsonDerivedType(typeof(ShowPortraitCommand), typeDiscriminator: "ShowPortrait")]
+    [JsonDerivedType(typeof(HidePortraitCommand), typeDiscriminator: "HidePortrait")]
+    [JsonDerivedType(typeof(ShowTextCommand), typeDiscriminator: "ShowText")]
     public abstract partial class StoryCommand : ObservableObject
     {
         [ObservableProperty] private bool _isBlocking = true; // Oyunçu bunu gözləməlidirmi?
@@ -156,6 +159,7 @@ namespace SpriteEditor.Data.Story
         public string Name { get; set; } = "My Story";
         public List<StoryNode> Nodes { get; set; } = new List<StoryNode>();
         public List<StoryVariable> Variables { get; set; } = new List<StoryVariable>();
+        public List<StoryCharacter> Characters { get; set; } = new List<StoryCharacter>();
         public string StartNodeId { get; set; }
     }
 
@@ -175,5 +179,86 @@ namespace SpriteEditor.Data.Story
                 case VariableType.String: Value = "Text.."; break;
             }
         }
+    }
+
+    // === 7. CHARACTER MANAGEMENT SYSTEM ===
+    
+    /// <summary>
+    /// Bir portreti təmsil edir (məs: happy, sad, angry)
+    /// </summary>
+    public partial class CharacterPortrait : ObservableObject
+    {
+        [ObservableProperty] private string _name = "neutral";
+        [ObservableProperty] private string _imagePath = "";
+    }
+
+    /// <summary>
+    /// Hekayə personajı
+    /// </summary>
+    public partial class StoryCharacter : ObservableObject
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        
+        [ObservableProperty] private string _name = "Character Name";
+        [ObservableProperty] private string _displayColor = "#3B82F6"; // Mavi (default)
+        [ObservableProperty] private string _description = "";
+        
+        // Portretlər kolleksiyası (happy, sad, angry, və s.)
+        public ObservableCollection<CharacterPortrait> Portraits { get; set; } = new ObservableCollection<CharacterPortrait>();
+    }
+
+    /// <summary>
+    /// Portret mövqeyi
+    /// </summary>
+    public enum PortraitPosition
+    {
+        Left,
+        Center,
+        Right
+    }
+
+    /// <summary>
+    /// Portret animasiya növləri
+    /// </summary>
+    public enum PortraitAnimation
+    {
+        None,
+        FadeIn,
+        SlideFromLeft,
+        SlideFromRight,
+        Bounce
+    }
+
+    // === 8. YENİ ƏMRLƏR: SHOW/HIDE PORTRAIT ===
+    
+    /// <summary>
+    /// Portreti göstər
+    /// </summary>
+    public partial class ShowPortraitCommand : StoryCommand
+    {
+        [ObservableProperty] private string _characterId;
+        [ObservableProperty] private string _portraitName = "neutral";
+        [ObservableProperty] private PortraitPosition _position = PortraitPosition.Center;
+        [ObservableProperty] private PortraitAnimation _animation = PortraitAnimation.FadeIn;
+        [ObservableProperty] private double _duration = 0.3; // saniyə
+    }
+
+    /// <summary>
+    /// Portreti gizlət
+    /// </summary>
+    public partial class HidePortraitCommand : StoryCommand
+    {
+        [ObservableProperty] private string _characterId;
+        [ObservableProperty] private PortraitAnimation _animation = PortraitAnimation.FadeIn; // Fade out
+        [ObservableProperty] private double _duration = 0.3;
+    }
+
+    /// <summary>
+    /// Narrator mətn göstər (dialog olmadan, məs: "3 years later...")
+    /// </summary>
+    public partial class ShowTextCommand : StoryCommand
+    {
+        [ObservableProperty] private string _text = "";
+        [ObservableProperty] private double _displayDuration = 2.0; // saniyə
     }
 }

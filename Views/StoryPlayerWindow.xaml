@@ -1,4 +1,4 @@
-﻿<Window x:Class="SpriteEditor.Views.StoryPlayerWindow"
+<Window x:Class="SpriteEditor.Views.StoryPlayerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -13,7 +13,49 @@
     <Grid>
         <Image Source="{Binding BackgroundImage}" Stretch="UniformToFill"/>
 
+        <!-- OLD CHARACTER IMAGE (Köhnə sistem, saxlayırıq əgər kimsə istifadə edirsə) -->
         <Image Source="{Binding CharacterImage}" Height="450" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,50,0"/>
+
+        <!-- YENİ: Portrait System (3 mövqe) -->
+        <Grid VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="0,0,0,180">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT Portrait -->
+            <Image Grid.Column="0" Source="{Binding PortraitLeft}" 
+                   Height="500" VerticalAlignment="Bottom" HorizontalAlignment="Left" 
+                   Margin="50,0,0,0"
+                   Visibility="{Binding IsPortraitLeftVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                   RenderTransformOrigin="0.5,0.5">
+                <Image.RenderTransform>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </Image.RenderTransform>
+            </Image>
+
+            <!-- CENTER Portrait -->
+            <Image Grid.Column="1" Source="{Binding PortraitCenter}" 
+                   Height="550" VerticalAlignment="Bottom" HorizontalAlignment="Center"
+                   Visibility="{Binding IsPortraitCenterVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                   RenderTransformOrigin="0.5,0.5">
+                <Image.RenderTransform>
+                    <ScaleTransform ScaleX="1.1" ScaleY="1.1"/>
+                </Image.RenderTransform>
+            </Image>
+
+            <!-- RIGHT Portrait -->
+            <Image Grid.Column="2" Source="{Binding PortraitRight}" 
+                   Height="500" VerticalAlignment="Bottom" HorizontalAlignment="Right" 
+                   Margin="0,0,50,0"
+                   Visibility="{Binding IsPortraitRightVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                   RenderTransformOrigin="0.5,0.5">
+                <Image.RenderTransform>
+                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                </Image.RenderTransform>
+            </Image>
+        </Grid>
 
         <Grid VerticalAlignment="Bottom" Margin="20,0,20,20" Height="180">
             <Border Background="#DD111827" BorderBrush="{StaticResource Brush.Accent.Blue}" BorderThickness="2" CornerRadius="10">
@@ -27,13 +69,28 @@
                         <TextBlock Text="{Binding SpeakerName}" FontWeight="Bold" Foreground="#111827" FontSize="14"/>
                     </Border>
 
-                    <TextBlock Grid.Row="1" Text="{Binding DisplayText}" Foreground="{StaticResource Brush.Text.Primary}" 
-                               FontSize="16" TextWrapping="Wrap" LineHeight="24"/>
+                    <Grid Grid.Row="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        
+                        <TextBlock Grid.Row="0" Text="{Binding DisplayText}" Foreground="{StaticResource Brush.Text.Primary}" 
+                                   FontSize="17" TextWrapping="Wrap" LineHeight="26" FontWeight="Normal"/>
+                        
+                        <!-- Hint: Click-to-continue -->
+                        <TextBlock Grid.Row="1" Text="▼ Click to continue" 
+                                   Foreground="{StaticResource Brush.Text.Secondary}" 
+                                   FontSize="11" HorizontalAlignment="Right" 
+                                   Margin="0,10,0,0" Opacity="0.6"
+                                   FontStyle="Italic"/>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>
 
-        <ItemsControl ItemsSource="{Binding CurrentChoices}" VerticalAlignment="Center" HorizontalAlignment="Center" Width="400">
+        <!-- IMPROVED CHOICE BUTTONS (Böyük, oxunaqlı, yaşlı istifadəçilər üçün) -->
+        <ItemsControl ItemsSource="{Binding CurrentChoices}" VerticalAlignment="Center" HorizontalAlignment="Center" Width="600" MaxWidth="600">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <StackPanel/>
@@ -41,12 +98,37 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Button Content="{Binding Text}" 
-                            Command="{Binding DataContext.SelectChoiceCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                    <Button Command="{Binding DataContext.SelectChoiceCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
                             CommandParameter="{Binding}"
-                            Style="{StaticResource Style.Button.Primary}"
-                            Height="45" FontSize="14" Background="#CC374151" BorderBrush="{StaticResource Brush.Accent.Primary}"
-                            Margin="0,0,0,10"/>
+                            Height="60" FontSize="18" FontWeight="SemiBold"
+                            Margin="0,0,0,15"
+                            Cursor="Hand"
+                            HorizontalContentAlignment="Left"
+                            Padding="20,10">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource Style.Button.Primary}">
+                                <Setter Property="Background" Value="#CC374151"/>
+                                <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent.Primary}"/>
+                                <Setter Property="BorderThickness" Value="2"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource Brush.Accent.Primary}"/>
+                                        <Setter Property="Foreground" Value="Black"/>
+                                        <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent.Primary}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="➤" FontSize="20" Margin="0,0,15,0" VerticalAlignment="Center" Foreground="{StaticResource Brush.Accent.Primary}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap" VerticalAlignment="Center" FontSize="17"/>
+                        </Grid>
+                    </Button>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>

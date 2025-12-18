@@ -51,7 +51,11 @@
 - **JSON metadata** - Export sprite coordinates
 - **Transparency trimming** - Auto-crop transparent pixels
 
-### 📖 **Story Editor** (Visual Novel)
+### 📖 **Story Editor** (Visual Novel) ⭐ **NEW: Character System!**
+- **🆕 Sample Story** - Ready-made demo with Alice & Bob (10 nodes, 2 endings)
+- **🆕 Character Management** - Create characters with multiple portraits/emotions
+- **🆕 Portrait System** - Show/hide characters (Left/Center/Right positions)
+- **🆕 Advanced Commands** - Portrait, Variables, Wait, Sound, Text
 - **Node-based editor** - Visual narrative graph
 - **Branching dialogues** - Multiple choice support
 - **Variable system** - Track game state
@@ -95,6 +99,22 @@
 2. **Load an image** using the "Load Image" button
 3. **Apply your edits** using the tool-specific controls
 4. **Export your work** with the "Save" or "Export" button
+
+### 🆕 Story Editor Quick Start (NEW!)
+
+**Try the sample story in 30 seconds:**
+1. Open Story Editor from sidebar
+2. Click **"📖 Load Sample Story"** button (left panel)
+3. Click **"▶ Play Preview"** to see the demo
+4. Enjoy the interactive story with Alice & Bob!
+
+**Learn by example:**
+- 2 Characters with portraits
+- 10 Connected nodes
+- Branching story (2 different endings)
+- Portrait commands, variables, choices
+
+For detailed guide: See `QUICK_START.md` and `SAMPLE_STORY_INFO.md`
 
 ---
 

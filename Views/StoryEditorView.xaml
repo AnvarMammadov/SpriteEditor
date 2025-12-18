@@ -1,10 +1,11 @@
-﻿<UserControl x:Class="SpriteEditor.Views.StoryEditorView"
+<UserControl x:Class="SpriteEditor.Views.StoryEditorView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:converters="clr-namespace:SpriteEditor.Converters"
+             xmlns:local="clr-namespace:SpriteEditor.Data.Story"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1200">
 
@@ -109,13 +110,87 @@
                         <Button Grid.Column="1" Command="{Binding LoadStoryCommand}" Content="📂 Load" Style="{StaticResource Style.Button.Primary}" Margin="5,0,0,0"/>
                     </Grid>
                     <Button Command="{Binding AddNodeCommand}" Content="+ Add Node" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,10"/>
-                    <Button Command="{Binding PlayStoryCommand}" Content="▶ Play Preview" Style="{StaticResource Style.Button.Accent}" Margin="0,0,0,15"/>
+                    <Button Command="{Binding PlayStoryCommand}" Content="▶ Play Preview" Style="{StaticResource Style.Button.Accent}" Margin="0,0,0,10"/>
+                    
+                    <!-- YENİ: SAMPLE STORY BUTTON -->
+                    <Button Command="{Binding LoadSampleStoryCommand}" 
+                            Style="{StaticResource Style.Button.Primary}" 
+                            Margin="0,0,0,15"
+                            Height="40"
+                            Background="#22C55E"
+                            BorderBrush="#22C55E"
+                            BorderThickness="2"
+                            ToolTip="Hazır demo hekayə yüklə (Alice və Bob ilə)">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📖" FontSize="18" Margin="0,0,8,0"/>
+                            <TextBlock Text="Load Sample Story" FontWeight="Bold" VerticalAlignment="Center" FontSize="12"/>
+                        </StackPanel>
+                    </Button>
+                    
                     <Separator Opacity="0.3" Background="{StaticResource Brush.Border}" Margin="0,0,0,15"/>
                 </StackPanel>
 
                 <Grid Grid.Row="1">
-                    <Expander Header="GLOBAL VARIABLES" Foreground="{StaticResource Brush.Text.Secondary}" FontWeight="Bold" IsExpanded="True" BorderThickness="0">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,5,0">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <!-- CHARACTERS LIBRARY -->
+                            <Expander Header="CHARACTERS" Foreground="{StaticResource Brush.Text.Secondary}" FontWeight="Bold" IsExpanded="True" BorderThickness="0" Margin="0,0,0,15">
+                                <StackPanel Margin="0,10,0,0">
+                                    <Button Command="{Binding AddCharacterCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,10" Height="35">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="👤" FontSize="16" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Add Character" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <ItemsControl ItemsSource="{Binding Characters}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#252D3B" CornerRadius="6" Margin="0,0,0,8" Padding="10" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1">
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <!-- Character Header -->
+                                                        <Grid Grid.Row="0">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBox Grid.Column="0" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
+                                                                     Foreground="{StaticResource Brush.Accent.Primary}" 
+                                                                     FontWeight="SemiBold" FontSize="13" Height="30" 
+                                                                     VerticalContentAlignment="Center" Padding="5,0" 
+                                                                     Margin="0,0,5,0"/>
+                                                            <Button Grid.Column="1" Content="✕" 
+                                                                    Command="{Binding DataContext.DeleteCharacterCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" 
+                                                                    CommandParameter="{Binding}" 
+                                                                    Width="30" Height="30" 
+                                                                    Style="{StaticResource Style.Button.Primary}" 
+                                                                    Background="#33EF4444" BorderBrush="#EF4444" Foreground="#EF4444" FontWeight="Bold"/>
+                                                        </Grid>
+                                                        <!-- Color Picker -->
+                                                        <Grid Grid.Row="1" Margin="0,5,0,0">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Text="Color:" Foreground="Gray" FontSize="10" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                            <TextBox Grid.Column="1" Text="{Binding DisplayColor, UpdateSourceTrigger=PropertyChanged}" 
+                                                                     Height="25" FontSize="11" VerticalContentAlignment="Center" Padding="5,0"/>
+                                                        </Grid>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Expander>
+
+                            <!-- GLOBAL VARIABLES -->
+                            <Expander Header="GLOBAL VARIABLES" Foreground="{StaticResource Brush.Text.Secondary}" FontWeight="Bold" IsExpanded="False" BorderThickness="0">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,5,0" MaxHeight="300">
                             <StackPanel Margin="0,10,0,0">
                                 <Button Command="{Binding AddVariableCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,10" Height="35">
                                     <StackPanel Orientation="Horizontal">
@@ -177,8 +252,10 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </StackPanel>
-                        </ScrollViewer>
-                    </Expander>
+                                </ScrollViewer>
+                            </Expander>
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </Grid>
         </Border>
@@ -488,48 +565,179 @@
                             </Grid>
                         </StackPanel>
 
-                        <!-- ACTIONS SECTION (Logic for Event/Condition etc) -->
+                        <!-- COMMANDS SECTION -->
                         <Grid Margin="0,15,0,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="ON ENTER ACTIONS" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Center"/>
-                            <Button Grid.Column="1" Command="{Binding AddActionCommand}" Content="+ Add" Style="{StaticResource Style.Button.Primary}" Height="24" FontSize="10" Padding="8,0"/>
+                            <TextBlock Text="COMMANDS" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Center"/>
                         </Grid>
 
-                        <ItemsControl ItemsSource="{Binding SelectedNode.OnEnterActions}">
+                        <!-- Command Buttons -->
+                        <WrapPanel Margin="0,0,0,10">
+                            <Button Command="{Binding AddShowPortraitCommand}" Content="👤 Portrait" Style="{StaticResource Style.Button.Primary}" Height="28" FontSize="10" Padding="8,0" Margin="0,0,5,5" ToolTip="Show character portrait"/>
+                            <Button Command="{Binding AddHidePortraitCommand}" Content="❌ Hide" Style="{StaticResource Style.Button.Primary}" Height="28" FontSize="10" Padding="8,0" Margin="0,0,5,5" ToolTip="Hide portrait"/>
+                            <Button Command="{Binding AddSetVariableCommand}" Content="📊 Variable" Style="{StaticResource Style.Button.Primary}" Height="28" FontSize="10" Padding="8,0" Margin="0,0,5,5" ToolTip="Set variable"/>
+                            <Button Command="{Binding AddWaitCommand}" Content="⏱️ Wait" Style="{StaticResource Style.Button.Primary}" Height="28" FontSize="10" Padding="8,0" Margin="0,0,5,5" ToolTip="Wait duration"/>
+                            <Button Command="{Binding AddSoundCommand}" Content="🔊 Sound" Style="{StaticResource Style.Button.Primary}" Height="28" FontSize="10" Padding="8,0" Margin="0,0,5,5" ToolTip="Play sound"/>
+                            <Button Command="{Binding AddShowTextCommand}" Content="📝 Text" Style="{StaticResource Style.Button.Primary}" Height="28" FontSize="10" Padding="8,0" Margin="0,0,5,5" ToolTip="Show narrator text"/>
+                        </WrapPanel>
+
+                        <!-- Commands List -->
+
+                        <ItemsControl ItemsSource="{Binding SelectedNode.Commands}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#252D3B" CornerRadius="4" Margin="0,2" Padding="5">
+                                    <Border Background="#252D3B" CornerRadius="4" Margin="0,4" Padding="8" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1">
                                         <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="2*"/>
-                                                <ColumnDefinition Width="1.5*"/>
-                                                <ColumnDefinition Width="1.5*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <ComboBox Grid.Column="0" ItemsSource="{Binding DataContext.GlobalVariables, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" DisplayMemberPath="Name" SelectedValuePath="Name" SelectedValue="{Binding TargetVariableName}" Style="{StaticResource DarkComboBoxStyle}" Height="25" FontSize="11" Margin="0,0,2,0"/>
-                                            <ComboBox Grid.Column="1" ItemsSource="{Binding DataContext.ActionOperations, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" SelectedItem="{Binding Operation}" Style="{StaticResource DarkComboBoxStyle}" Height="25" FontSize="11" Margin="2,0,2,0"/>
-                                            <Grid Grid.Column="2" Margin="2,0,2,0">
-                                                <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Height="25" FontSize="11" VerticalContentAlignment="Center" Padding="5,0" Background="{StaticResource Brush.Bg.Input}" Foreground="White" BorderBrush="{StaticResource Brush.Border}">
-                                                    <TextBox.Visibility>
-                                                        <MultiBinding Converter="{StaticResource VariableTypeToVisibilityConverter}" ConverterParameter="Other">
-                                                            <Binding Path="TargetVariableName"/>
-                                                            <Binding Path="DataContext.GlobalVariables" RelativeSource="{RelativeSource AncestorType={x:Type UserControl}}"/>
-                                                        </MultiBinding>
-                                                    </TextBox.Visibility>
-                                                </TextBox>
-                                                <ComboBox SelectedItem="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ItemsSource="{StaticResource BooleanOptions}" Height="25" FontSize="11" VerticalContentAlignment="Center" Style="{StaticResource DarkComboBoxStyle}">
-                                                    <ComboBox.Visibility>
-                                                        <MultiBinding Converter="{StaticResource VariableTypeToVisibilityConverter}" ConverterParameter="Boolean">
-                                                            <Binding Path="TargetVariableName"/>
-                                                            <Binding Path="DataContext.GlobalVariables" RelativeSource="{RelativeSource AncestorType={x:Type UserControl}}"/>
-                                                        </MultiBinding>
-                                                    </ComboBox.Visibility>
-                                                </ComboBox>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            
+                                            <!-- Command Header -->
+                                            <Grid Grid.Row="0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" FontWeight="Bold" FontSize="11" Foreground="{StaticResource Brush.Accent.Primary}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="Command"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding}" Value="{x:Type local:ShowPortraitCommand}">
+                                                                    <Setter Property="Text" Value="👤 Show Portrait"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding}" Value="{x:Type local:HidePortraitCommand}">
+                                                                    <Setter Property="Text" Value="❌ Hide Portrait"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding}" Value="{x:Type local:SetVariableCommand}">
+                                                                    <Setter Property="Text" Value="📊 Set Variable"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding}" Value="{x:Type local:WaitCommand}">
+                                                                    <Setter Property="Text" Value="⏱️ Wait"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding}" Value="{x:Type local:PlaySoundCommand}">
+                                                                    <Setter Property="Text" Value="🔊 Play Sound"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding}" Value="{x:Type local:ShowTextCommand}">
+                                                                    <Setter Property="Text" Value="📝 Show Text"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <Button Grid.Column="1" Content="✕" Command="{Binding DataContext.DeleteCommandCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" CommandParameter="{Binding}" Style="{StaticResource Style.Button.Primary}" Width="24" Height="24" FontSize="10" Background="#33EF4444" BorderBrush="#EF4444" Foreground="#EF4444"/>
                                             </Grid>
-                                            <Button Grid.Column="3" Content="✕" Command="{Binding DataContext.DeleteActionCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" CommandParameter="{Binding}" Style="{StaticResource Style.Button.Primary}" Width="25" Height="25" FontSize="10" Background="#33EF4444" BorderBrush="#EF4444" Foreground="#EF4444"/>
+                                            
+                                            <!-- Command Content (different for each type) -->
+                                            <ContentControl Grid.Row="1" Content="{Binding}" Margin="0,5,0,0">
+                                                <ContentControl.Resources>
+                                                    <!-- ShowPortraitCommand Template -->
+                                                    <DataTemplate DataType="{x:Type local:ShowPortraitCommand}">
+                                                        <StackPanel>
+                                                            <TextBlock Text="Character:" Foreground="Gray" FontSize="10" Margin="0,0,0,2"/>
+                                                            <ComboBox ItemsSource="{Binding DataContext.Characters, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" 
+                                                                      DisplayMemberPath="Name" SelectedValuePath="Id" 
+                                                                      SelectedValue="{Binding CharacterId}" 
+                                                                      Style="{StaticResource DarkComboBoxStyle}" Height="25" FontSize="11" Margin="0,0,0,5"/>
+                                                            
+                                                            <TextBlock Text="Portrait:" Foreground="Gray" FontSize="10" Margin="0,0,0,2"/>
+                                                            <TextBox Text="{Binding PortraitName, UpdateSourceTrigger=PropertyChanged}" Height="25" FontSize="11" Margin="0,0,0,5"/>
+                                                            
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <StackPanel Grid.Column="0" Margin="0,0,2,0">
+                                                                    <TextBlock Text="Position:" Foreground="Gray" FontSize="10" Margin="0,0,0,2"/>
+                                                                    <ComboBox ItemsSource="{Binding DataContext.PortraitPositions, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" 
+                                                                              SelectedItem="{Binding Position}" Style="{StaticResource DarkComboBoxStyle}" Height="25" FontSize="11"/>
+                                                                </StackPanel>
+                                                                <StackPanel Grid.Column="1" Margin="2,0,0,0">
+                                                                    <TextBlock Text="Animation:" Foreground="Gray" FontSize="10" Margin="0,0,0,2"/>
+                                                                    <ComboBox ItemsSource="{Binding DataContext.PortraitAnimations, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" 
+                                                                              SelectedItem="{Binding Animation}" Style="{StaticResource DarkComboBoxStyle}" Height="25" FontSize="11"/>
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                    
+                                                    <!-- HidePortraitCommand Template -->
+                                                    <DataTemplate DataType="{x:Type local:HidePortraitCommand}">
+                                                        <StackPanel>
+                                                            <TextBlock Text="Character:" Foreground="Gray" FontSize="10" Margin="0,0,0,2"/>
+                                                            <ComboBox ItemsSource="{Binding DataContext.Characters, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" 
+                                                                      DisplayMemberPath="Name" SelectedValuePath="Id" 
+                                                                      SelectedValue="{Binding CharacterId}" 
+                                                                      Style="{StaticResource DarkComboBoxStyle}" Height="25" FontSize="11"/>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                    
+                                                    <!-- SetVariableCommand Template -->
+                                                    <DataTemplate DataType="{x:Type local:SetVariableCommand}">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="2*"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="1.5*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <ComboBox Grid.Column="0" ItemsSource="{Binding DataContext.GlobalVariables, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" DisplayMemberPath="Name" SelectedValuePath="Name" SelectedValue="{Binding TargetVariableName}" Style="{StaticResource DarkComboBoxStyle}" Height="25" FontSize="11" Margin="0,0,2,0"/>
+                                                            <ComboBox Grid.Column="1" ItemsSource="{Binding DataContext.ActionOperations, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" SelectedItem="{Binding Operation}" Style="{StaticResource DarkComboBoxStyle}" Height="25" FontSize="11" Margin="2,0,2,0"/>
+                                                            <TextBox Grid.Column="2" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Height="25" FontSize="11" VerticalContentAlignment="Center" Padding="5,0" Margin="2,0,0,0"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                    
+                                                    <!-- WaitCommand Template -->
+                                                    <DataTemplate DataType="{x:Type local:WaitCommand}">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Text="Duration:" Foreground="Gray" FontSize="10" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                            <TextBox Grid.Column="1" Text="{Binding DurationSeconds, UpdateSourceTrigger=PropertyChanged}" Height="25" FontSize="11" VerticalContentAlignment="Center" Padding="5,0"/>
+                                                            <TextBlock Grid.Column="2" Text="sec" Foreground="Gray" FontSize="10" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                    
+                                                    <!-- PlaySoundCommand Template -->
+                                                    <DataTemplate DataType="{x:Type local:PlaySoundCommand}">
+                                                        <StackPanel>
+                                                            <TextBlock Text="Audio Path:" Foreground="Gray" FontSize="10" Margin="0,0,0,2"/>
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="30"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBox Text="{Binding AudioPath, UpdateSourceTrigger=PropertyChanged}" Height="25" FontSize="11" VerticalContentAlignment="Center" Padding="5,0"/>
+                                                                <Button Grid.Column="1" Content="..." Style="{StaticResource Style.Button.Primary}" Padding="0" Margin="2,0,0,0"/>
+                                                            </Grid>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                    
+                                                    <!-- ShowTextCommand Template -->
+                                                    <DataTemplate DataType="{x:Type local:ShowTextCommand}">
+                                                        <StackPanel>
+                                                            <TextBlock Text="Narrator Text:" Foreground="Gray" FontSize="10" Margin="0,0,0,2"/>
+                                                            <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Height="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,5"/>
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Text="Display:" Foreground="Gray" FontSize="10" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                                <TextBox Grid.Column="1" Text="{Binding DisplayDuration, UpdateSourceTrigger=PropertyChanged}" Height="25" FontSize="11" VerticalContentAlignment="Center" Padding="5,0"/>
+                                                                <TextBlock Grid.Column="2" Text="sec" Foreground="Gray" FontSize="10" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                                            </Grid>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ContentControl.Resources>
+                                            </ContentControl>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>

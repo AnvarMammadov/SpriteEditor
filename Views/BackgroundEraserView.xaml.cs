@@ -1,136 +1,132 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using SpriteEditor.ViewModels;
 
 namespace SpriteEditor.Views
 {
     public partial class BackgroundEraserView : UserControl
     {
-        // ViewModel-ə birbaşa müraciət üçün
         private BackgroundEraserViewModel _viewModel;
-
         private bool _isErasing = false;
+
         public BackgroundEraserView()
         {
             InitializeComponent();
 
-            // SpriteSlicerView.xaml.cs kimi, ViewModel-i əldə edək
             this.DataContextChanged += (sender, e) =>
             {
                 _viewModel = e.NewValue as BackgroundEraserViewModel;
             };
         }
 
-        // Addım 1-də XAML-da təyin etdiyimiz metod
+        /// <summary>
+        /// Handle mouse click on original image
+        /// </summary>
         private void OriginalImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            // ViewModel və ya şəkil yoxdursa, heçnə etmə
             if (_viewModel == null || _viewModel.LoadedImageSource == null) return;
 
-            // === DÜZƏLİŞ BURADADIR: ALƏT REJİMİNƏ GÖRƏ MƏNTİQ ===
-            if (_viewModel.CurrentToolMode == EraserToolMode.Pipet)
+            // Check tool mode
+            if (_viewModel.CurrentToolMode == EraserToolMode.Pipette)
             {
-                // Əgər alət "Pipet"dirsə, rəng seçmə məntiqini işə sal
-                RunPipetTool(sender, e);
+                // Pipette mode - select color
+                SelectColor(sender, e);
             }
-            else // Rejim ManualEraser-dirsə
+            else if (_viewModel.CurrentToolMode == EraserToolMode.ManualEraser)
             {
-                // Əgər alət "Manual Silgi"dirsə, silmə prosesinə başla
+                // Manual Eraser mode - start erasing
                 _isErasing = true;
-
-                // Kliklənən nöqtədən silməyə başla
-                RunManualEraser(sender, e);
-
-                // Siçanı tut (Capture) ki, pəncərədən kənara çıxsa da işləsin
+                EraseAtPoint(sender, e);
                 (sender as IInputElement)?.CaptureMouse();
             }
         }
 
-
-        // === YENİ METOD: Siçan Hərəkət Etdikdə ===
+        /// <summary>
+        /// Handle mouse move for manual eraser
+        /// </summary>
         private void OriginalImage_MouseMove(object sender, MouseEventArgs e)
         {
-            // Yalnız silgi rejimində və siçan basılı olduqda işlə
             if (!_isErasing || _viewModel.CurrentToolMode != EraserToolMode.ManualEraser)
-            {
                 return;
-            }
 
-            // Hərəkət etdikcə sil
-            RunManualEraser(sender, e);
+            EraseAtPoint(sender, e);
         }
 
-        // === YENİ METOD: Siçan Buraxıldıqda ===
+        /// <summary>
+        /// Handle mouse release
+        /// </summary>
         private void OriginalImage_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             _isErasing = false;
-            // Siçanı burax
             (sender as IInputElement)?.ReleaseMouseCapture();
         }
 
-        // --- Köməkçi Metodlar ---
-
         /// <summary>
-        /// Mövcud Pipet məntiqini ayrıca metoda çıxardıq
+        /// Select color from image (Pipette tool)
         /// </summary>
-        private void RunPipetTool(object sender, MouseButtonEventArgs e)
+        private void SelectColor(object sender, MouseButtonEventArgs e)
         {
             var imageControl = sender as Image;
             var bitmapSource = imageControl.Source as BitmapSource;
             if (bitmapSource == null) return;
 
+            // Get click position
             Point clickPos = e.GetPosition(imageControl);
+            
+            // Convert to pixel coordinates
             int pixelX = (int)(clickPos.X / imageControl.ActualWidth * bitmapSource.PixelWidth);
             int pixelY = (int)(clickPos.Y / imageControl.ActualHeight * bitmapSource.PixelHeight);
 
+            // Bounds check
             if (pixelX < 0 || pixelX >= bitmapSource.PixelWidth ||
                 pixelY < 0 || pixelY >= bitmapSource.PixelHeight)
             {
                 return;
             }
 
-            CroppedBitmap cb = new CroppedBitmap(bitmapSource, new Int32Rect(pixelX, pixelY, 1, 1));
-            byte[] pixels = new byte[4];
-            cb.CopyPixels(pixels, 4, 0);
+            // Get pixel color
+            try
+            {
+                CroppedBitmap cb = new CroppedBitmap(bitmapSource, new Int32Rect(pixelX, pixelY, 1, 1));
+                byte[] pixels = new byte[4];
+                cb.CopyPixels(pixels, 4, 0);
 
-            _viewModel.TargetColor = Color.FromArgb(pixels[3], pixels[2], pixels[1], pixels[0]);
-            _viewModel.StartPixelX = pixelX;
-            _viewModel.StartPixelY = pixelY;
+                // Update ViewModel
+                _viewModel.TargetColor = Color.FromArgb(pixels[3], pixels[2], pixels[1], pixels[0]);
+                _viewModel.StartPixelX = pixelX;
+                _viewModel.StartPixelY = pixelY;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Click error: {ex.Message}");
+            }
         }
 
         /// <summary>
-        /// Manual Silgi məntiqi (Pikselləri şəffaf edir)
+        /// Erase pixels at mouse position (Manual Eraser tool)
         /// </summary>
-        private void RunManualEraser(object sender, MouseEventArgs e)
+        private void EraseAtPoint(object sender, MouseEventArgs e)
         {
             var imageControl = sender as Image;
-            // DİQQƏT: Birbaşa WriteableBitmap-i götürürük
             var wb = _viewModel.LoadedImageSource as WriteableBitmap;
             if (wb == null) return;
 
-            // 1. Klik koordinatlarını piksel koordinatlarına çevir
+            // Get click position
             Point clickPos = e.GetPosition(imageControl);
+            
+            // Convert to pixel coordinates
             int pixelX = (int)(clickPos.X / imageControl.ActualWidth * wb.PixelWidth);
             int pixelY = (int)(clickPos.Y / imageControl.ActualHeight * wb.PixelHeight);
 
-            // 2. Fırça ölçüsünü ViewModel-dən al
+            // Get brush size
             int brushSize = _viewModel.BrushSize;
             int halfBrush = brushSize / 2;
 
-            // 3. Silinəcək sahəni (rectangle) hesabla
-            // (Şəklin kənarlarına çıxmamaq şərtilə)
+            // Calculate erase area
             int startX = Math.Max(0, pixelX - halfBrush);
             int startY = Math.Max(0, pixelY - halfBrush);
             int endX = Math.Min(wb.PixelWidth, pixelX + halfBrush);
@@ -141,64 +137,22 @@ namespace SpriteEditor.Views
 
             if (width <= 0 || height <= 0) return;
 
-            // 4. Həmin sahəni doldurmaq üçün tam şəffaf (0,0,0,0) byte massivi yarat
-            int bytesPerPixel = wb.Format.BitsPerPixel / 8; // (Bgra32 üçün 4 olacaq)
+            // Create transparent pixel data
+            int bytesPerPixel = wb.Format.BitsPerPixel / 8;
             int stride = width * bytesPerPixel;
             byte[] transparentData = new byte[height * stride];
-            // C#-da yeni byte[] massivi avtomatik 0-larla doldurulur,
-            // bu da B:0, G:0, R:0, A:0 deməkdir (tam şəffaf)
 
-            // 5. Pikselləri WriteableBitmap-ə yaz (ən vacib hissə)
+            // Write transparent pixels
             try
             {
-                wb.Lock(); // Yaddaşı kilidlə
+                wb.Lock();
                 Int32Rect rect = new Int32Rect(startX, startY, width, height);
                 wb.WritePixels(rect, transparentData, stride, 0);
             }
             finally
             {
-                wb.Unlock(); // Kilidi aç
+                wb.Unlock();
             }
         }
-
-
-        private void OriginalImage_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            // ViewModel və ya şəkil yoxdursa, heçnə etmə
-            if (_viewModel == null || _viewModel.LoadedImageSource == null) return;
-
-            // Yaxınlaşdırma üçün standart olaraq Ctrl düyməsini tələb edirik
-            // Əgər Ctrl basılı deyilsə, normal scroll etsin (şaquli)
-            if (Keyboard.Modifiers != ModifierKeys.Control)
-                return;
-
-            // Zoom sürəti
-            double zoomFactor = 1.1;
-            double scale;
-
-            if (e.Delta > 0)
-            {
-                // Yaxınlaşdır
-                scale = ImageScaleTransform.ScaleX * zoomFactor;
-            }
-            else
-            {
-                // Uzaqlaşdır
-                scale = ImageScaleTransform.ScaleX / zoomFactor;
-            }
-
-            // Zoom həddlərini təyin edək (məsələn, 10%-dən 1000%-ə qədər)
-            // Bu, istifadəçinin sonsuz kiçiltmə və ya böyütməsinin qarşısını alır
-            scale = Math.Max(0.1, Math.Min(scale, 10.0));
-
-            // Həm eni, həm hündürlüyü eyni miqdarda dəyiş
-            ImageScaleTransform.ScaleX = scale;
-            ImageScaleTransform.ScaleY = scale;
-
-            // Bu event-i "handled" (icra edilmiş) olaraq işarələyirik ki,
-            // ScrollViewer eyni anda həm zoom, həm də şaquli scroll etməyə çalışmasın.
-            e.Handled = true;
-        }
-
     }
 }

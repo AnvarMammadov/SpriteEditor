@@ -3,174 +3,357 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:SpriteEditor.Views"
              xmlns:converters="clr-namespace:SpriteEditor.Converters"
              mc:Ignorable="d" 
-             d:DesignHeight="600" d:DesignWidth="900">
+             d:DesignHeight="700" d:DesignWidth="1000">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <converters:EnumToBooleanConverter x:Key="EnumToBooleanConverter"/>
-        <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
     </UserControl.Resources>
 
     <Grid Background="{StaticResource Brush.Bg.Deep}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280"/>
+            <ColumnDefinition Width="320"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Background="{StaticResource Brush.Bg.Panel}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,1,0" Padding="20">
+        <!-- LEFT PANEL - TOOLS -->
+        <Border Grid.Column="0" Background="{StaticResource Brush.Bg.Panel}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,1,0">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <TextBlock Text="{DynamicResource Str_HeaderEraserTools}" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="12" Margin="0,0,0,15"/>
+                <StackPanel Margin="20">
 
-                    <Button Content="{DynamicResource Str_BtnLoadImage}" Command="{Binding LoadImageCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,10"/>
-                    <Button Content="{DynamicResource Str_BtnReset}" Command="{Binding RefreshImageCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,20"/>
+                    <!-- HEADER -->
+                    <TextBlock Text="BACKGROUND ERASER PRO" 
+                               FontSize="18" 
+                               FontWeight="Bold" 
+                               Foreground="{StaticResource Brush.Accent.Primary}" 
+                               Margin="0,0,0,20"/>
 
-                    <Separator Background="{StaticResource Brush.Border}" Margin="0,0,0,20" Opacity="0.3"/>
+                    <!-- LOAD IMAGE -->
+                    <TextBlock Text="IMAGE" FontSize="11" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,8"/>
+                    <Button Content="Load Image" Command="{Binding LoadImageCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,5"/>
+                    <Button Content="Reset" Command="{Binding RefreshImageCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,20"/>
 
-                    <TextBlock Text="{DynamicResource Str_HeaderTools}" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
-
-                    <RadioButton GroupName="ToolMode" Style="{StaticResource Style.RadioButton.Tool}"
-                                 IsChecked="{Binding CurrentToolMode, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Pipet}">
-                        <StackPanel Orientation="Horizontal">
-                            <Path Data="M19.22,4.78a3,3,0,0,0-4.24,0L10.22,9.54a3,3,0,0,0-.71.93L6,10l-.44.44L4.7,9.58,2.58,11.7l2.12,2.12-.86.86,4.16,4.16L9,18.12l2.12,2.12L13.24,18l.44-.44,1-.35a3,3,0,0,0,.93-.71l4.76-4.76A3,3,0,0,0,19.22,4.78ZM13.41,14.24l-2.12-2.12L15,8.41l2.12,2.12Z" Fill="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(TextElement.Foreground)}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,8,0"/>
-                            <TextBlock Text="{DynamicResource Str_ToolPipette}"/>
-                        </StackPanel>
-                    </RadioButton>
-
-                    <RadioButton GroupName="ToolMode" Style="{StaticResource Style.RadioButton.Tool}"
-                                 IsChecked="{Binding CurrentToolMode, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=ManualEraser}">
-                        <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource Icon.Eraser}" Fill="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(TextElement.Foreground)}" Width="14" Height="14" Stretch="Uniform" Margin="0,0,8,0"/>
-                            <TextBlock Text="{DynamicResource Str_ToolManual}"/>
-                        </StackPanel>
-                    </RadioButton>
-
-                    <StackPanel Visibility="{Binding CurrentToolMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=ManualEraser}" Margin="5,0,0,0">
-                        <TextBlock Text="{DynamicResource Str_BrushSize}" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,10,0,5"/>
-                        <DockPanel>
-                            <TextBlock Text="{Binding BrushSize, StringFormat={}{0}px}" Foreground="{StaticResource Brush.Text.Primary}" Width="40" DockPanel.Dock="Right" TextAlignment="Right"/>
-                            <Slider Minimum="2" Maximum="100" Value="{Binding BrushSize}" IsSnapToTickEnabled="True" TickFrequency="1"/>
-                        </DockPanel>
+                    <!-- TOOL MODE SELECTION -->
+                    <TextBlock Text="TOOL MODE" FontSize="11" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,8"/>
+                    
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        <RadioButton GroupName="ToolMode" 
+                                     Content="Pipette" 
+                                     IsChecked="{Binding CurrentToolMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Pipette}"
+                                     Margin="0,0,15,0"/>
+                        <RadioButton GroupName="ToolMode" 
+                                     Content="Manual Eraser" 
+                                     IsChecked="{Binding CurrentToolMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=ManualEraser}"/>
                     </StackPanel>
 
-                    <Separator Background="{StaticResource Brush.Border}" Margin="0,20,0,20" Opacity="0.3"/>
-
-                    <TextBlock Text="{DynamicResource Str_HeaderMagicWand}" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
-
-                    <Grid Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{DynamicResource Str_TargetColor}" VerticalAlignment="Center" Foreground="{StaticResource Brush.Text.Secondary}"/>
-                        <Border Grid.Column="1" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" CornerRadius="4" Height="28" Margin="10,0,0,0">
-                            <Border.Background>
-                                <SolidColorBrush Color="{Binding TargetColor}"/>
-                            </Border.Background>
-                        </Border>
-                    </Grid>
-
-                    <TextBlock Text="{DynamicResource Str_Tolerance}" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,5,0,5"/>
-                    <DockPanel Margin="0,0,0,15">
-                        <TextBlock Text="{Binding Tolerance, StringFormat={}{0:F0}%}" Foreground="{StaticResource Brush.Text.Primary}" Width="40" DockPanel.Dock="Right" TextAlignment="Right"/>
-                        <Slider Minimum="0" Maximum="100" Value="{Binding Tolerance}"/>
-                    </DockPanel>
-
-                    <Button Command="{Binding GeneratePreviewCommand}" Style="{StaticResource Style.Button.Accent}" Margin="0,0,0,10">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{DynamicResource Str_BtnMagicPreview}"/>
+                    <!-- MANUAL ERASER BRUSH SIZE -->
+                    <Border Visibility="{Binding ShowManualEraserOptions, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Background="{StaticResource Brush.Bg.Input}" 
+                            Padding="12" 
+                            CornerRadius="6" 
+                            Margin="0,0,0,15">
+                        <StackPanel>
+                            <TextBlock Text="Brush Size" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Slider Grid.Column="0" Minimum="2" Maximum="100" Value="{Binding BrushSize}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                <TextBlock Grid.Column="1" Text="{Binding BrushSize, StringFormat={}{0}px}" Width="40" FontSize="11" Foreground="{StaticResource Brush.Accent.Primary}" Margin="10,0,0,0" TextAlignment="Right"/>
+                            </Grid>
                         </StackPanel>
-                    </Button>
+                    </Border>
 
-                    <ProgressBar IsIndeterminate="True" Visibility="{Binding IsProcessing, Converter={StaticResource BooleanToVisibilityConverter}}" Height="4" Foreground="{StaticResource Brush.Accent.Blue}" BorderThickness="0" Background="Transparent"/>
+                    <!-- METHOD SELECTION -->
+                    <TextBlock Text="REMOVAL METHOD" FontSize="11" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,8"/>
+                    <ComboBox ItemsSource="{Binding RemovalMethods}" 
+                              SelectedItem="{Binding SelectedMethod}" 
+                              Style="{StaticResource DarkComboBoxStyle}"
+                              Margin="0,0,0,15"/>
 
-                    <Separator Background="{StaticResource Brush.Border}" Margin="0,20,0,20" Opacity="0.3"/>
+                    <!-- FLOOD FILL OPTIONS -->
+                    <Border Visibility="{Binding ShowFloodFillOptions, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Background="{StaticResource Brush.Bg.Input}" 
+                            Padding="12" 
+                            CornerRadius="6" 
+                            Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock Text="FLOOD FILL SETTINGS" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Brush.Accent.Blue}" Margin="0,0,0,10"/>
+                            
+                            <TextBlock Text="Click on the image to select color" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                            
+                            <TextBlock Text="Tolerance" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Slider Grid.Column="0" Minimum="0" Maximum="100" Value="{Binding Tolerance}"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Tolerance, StringFormat={}{0:F0}%}" Width="40" FontSize="11" Foreground="{StaticResource Brush.Accent.Primary}" Margin="10,0,0,0" TextAlignment="Right"/>
+                            </Grid>
+                            
+                            <TextBlock Text="Feather Radius" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,10,0,5"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Slider Grid.Column="0" Minimum="0" Maximum="20" Value="{Binding FeatherRadius}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                <TextBlock Grid.Column="1" Text="{Binding FeatherRadius, StringFormat={}{0}px}" Width="40" FontSize="11" Foreground="{StaticResource Brush.Accent.Primary}" Margin="10,0,0,0" TextAlignment="Right"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
 
-                    <Button Content="{DynamicResource Str_BtnSaveResult}" Command="{Binding SaveImageCommand}" Style="{StaticResource Style.Button.Primary}"/>
+                    <!-- COLOR RANGE OPTIONS -->
+                    <Border Visibility="{Binding ShowColorRangeOptions, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Background="{StaticResource Brush.Bg.Input}" 
+                            Padding="12" 
+                            CornerRadius="6" 
+                            Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock Text="COLOR RANGE SETTINGS" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Brush.Accent.Blue}" Margin="0,0,0,10"/>
+                            
+                            <TextBlock Text="Target Color" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
+                            <Border BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" CornerRadius="4" Height="30" Margin="0,0,0,10">
+                                <Border.Background>
+                                    <SolidColorBrush Color="{Binding TargetColor}"/>
+                                </Border.Background>
+                            </Border>
+                            
+                            <TextBlock Text="Tolerance" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Slider Grid.Column="0" Minimum="0" Maximum="100" Value="{Binding Tolerance}"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Tolerance, StringFormat={}{0:F0}%}" Width="40" FontSize="11" Foreground="{StaticResource Brush.Accent.Primary}" Margin="10,0,0,0" TextAlignment="Right"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- CHROMA KEY OPTIONS -->
+                    <Border Visibility="{Binding ShowChromaKeyOptions, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Background="{StaticResource Brush.Bg.Input}" 
+                            Padding="12" 
+                            CornerRadius="6" 
+                            Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock Text="CHROMA KEY SETTINGS" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Brush.Accent.Blue}" Margin="0,0,0,10"/>
+                            
+                            <TextBlock Text="Key Color" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
+                            <ComboBox ItemsSource="{Binding ChromaColors}" 
+                                      SelectedItem="{Binding SelectedChromaColor}" 
+                                      Style="{StaticResource DarkComboBoxStyle}"
+                                      Margin="0,0,0,10"/>
+                            
+                            <TextBlock Text="Tolerance" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Slider Grid.Column="0" Minimum="0" Maximum="100" Value="{Binding Tolerance}"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Tolerance, StringFormat={}{0:F0}%}" Width="40" FontSize="11" Foreground="{StaticResource Brush.Accent.Primary}" Margin="10,0,0,0" TextAlignment="Right"/>
+                            </Grid>
+                            
+                            <TextBlock Text="Spill Suppression" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Slider Grid.Column="0" Minimum="0" Maximum="100" Value="{Binding SpillSuppression}"/>
+                                <TextBlock Grid.Column="1" Text="{Binding SpillSuppression, StringFormat={}{0:F0}%}" Width="40" FontSize="11" Foreground="{StaticResource Brush.Accent.Primary}" Margin="10,0,0,0" TextAlignment="Right"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- REFINE EDGES OPTIONS -->
+                    <Border Visibility="{Binding ShowRefineEdgesOptions, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Background="{StaticResource Brush.Bg.Input}" 
+                            Padding="12" 
+                            CornerRadius="6" 
+                            Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock Text="REFINE EDGES" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Brush.Accent.Blue}" Margin="0,0,0,10"/>
+                            
+                            <TextBlock Text="Smooth Radius" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Slider Grid.Column="0" Minimum="0" Maximum="10" Value="{Binding SmoothRadius}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                <TextBlock Grid.Column="1" Text="{Binding SmoothRadius, StringFormat={}{0}px}" Width="40" FontSize="11" Foreground="{StaticResource Brush.Accent.Primary}" Margin="10,0,0,0" TextAlignment="Right"/>
+                            </Grid>
+                            
+                            <TextBlock Text="Feather Radius" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Slider Grid.Column="0" Minimum="0" Maximum="20" Value="{Binding FeatherRadius}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                <TextBlock Grid.Column="1" Text="{Binding FeatherRadius, StringFormat={}{0}px}" Width="40" FontSize="11" Foreground="{StaticResource Brush.Accent.Primary}" Margin="10,0,0,0" TextAlignment="Right"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- PROCESS BUTTON -->
+                    <Button Content="⚡ PROCESS" 
+                            Command="{Binding ProcessCommand}" 
+                            Style="{StaticResource Style.Button.Accent}"
+                            Height="40"
+                            FontSize="14"
+                            Margin="0,0,0,10"/>
+
+                    <!-- APPLY TO SOURCE BUTTON (Real-time editing) -->
+                    <Button Content="↻ Apply to Source (Continue Editing)" 
+                            Command="{Binding ApplyToSourceCommand}" 
+                            Style="{StaticResource Style.Button.Accent}"
+                            FontSize="12"
+                            Margin="0,0,0,5"/>
+
+                    <!-- INVERT BUTTON -->
+                    <Button Content="⟲ Invert Selection" 
+                            Command="{Binding InvertCommand}" 
+                            Style="{StaticResource Style.Button.Primary}"
+                            Margin="0,0,0,10"/>
+
+                    <!-- PROGRESS BAR -->
+                    <ProgressBar IsIndeterminate="True" 
+                                 Visibility="{Binding IsProcessing, Converter={StaticResource BooleanToVisibilityConverter}}" 
+                                 Height="4" 
+                                 Foreground="{StaticResource Brush.Accent.Blue}" 
+                                 BorderThickness="0" 
+                                 Background="Transparent"
+                                 Margin="0,0,0,10"/>
+
+                    <!-- BATCH SECTION -->
+                    <Expander Header="BATCH PROCESSING" IsExpanded="False" Foreground="{StaticResource Brush.Text.Primary}" Margin="0,10,0,10">
+                        <StackPanel Margin="0,10,0,0">
+                            <Button Content="Add Files..." Command="{Binding AddBatchFilesCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,5"/>
+                            <Button Content="Process All" Command="{Binding BatchProcessCommand}" Style="{StaticResource Style.Button.Accent}" Margin="0,0,0,5"/>
+                            <Button Content="Clear List" Command="{Binding ClearBatchFilesCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,10"/>
+                            <TextBlock Text="{Binding BatchStatus}" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Expander>
+
+                    <!-- SAVE & RESET -->
+                    <Button Content="💾 SAVE RESULT" 
+                            Command="{Binding SaveImageCommand}" 
+                            Style="{StaticResource Style.Button.Primary}"
+                            Height="40"
+                            FontSize="14"
+                            Margin="0,10,0,5"/>
+
+                    <Button Content="Reset to Defaults" 
+                            Command="{Binding ResetToDefaultsCommand}" 
+                            Style="{StaticResource Style.Button.Primary}"
+                            Opacity="0.7"/>
+
                 </StackPanel>
             </ScrollViewer>
         </Border>
 
-        <Grid Grid.Column="1" Margin="20">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="15"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <!-- RIGHT PANEL - PREVIEW -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-            <Grid Grid.Column="0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <Border Background="{StaticResource Brush.Bg.Panel}" CornerRadius="6,6,0,0" Padding="10,6" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1,1,1,0">
-                    <TextBlock Text="{DynamicResource Str_PanelOriginal}" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11"/>
-                </Border>
-                <Border Grid.Row="1" Background="#0F1218" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" CornerRadius="0,0,6,6" ClipToBounds="True">
-                    <Grid>
-                        <Grid.Background>
-                            <DrawingBrush Viewport="0,0,20,20" ViewportUnits="Absolute" TileMode="Tile">
-                                <DrawingBrush.Drawing>
-                                    <GeometryDrawing>
-                                        <GeometryDrawing.Pen>
-                                            <Pen Brush="#1F2937" Thickness="1"/>
-                                        </GeometryDrawing.Pen>
-                                        <GeometryDrawing.Geometry>
-                                            <GeometryGroup>
-                                                <LineGeometry StartPoint="0,0" EndPoint="0,20"/>
-                                                <LineGeometry StartPoint="0,0" EndPoint="20,0"/>
-                                            </GeometryGroup>
-                                        </GeometryDrawing.Geometry>
-                                    </GeometryDrawing>
-                                </DrawingBrush.Drawing>
-                            </DrawingBrush>
-                        </Grid.Background>
-                        <ScrollViewer x:Name="OriginalImageScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" PreviewMouseWheel="OriginalImage_PreviewMouseWheel">
-                            <Border x:Name="ImageContainerBorder" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Image Source="{Binding LoadedImageSource}" MouseLeftButtonDown="OriginalImage_MouseLeftButtonDown" MouseLeftButtonUp="OriginalImage_MouseLeftButtonUp" MouseMove="OriginalImage_MouseMove" Cursor="Cross" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor">
-                                    <Image.LayoutTransform>
-                                        <ScaleTransform x:Name="ImageScaleTransform" ScaleX="1" ScaleY="1"/>
-                                    </Image.LayoutTransform>
-                                </Image>
-                            </Border>
-                        </ScrollViewer>
-                    </Grid>
-                </Border>
-            </Grid>
+            <!-- INFO BAR -->
+            <Border Grid.Row="0" Background="{StaticResource Brush.Bg.Panel}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1" Padding="15,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="ORIGINAL" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
+                        <TextBlock Text="Click to select color for removal" FontSize="11" Foreground="{StaticResource Brush.Text.Primary}"/>
+                    </StackPanel>
+                    
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="RESULT" FontSize="10" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
+                        <TextBlock Text="Transparent background preview" FontSize="11" Foreground="{StaticResource Brush.Text.Primary}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
 
-            <Grid Grid.Column="2">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <Border Background="{StaticResource Brush.Bg.Panel}" CornerRadius="6,6,0,0" Padding="10,6" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1,1,1,0">
-                    <TextBlock Text="{DynamicResource Str_PanelPreview}" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11"/>
+            <!-- SPLIT VIEW -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="5"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ORIGINAL IMAGE -->
+                <Border Grid.Column="0" Background="{StaticResource Brush.Bg.Deep}" ClipToBounds="True">
+                    <Image x:Name="OriginalImage" 
+                           Source="{Binding LoadedImageSource}" 
+                           Stretch="Uniform" 
+                           Margin="10"
+                           MouseLeftButtonDown="OriginalImage_MouseLeftButtonDown"
+                           MouseMove="OriginalImage_MouseMove"
+                           MouseLeftButtonUp="OriginalImage_MouseLeftButtonUp"/>
                 </Border>
-                <Border Grid.Row="1" Background="#0F1218" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" CornerRadius="0,0,6,6" ClipToBounds="True">
+
+                <!-- SPLITTER -->
+                <GridSplitter Grid.Column="1" Background="{StaticResource Brush.Border}" HorizontalAlignment="Stretch"/>
+
+                <!-- PREVIEW IMAGE -->
+                <Border Grid.Column="2" Background="{StaticResource Brush.Bg.Deep}">
                     <Grid>
-                        <Rectangle Fill="#1F2937"/>
-                        <Rectangle Fill="#374151">
-                            <Rectangle.OpacityMask>
+                        <!-- Checkboard background -->
+                        <Rectangle>
+                            <Rectangle.Fill>
                                 <DrawingBrush Viewport="0,0,20,20" ViewportUnits="Absolute" TileMode="Tile">
                                     <DrawingBrush.Drawing>
-                                        <GeometryDrawing Brush="Black">
-                                            <GeometryDrawing.Geometry>
-                                                <GeometryGroup>
+                                        <DrawingGroup>
+                                            <GeometryDrawing Brush="#2A2A2A">
+                                                <GeometryDrawing.Geometry>
                                                     <RectangleGeometry Rect="0,0,10,10"/>
+                                                </GeometryDrawing.Geometry>
+                                            </GeometryDrawing>
+                                            <GeometryDrawing Brush="#2A2A2A">
+                                                <GeometryDrawing.Geometry>
                                                     <RectangleGeometry Rect="10,10,10,10"/>
-                                                </GeometryGroup>
-                                            </GeometryDrawing.Geometry>
-                                        </GeometryDrawing>
+                                                </GeometryDrawing.Geometry>
+                                            </GeometryDrawing>
+                                            <GeometryDrawing Brush="#1A1A1A">
+                                                <GeometryDrawing.Geometry>
+                                                    <RectangleGeometry Rect="0,10,10,10"/>
+                                                </GeometryDrawing.Geometry>
+                                            </GeometryDrawing>
+                                            <GeometryDrawing Brush="#1A1A1A">
+                                                <GeometryDrawing.Geometry>
+                                                    <RectangleGeometry Rect="10,0,10,10"/>
+                                                </GeometryDrawing.Geometry>
+                                            </GeometryDrawing>
+                                        </DrawingGroup>
                                     </DrawingBrush.Drawing>
                                 </DrawingBrush>
-                            </Rectangle.OpacityMask>
+                            </Rectangle.Fill>
                         </Rectangle>
-                        <Viewbox Stretch="Uniform">
-                            <Image Source="{Binding PreviewImageSource}" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-                        </Viewbox>
+
+                        <!-- Preview Image -->
+                        <Image Source="{Binding PreviewImageSource}" Stretch="Uniform" Margin="10"/>
+
+                        <!-- Placeholder Text -->
+                        <TextBlock Text="Preview will appear here after processing" 
+                                   FontSize="14" 
+                                   Foreground="{StaticResource Brush.Text.Secondary}" 
+                                   HorizontalAlignment="Center" 
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding IsImageLoaded, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     </Grid>
                 </Border>
             </Grid>

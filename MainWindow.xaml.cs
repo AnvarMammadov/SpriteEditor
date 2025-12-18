@@ -10,6 +10,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using SpriteEditor.ViewModels;
 using SpriteEditor.Helpers;
+using SpriteEditor.Helpers.UndoRedo;
 
 namespace SpriteEditor
 {
@@ -35,9 +36,10 @@ namespace SpriteEditor
             KeyboardShortcutManager.RegisterShortcut(Key.F11, ModifierKeys.None, ToggleFullscreen, "Toggle Fullscreen");
             KeyboardShortcutManager.RegisterShortcut(Key.Escape, ModifierKeys.None, HandleEscape, "Escape");
             
-            // Future: Add more shortcuts here
-            // KeyboardShortcutManager.RegisterShortcut(Key.Z, ModifierKeys.Control, Undo, "Undo");
-            // KeyboardShortcutManager.RegisterShortcut(Key.Y, ModifierKeys.Control, Redo, "Redo");
+            // Undo/Redo shortcuts
+            KeyboardShortcutManager.RegisterShortcut(Key.Z, ModifierKeys.Control, PerformUndo, "Undo");
+            KeyboardShortcutManager.RegisterShortcut(Key.Y, ModifierKeys.Control, PerformRedo, "Redo");
+            KeyboardShortcutManager.RegisterShortcut(Key.Z, ModifierKeys.Control | ModifierKeys.Shift, PerformRedo, "Redo (Alt)");
         }
 
         private void ShowHelp()
@@ -75,6 +77,32 @@ namespace SpriteEditor
         {
             // Future: Handle escape in different contexts
             // For now, do nothing
+        }
+
+        private void PerformUndo()
+        {
+            try
+            {
+                UndoRedoManager.Instance.Undo();
+            }
+            catch (Exception ex)
+            {
+                GlobalErrorHandler.LogError(ex, "Undo");
+                MessageBox.Show($"Undo failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void PerformRedo()
+        {
+            try
+            {
+                UndoRedoManager.Instance.Redo();
+            }
+            catch (Exception ex)
+            {
+                GlobalErrorHandler.LogError(ex, "Redo");
+                MessageBox.Show($"Redo failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void Minimize_Click(object sender, RoutedEventArgs e)

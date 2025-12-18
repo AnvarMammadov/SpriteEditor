@@ -1,0 +1,40 @@
+SPRITE EDITOR PRO - Installation Complete
+==========================================
+
+Thank you for installing Sprite Editor Pro!
+
+GET STARTED:
+1. Launch Sprite Editor Pro from your desktop or Start menu
+2. Explore the 7 powerful modules from the sidebar
+3. Check out the tutorials at docs.spriteeditorpro.com
+4. Join our Discord community for support
+
+TRIAL INFORMATION:
+- You have 30 days of full access
+- All features are unlocked during trial
+- Save and export your work without limitations
+- Purchase a license to continue using after trial
+
+NEED HELP?
+- Press F1 inside the app for keyboard shortcuts
+- Visit: docs.spriteeditorpro.com
+- Email: support@spriteeditorpro.com
+- Discord: discord.gg/spriteeditor
+
+KEYBOARD SHORTCUTS:
+- F1: Show help
+- F11: Toggle fullscreen
+- Ctrl + S: Save work
+- Del: Delete selected item
+
+NEXT STEPS:
+1. Launch the application
+2. Select your preferred language (Settings menu)
+3. Try the Sprite Slicer or Background Eraser tools
+4. Create your first project!
+
+Thank you for your support!
+- The Sprite Editor Pro Team
+
+Visit: https://spriteeditorpro.com
+

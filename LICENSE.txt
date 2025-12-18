@@ -1,0 +1,212 @@
+SPRITE EDITOR PRO - COMMERCIAL LICENSE AGREEMENT
+
+Version 1.0 - Effective Date: January 2025
+
+Copyright (c) 2025 [Your Company Name]. All Rights Reserved.
+
+================================================================================
+                          END-USER LICENSE AGREEMENT
+================================================================================
+
+IMPORTANT: PLEASE READ THIS LICENSE AGREEMENT CAREFULLY BEFORE USING THIS SOFTWARE.
+
+By installing, copying, or otherwise using Sprite Editor Pro (the "Software"), 
+you agree to be bound by the terms of this License Agreement. If you do not 
+agree to the terms of this License Agreement, do not install or use the Software.
+
+================================================================================
+                               1. DEFINITIONS
+================================================================================
+
+"Software" refers to Sprite Editor Pro, including all executable files, 
+documentation, updates, and related materials provided by the Licensor.
+
+"Licensor" refers to [Your Company Name] or its authorized distributors.
+
+"Licensee" or "You" refers to the individual or entity that has purchased 
+or obtained a license to use the Software.
+
+"License Key" refers to the unique activation code provided upon purchase.
+
+================================================================================
+                              2. LICENSE GRANT
+================================================================================
+
+2.1 FREE TRIAL LICENSE
+The Licensor grants you a limited, non-exclusive, non-transferable license 
+to use the Software for a trial period of 30 days from the date of installation 
+without charge. All features are available during the trial period.
+
+2.2 PERSONAL LICENSE
+Upon purchase of a Personal License, the Licensor grants you a perpetual, 
+non-exclusive, non-transferable license to:
+  - Install and use the Software on up to 2 computers for personal use
+  - Create unlimited projects for personal or commercial purposes
+  - Receive free updates for 1 year from purchase date
+  - Access email support
+
+2.3 PROFESSIONAL LICENSE
+Upon purchase of a Professional License, the Licensor grants you a perpetual, 
+non-exclusive, non-transferable license to:
+  - Install and use the Software on up to 5 computers
+  - Use by a single individual or small team (up to 5 users)
+  - Create unlimited projects for commercial purposes
+  - Receive free updates for 2 years from purchase date
+  - Access priority email and Discord support
+  - Early access to beta features
+
+2.4 STUDIO LICENSE
+Upon purchase of a Studio License, the Licensor grants you a perpetual, 
+non-exclusive license to:
+  - Install and use the Software on unlimited computers within your organization
+  - Use by unlimited users within the licensed organization
+  - Create unlimited projects for commercial purposes
+  - Receive free lifetime updates
+  - Access priority support with dedicated assistance
+  - Custom feature requests consideration
+  - License transferable within organization
+
+================================================================================
+                            3. LICENSE RESTRICTIONS
+================================================================================
+
+You MAY NOT:
+  - Redistribute, sell, lease, rent, or sublicense the Software
+  - Reverse engineer, decompile, or disassemble the Software
+  - Remove or modify any copyright notices or license information
+  - Use the Software to create competing products
+  - Share your License Key with others
+  - Use a Personal License for team/organizational purposes
+  - Use the Software for illegal or unethical purposes
+
+================================================================================
+                           4. OWNERSHIP AND COPYRIGHT
+================================================================================
+
+The Software is licensed, not sold. The Licensor retains all right, title, 
+and interest in and to the Software, including all copyrights, patents, trade 
+secrets, trademarks, and other intellectual property rights.
+
+================================================================================
+                          5. UPDATES AND MAINTENANCE
+================================================================================
+
+5.1 FREE UPDATES
+The Licensor may provide updates, bug fixes, and improvements to the Software. 
+Updates are provided free of charge during the update period specified in your 
+license type.
+
+5.2 MAJOR VERSIONS
+Major version upgrades (e.g., 1.x to 2.0) may require an additional purchase 
+or upgrade fee. Upgrade pricing will be offered at a discount to existing license holders.
+
+================================================================================
+                            6. SUPPORT SERVICES
+================================================================================
+
+Support services are provided via email and Discord during the support period 
+included with your license. Response times vary by license type:
+  - Personal: 48-72 business hours
+  - Professional: 24-48 business hours  
+  - Studio: 12-24 business hours with priority queue
+
+================================================================================
+                         7. WARRANTY DISCLAIMER
+================================================================================
+
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS 
+OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+The Licensor does not warrant that the Software will meet your requirements 
+or that the operation of the Software will be uninterrupted or error-free.
+
+================================================================================
+                         8. LIMITATION OF LIABILITY
+================================================================================
+
+IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY SPECIAL, INCIDENTAL, INDIRECT, 
+OR CONSEQUENTIAL DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR 
+LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS OF BUSINESS INFORMATION, 
+OR ANY OTHER PECUNIARY LOSS) ARISING OUT OF THE USE OF OR INABILITY TO USE THE 
+SOFTWARE, EVEN IF THE LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+THE TOTAL LIABILITY OF THE LICENSOR UNDER THIS AGREEMENT SHALL NOT EXCEED THE 
+AMOUNT PAID BY YOU FOR THE SOFTWARE LICENSE.
+
+================================================================================
+                              9. TERMINATION
+================================================================================
+
+This License Agreement is effective until terminated. Your rights under this 
+License will terminate automatically without notice if you fail to comply with 
+any term of this License Agreement.
+
+Upon termination, you must cease all use of the Software and destroy all copies 
+in your possession or control.
+
+================================================================================
+                           10. REFUND POLICY
+================================================================================
+
+We offer a 30-day money-back guarantee. If you are not satisfied with the 
+Software, you may request a full refund within 30 days of purchase.
+
+To request a refund, contact: refunds@spriteeditorpro.com
+
+================================================================================
+                          11. PRIVACY AND DATA
+================================================================================
+
+11.1 DATA COLLECTION
+The Software may collect anonymous usage statistics to improve user experience. 
+No personally identifiable information is collected without your consent.
+
+11.2 LICENSE VERIFICATION
+The Software requires periodic online verification of your License Key. This 
+does not require constant internet connection, but periodic checks are necessary.
+
+================================================================================
+                          12. EXPORT RESTRICTIONS
+================================================================================
+
+You agree to comply with all applicable export laws and restrictions and 
+regulations of any country or international agency, and not to export or 
+re-export the Software in violation of any such restrictions or regulations.
+
+================================================================================
+                           13. GOVERNING LAW
+================================================================================
+
+This License Agreement shall be governed by and construed in accordance with 
+the laws of [Your Country/State], without regard to its conflicts of law provisions.
+
+================================================================================
+                         14. ENTIRE AGREEMENT
+================================================================================
+
+This License Agreement constitutes the entire agreement between you and the 
+Licensor relating to the Software and supersedes all prior or contemporaneous 
+oral or written communications, proposals, and representations with respect to 
+the Software.
+
+================================================================================
+                         15. CONTACT INFORMATION
+================================================================================
+
+For questions regarding this License Agreement, please contact:
+
+  [Your Company Name]
+  Email: legal@spriteeditorpro.com
+  Website: https://spriteeditorpro.com
+  Support: support@spriteeditorpro.com
+
+================================================================================
+
+BY INSTALLING OR USING THE SOFTWARE, YOU ACKNOWLEDGE THAT YOU HAVE READ THIS 
+LICENSE AGREEMENT, UNDERSTAND IT, AND AGREE TO BE BOUND BY ITS TERMS AND CONDITIONS.
+
+================================================================================
+
+Last Updated: January 2025
+

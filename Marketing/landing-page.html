@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sprite Editor Pro - All-in-one 2D game development toolkit for sprite manipulation, rigging, and animation. Save time and money with 7 powerful tools in one app.">
+    <meta name="keywords" content="sprite editor, game development, 2D animation, texture packer, rigging, pixel art">
+    <meta property="og:title" content="Sprite Editor Pro - Professional 2D Game Development Toolkit">
+    <meta property="og:description" content="7 powerful tools in one beautiful app. Start free 30-day trial!">
+    <meta property="og:image" content="https://spriteeditorpro.com/og-image.png">
+    <meta property="og:url" content="https://spriteeditorpro.com">
+    <title>Sprite Editor Pro - All Your Sprite Tools, One Beautiful App</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #EAB308;
+            --primary-dark: #CA8A04;
+            --secondary: #3B82F6;
+            --bg-dark: #111827;
+            --bg-darker: #0F172A;
+            --bg-panel: #1F2937;
+            --text-light: #F9FAFB;
+            --text-gray: #9CA3AF;
+            --accent-green: #22C55E;
+            --accent-red: #EF4444;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-darker);
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header/Nav */
+        header {
+            background: var(--bg-dark);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+        
+        .nav-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+        
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 6rem 0;
+            background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-darker) 100%);
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+        
+        .hero .highlight {
+            color: var(--primary);
+        }
+        
+        .hero p {
+            font-size: 1.3rem;
+            color: var(--text-gray);
+            margin-bottom: 2rem;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: #000;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(234, 179, 8, 0.3);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-light);
+            border: 2px solid var(--text-gray);
+        }
+        
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        /* Features Grid */
+        .features {
+            padding: 6rem 0;
+        }
+        
+        .features h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature-card {
+            background: var(--bg-panel);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border-color: var(--primary);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature-card p {
+            color: var(--text-gray);
+        }
+        
+        /* Pricing Section */
+        .pricing {
+            padding: 6rem 0;
+            background: var(--bg-dark);
+        }
+        
+        .pricing h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .pricing-card {
+            background: var(--bg-panel);
+            padding: 2.5rem 2rem;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        
+        .pricing-card.popular {
+            border-color: var(--primary);
+            transform: scale(1.05);
+            box-shadow: 0 10px 50px rgba(234, 179, 8, 0.2);
+        }
+        
+        .pricing-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+        
+        .price {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .price-note {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+        
+        .features-list {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 2rem;
+        }
+        
+        .features-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .features-list li:before {
+            content: "✓ ";
+            color: var(--accent-green);
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        
+        /* Testimonials */
+        .testimonials {
+            padding: 6rem 0;
+        }
+        
+        .testimonials h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .testimonial {
+            background: var(--bg-panel);
+            padding: 2rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .testimonial p {
+            font-style: italic;
+            margin-bottom: 1rem;
+            color: var(--text-gray);
+        }
+        
+        .testimonial-author {
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        /* FAQ */
+        .faq {
+            padding: 6rem 0;
+            background: var(--bg-dark);
+        }
+        
+        .faq h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .faq-item {
+            background: var(--bg-panel);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .faq-item h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .faq-answer {
+            color: var(--text-gray);
+            display: none;
+        }
+        
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+        
+        /* CTA Section */
+        .final-cta {
+            padding: 6rem 0;
+            text-align: center;
+        }
+        
+        .final-cta h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .final-cta p {
+            font-size: 1.2rem;
+            color: var(--text-gray);
+            margin-bottom: 2rem;
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--bg-darker);
+            padding: 3rem 0 1rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .footer-col h4 {
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        
+        .footer-col ul {
+            list-style: none;
+        }
+        
+        .footer-col a {
+            color: var(--text-gray);
+            text-decoration: none;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .footer-col a:hover {
+            color: var(--primary);
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-gray);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1.1rem;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+            }
+            
+            .pricing-card.popular {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo">🎨 Sprite Editor Pro</div>
+                <ul class="nav-links">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="#testimonials">Reviews</a></li>
+                    <li><a href="#faq">FAQ</a></li>
+                    <li><a href="#download" class="btn btn-primary" style="padding: 0.5rem 1.5rem;">Download</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>All Your Sprite Tools<br><span class="highlight">One Beautiful App</span></h1>
+            <p>7 professional modules. One powerful workflow. Start creating today.</p>
+            <div class="cta-buttons">
+                <a href="#download" class="btn btn-primary">Start Free 30-Day Trial</a>
+                <a href="#demo" class="btn btn-secondary">Watch Demo (2 min)</a>
+            </div>
+            <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-gray);">
+                ✓ No credit card required  ✓ Full features  ✓ Windows 10/11
+            </p>
+        </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2>Everything You Need, Nothing You Don't</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔪</div>
+                    <h3>Sprite Slicer</h3>
+                    <p>Cut spritesheets with precision. Grid-based or auto-detection.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎭</div>
+                    <h3>Background Eraser</h3>
+                    <p>Remove backgrounds with magic wand or manual brush.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🦴</div>
+                    <h3>Rigging & Skinning</h3>
+                    <p>Create 2D skeletons, auto-weight, and animate with keyframes.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Format Converter</h3>
+                    <p>Convert between PNG, JPG, BMP, ICO, WebP with one click.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎬</div>
+                    <h3>Frame Animator</h3>
+                    <p>Test sprite animations and export as GIF.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📦</div>
+                    <h3>Texture Packer</h3>
+                    <p>Generate optimized atlases with JSON metadata.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📖</div>
+                    <h3>Story Editor</h3>
+                    <p>Create visual novels with branching narratives.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <h3>7 Languages</h3>
+                    <p>English, Azərbaycan, Русский, Türkçe, Español, Português, 中文</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <h2>Simple, Transparent Pricing</h2>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Personal</h3>
+                    <div class="price">$39.99</div>
+                    <p class="price-note">One-time payment</p>
+                    <ul class="features-list">
+                        <li>All 7 modules</li>
+                        <li>2 installations</li>
+                        <li>1 year updates</li>
+                        <li>Email support</li>
+                        <li>Commercial use</li>
+                    </ul>
+                    <a href="#buy" class="btn btn-secondary">Get Personal</a>
+                </div>
+                
+                <div class="pricing-card popular">
+                    <h3>Professional</h3>
+                    <div class="price">$79.99</div>
+                    <p class="price-note">Most Popular</p>
+                    <ul class="features-list">
+                        <li>All Personal features</li>
+                        <li>5 installations</li>
+                        <li>2 years updates</li>
+                        <li>Priority support</li>
+                        <li>Early beta access</li>
+                    </ul>
+                    <a href="#buy" class="btn btn-primary">Get Professional</a>
+                </div>
+                
+                <div class="pricing-card">
+                    <h3>Studio</h3>
+                    <div class="price">$249</div>
+                    <p class="price-note">Lifetime updates</p>
+                    <ul class="features-list">
+                        <li>All Pro features</li>
+                        <li>Unlimited installs</li>
+                        <li>Lifetime updates</li>
+                        <li>Dedicated support</li>
+                        <li>Custom features</li>
+                    </ul>
+                    <a href="#buy" class="btn btn-secondary">Get Studio</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Testimonials -->
+    <section id="testimonials" class="testimonials">
+        <div class="container">
+            <h2>Loved by Indie Developers</h2>
+            <div class="testimonials-grid">
+                <div class="testimonial">
+                    <p>"Sprite Editor Pro saved me hundreds of dollars. I was using 5 different tools before. Now everything is in one place!"</p>
+                    <div class="testimonial-author">— Alex M., Indie Developer</div>
+                </div>
+                
+                <div class="testimonial">
+                    <p>"The rigging system is incredible. I can create complex character animations in minutes. Worth every penny."</p>
+                    <div class="testimonial-author">— Sarah K., 2D Animator</div>
+                </div>
+                
+                <div class="testimonial">
+                    <p>"Clean UI, fast workflow, and great support. This is now my go-to tool for all sprite work."</p>
+                    <div class="testimonial-author">— Mike T., Game Studio</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- FAQ -->
+    <section id="faq" class="faq">
+        <div class="container">
+            <h2>Frequently Asked Questions</h2>
+            <div class="faq-item">
+                <h3>Do I need a subscription?</h3>
+                <div class="faq-answer">
+                    No! It's a one-time purchase with free updates for 1-2 years (depending on tier). After that, you can keep using your version forever or pay a small upgrade fee.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Can I use it for commercial projects?</h3>
+                <div class="faq-answer">
+                    Yes! All licenses (Personal, Professional, Studio) allow commercial use without royalties or additional fees.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <h3>What if I'm not satisfied?</h3>
+                <div class="faq-answer">
+                    We offer a 30-day money-back guarantee, no questions asked. Try it risk-free!
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <h3>Does it work on Mac or Linux?</h3>
+                <div class="faq-answer">
+                    Currently, Sprite Editor Pro is Windows-only (.NET 8). Mac and Linux versions are on our roadmap for 2025.
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Final CTA -->
+    <section class="final-cta">
+        <div class="container">
+            <h2>Ready to Level Up Your Workflow?</h2>
+            <p>Join 1,000+ developers who are already creating amazing games.</p>
+            <a href="#download" class="btn btn-primary">Start Free Trial Today</a>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#pricing">Pricing</a></li>
+                        <li><a href="#download">Download</a></li>
+                        <li><a href="#changelog">Changelog</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-col">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#docs">Documentation</a></li>
+                        <li><a href="#tutorials">Tutorials</a></li>
+                        <li><a href="#discord">Discord</a></li>
+                        <li><a href="mailto:support@spriteeditorpro.com">Email Support</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-col">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#blog">Blog</a></li>
+                        <li><a href="#press">Press Kit</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-col">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#license">License Agreement</a></li>
+                        <li><a href="#privacy">Privacy Policy</a></li>
+                        <li><a href="#terms">Terms of Service</a></li>
+                        <li><a href="#refunds">Refund Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Sprite Editor Pro. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        // FAQ Toggle
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.addEventListener('click', () => {
+                item.classList.toggle('active');
+            });
+        });
+        
+        // Smooth Scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

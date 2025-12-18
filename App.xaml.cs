@@ -1,6 +1,7 @@
 ﻿using System.Configuration;
 using System.Data;
 using System.Windows;
+using SpriteEditor.Helpers;
 
 namespace SpriteEditor
 {
@@ -9,6 +10,14 @@ namespace SpriteEditor
     /// </summary>
     public partial class App : Application
     {
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            base.OnStartup(e);
+            
+            // Initialize global error handler
+            GlobalErrorHandler.Initialize();
+        }
+
         public void ChangeLanguage(string cultureCode)
         {
             // Dil faylının yolunu təyin edirik

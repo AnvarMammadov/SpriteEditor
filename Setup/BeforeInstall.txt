@@ -1,0 +1,35 @@
+SPRITE EDITOR PRO - Installation Guide
+========================================
+
+Thank you for choosing Sprite Editor Pro!
+
+SYSTEM REQUIREMENTS:
+- Windows 10/11 (64-bit)
+- .NET 8.0 Desktop Runtime
+- 4 GB RAM (8 GB recommended)
+- 200 MB available disk space
+- DirectX 11 compatible GPU
+
+WHAT WILL BE INSTALLED:
+- Sprite Editor Pro application
+- Required libraries and dependencies
+- Documentation files
+- File association for .rig.json files
+- Desktop shortcut (optional)
+
+IMPORTANT NOTES:
+1. The installer will check for .NET 8.0 Desktop Runtime
+2. If not found, you'll be prompted to download it
+3. Administrator privileges are required for installation
+4. Close any running instances of Sprite Editor Pro before continuing
+
+TRIAL VERSION:
+- Full features available for 30 days
+- No credit card required
+- Convert to paid license at any time
+
+For more information, visit:
+https://spriteeditorpro.com
+
+Click "Next" to continue...
+

@@ -9,6 +9,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using SpriteEditor.ViewModels;
+using SpriteEditor.Helpers;
 
 namespace SpriteEditor
 {
@@ -21,6 +22,59 @@ namespace SpriteEditor
         {
             InitializeComponent();
             this.DataContext = new MainViewModel();
+            InitializeKeyboardShortcuts();
+        }
+
+        private void InitializeKeyboardShortcuts()
+        {
+            // Initialize keyboard shortcuts manager
+            KeyboardShortcutManager.Initialize(this);
+
+            // Register global shortcuts
+            KeyboardShortcutManager.RegisterShortcut(Key.F1, ModifierKeys.None, ShowHelp, "Show Help");
+            KeyboardShortcutManager.RegisterShortcut(Key.F11, ModifierKeys.None, ToggleFullscreen, "Toggle Fullscreen");
+            KeyboardShortcutManager.RegisterShortcut(Key.Escape, ModifierKeys.None, HandleEscape, "Escape");
+            
+            // Future: Add more shortcuts here
+            // KeyboardShortcutManager.RegisterShortcut(Key.Z, ModifierKeys.Control, Undo, "Undo");
+            // KeyboardShortcutManager.RegisterShortcut(Key.Y, ModifierKeys.Control, Redo, "Redo");
+        }
+
+        private void ShowHelp()
+        {
+            var shortcuts = KeyboardShortcutManager.GetAllShortcuts();
+            string helpText = "Keyboard Shortcuts:\n\n";
+            foreach (var shortcut in shortcuts)
+            {
+                helpText += $"{shortcut.Key,-20} - {shortcut.Value}\n";
+            }
+            
+            MessageBox.Show(
+                helpText,
+                "Keyboard Shortcuts",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information
+            );
+        }
+
+        private void ToggleFullscreen()
+        {
+            if (WindowState == WindowState.Maximized && WindowStyle == WindowStyle.None)
+            {
+                WindowState = WindowState.Normal;
+                WindowStyle = WindowStyle.None;
+            }
+            else
+            {
+                WindowState = WindowState.Maximized;
+                WindowStyle = WindowStyle.None;
+            }
+        }
+
+        private void HandleEscape()
+        {
+            // Future: Handle escape in different contexts
+            // For now, do nothing
         }
 
         private void Minimize_Click(object sender, RoutedEventArgs e)
@@ -66,6 +120,16 @@ namespace SpriteEditor
                 // Sonra açırıq
                 btn.ContextMenu.IsOpen = true;
             }
+        }
+
+        // About dialog
+        private void About_Click(object sender, RoutedEventArgs e)
+        {
+            var aboutDialog = new Views.AboutDialog
+            {
+                Owner = this
+            };
+            aboutDialog.ShowDialog();
         }
     }
 }

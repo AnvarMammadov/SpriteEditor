@@ -109,6 +109,8 @@
                                 <MenuItem Header="Español" Click="Language_Click" Tag="es-ES"/>
                                 <MenuItem Header="Português" Click="Language_Click" Tag="pt-BR"/>
                                 <MenuItem Header="中文 (简体)" Click="Language_Click" Tag="zh-CN"/>
+                                <Separator Background="{StaticResource Brush.Border}" Margin="0,5"/>
+                                <MenuItem Header="About Sprite Editor Pro" Click="About_Click"/>
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>

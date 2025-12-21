@@ -13,7 +13,6 @@ namespace SpriteEditor.Views
             InitializeComponent();
         }
 
-        // === Grid Mode Üçün Resize Logic (Sizin köhnə kodunuz) ===
         private void GridLine_DragDelta(object sender, DragDeltaEventArgs e)
         {
             var thumb = sender as Thumb;
@@ -44,12 +43,11 @@ namespace SpriteEditor.Views
             {
                 case "ThumbRight": vm.SlicerWidth += e.HorizontalChange; break;
                 case "ThumbBottom": vm.SlicerHeight += e.VerticalChange; break;
-                    // Digər thumblar ehtiyac olarsa əlavə edilə bilər
             }
         }
 
-        // === YENİ: PEN TOOL MOUSE EVENT ===
-        // Bu metod olmazsa, nöqtə qoymaq mümkün deyil!
+        // === PEN TOOL EVENTS ===
+
         private void OnCanvasMouseDown(object sender, MouseButtonEventArgs e)
         {
             var vm = DataContext as SpriteSlicerViewModel;
@@ -57,22 +55,32 @@ namespace SpriteEditor.Views
 
             if (vm.CurrentMode == SpriteSlicerViewModel.SlicerMode.PolygonPen)
             {
-                // Canvas üzərində kliklənən nöqtəni al
                 Point clickPoint = e.GetPosition((IInputElement)sender);
 
                 if (e.ChangedButton == MouseButton.Left)
                 {
-                    // Sol klik: Nöqtə əlavə et
                     vm.CurrentDrawingPoints.Add(clickPoint);
+                    // Kliklənən kimi xətti yenilə ki, yeni başlanğıc nöqtəsi götürülsün
+                    vm.UpdatePreviewLine(clickPoint);
                 }
                 else if (e.ChangedButton == MouseButton.Right)
                 {
-                    // Sağ klik: Tamamla
                     if (vm.AddCurrentPolygonToListCommand.CanExecute(null))
                     {
                         vm.AddCurrentPolygonToListCommand.Execute(null);
                     }
                 }
+            }
+        }
+
+        // YENİ: Siçan hərəkət etdikcə xətti yeniləyir
+        private void OnCanvasMouseMove(object sender, MouseEventArgs e)
+        {
+            var vm = DataContext as SpriteSlicerViewModel;
+            if (vm != null && vm.CurrentMode == SpriteSlicerViewModel.SlicerMode.PolygonPen)
+            {
+                var point = e.GetPosition((IInputElement)sender);
+                vm.UpdatePreviewLine(point);
             }
         }
     }

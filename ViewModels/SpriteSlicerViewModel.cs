@@ -1,23 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized; // CollectionChanged üçün
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media; // PointCollection üçün
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
-using SpriteEditor.Services;
 using SpriteEditor.Data;
+using SpriteEditor.Services;
+using SpriteEditor.Views;
 
 namespace SpriteEditor.ViewModels
 {
-    // Auto Detect üçün köməkçi sinif (Struct əvəzinə)
     public class DetectedSpriteItem : ObservableObject
     {
         public int X { get; set; }
@@ -68,17 +68,21 @@ namespace SpriteEditor.ViewModels
         [ObservableProperty] private int _rows = 4;
 
         public ObservableCollection<GridLineViewModel> GridLines { get; } = new ObservableCollection<GridLineViewModel>();
-
-        // DƏYİŞİKLİK 1: Int32Rect əvəzinə DetectedSpriteItem
         public ObservableCollection<DetectedSpriteItem> DetectedRects { get; } = new ObservableCollection<DetectedSpriteItem>();
 
         [ObservableProperty] private bool _useAutoDetection = false;
         [ObservableProperty] private SlicerMode _currentMode = SlicerMode.Grid;
 
-        // DƏYİŞİKLİK 2: Polyline üçün PointCollection (WPF bunu sevir)
         [ObservableProperty] private PointCollection _visualDrawingPoints = new PointCollection();
 
-        // Məntiq üçün saxladığımız orijinal siyahı
+        // --- PREVIEW LINE (Rubber Band) PROPS ---
+        [ObservableProperty] private Visibility _previewLineVisibility = Visibility.Collapsed;
+        [ObservableProperty] private double _previewX1;
+        [ObservableProperty] private double _previewY1;
+        [ObservableProperty] private double _previewX2;
+        [ObservableProperty] private double _previewY2;
+        // ----------------------------------------
+
         public ObservableCollection<Point> CurrentDrawingPoints { get; } = new ObservableCollection<Point>();
         public ObservableCollection<SlicePart> ExtractedParts { get; } = new ObservableCollection<SlicePart>();
 
@@ -89,20 +93,44 @@ namespace SpriteEditor.ViewModels
         public SpriteSlicerViewModel()
         {
             _imageService = new ImageService();
-            // Point əlavə olunanda vizual kolleksiyanı yeniləyək
             CurrentDrawingPoints.CollectionChanged += CurrentDrawingPoints_CollectionChanged;
         }
 
         private void CurrentDrawingPoints_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            // ObservableCollection dəyişəndə PointCollection-u yenidən yaradırıq
             VisualDrawingPoints = new PointCollection(CurrentDrawingPoints);
+            // Nöqtə əlavə olunan kimi Preview Line başlanğıcını yenilə
+            if (CurrentDrawingPoints.Count > 0)
+            {
+                var last = CurrentDrawingPoints.Last();
+                PreviewX1 = last.X;
+                PreviewY1 = last.Y;
+                // PreviewX2/Y2 MouseMove ilə yenilənəcək
+            }
+        }
+
+        // MouseMove hadisəsindən çağırılacaq metod
+        public void UpdatePreviewLine(Point mousePos)
+        {
+            if (CurrentDrawingPoints.Count > 0)
+            {
+                var lastPoint = CurrentDrawingPoints.Last();
+                PreviewX1 = lastPoint.X;
+                PreviewY1 = lastPoint.Y;
+                PreviewX2 = mousePos.X;
+                PreviewY2 = mousePos.Y;
+                PreviewLineVisibility = Visibility.Visible;
+            }
+            else
+            {
+                PreviewLineVisibility = Visibility.Collapsed;
+            }
         }
 
         [RelayCommand]
         private void LoadImage()
         {
-            string imgFilter = App.GetStr("Str_Filter_Images"); // Resources yoxdursa "Images" yazın
+            // Resources yoxdursa string title = "Select Image";
             OpenFileDialog openDialog = new OpenFileDialog { Filter = "Images (*.png;*.jpg)|*.png;*.jpg" };
 
             if (openDialog.ShowDialog() == true)
@@ -141,9 +169,13 @@ namespace SpriteEditor.ViewModels
         {
             CurrentMode = mode;
             UseAutoDetection = (mode == SlicerMode.AutoDetect);
+
+            // Təmizlik işləri
             GridLines.Clear();
             DetectedRects.Clear();
             CurrentDrawingPoints.Clear();
+            PreviewLineVisibility = Visibility.Collapsed; // Xətti gizlət
+
             if (mode == SlicerMode.Grid) UpdateGridLines();
         }
 
@@ -155,7 +187,10 @@ namespace SpriteEditor.ViewModels
             if (SelectedPart != null) SelectedPart.IsSelected = false;
             ExtractedParts.Add(newPart);
             SelectedPart = newPart;
+
             CurrentDrawingPoints.Clear();
+            PreviewLineVisibility = Visibility.Collapsed; // Xətti gizlət
+
             ExportAllPartsCommand.NotifyCanExecuteChanged();
         }
         private bool CanAddPolygon() => IsImageLoaded && CurrentDrawingPoints.Count >= 3;
@@ -179,7 +214,6 @@ namespace SpriteEditor.ViewModels
                 {
                     if (UseAutoDetection)
                     {
-                        // DetectedSpriteItem -> Int32Rect çevrilməsi
                         var rects = DetectedRects.Select(r => new Int32Rect(r.X, r.Y, r.Width, r.Height)).ToList();
                         _imageService.SliceByRects(_loadedImagePath, rects, dir);
                     }
@@ -214,19 +248,38 @@ namespace SpriteEditor.ViewModels
         private async Task AutoDetectSpritesAsync()
         {
             if (!IsImageLoaded) return;
-            IsSlicing = true; DetectedRects.Clear(); GridLines.Clear();
+            IsSlicing = true;
+            // Burada təmizləməyə ehtiyac yoxdur, SetMode aşağıda edəcək
             try
             {
                 var rects = await Task.Run(() => _imageService.DetectSprites(_loadedImagePath));
-                foreach (var r in rects) DetectedRects.Add(new DetectedSpriteItem(r.X, r.Y, r.Width, r.Height));
 
                 if (rects.Count > 0)
                 {
+                    // DÜZƏLİŞ: Əvvəl rejimi dəyişirik ki, DetectedRects təmizlənsin
                     SetMode(SlicerMode.AutoDetect);
-                    MessageBox.Show($"{rects.Count} sprites found!");
+
+                    // Sonra yeniləri əlavə edirik
+                    foreach (var r in rects)
+                        DetectedRects.Add(new DetectedSpriteItem(r.X, r.Y, r.Width, r.Height));
+
+                    CustomMessageBox.Show($"{rects.Count} sprites found!", "Success", MessageBoxButton.OK, MsgImage.Success);
+                }
+                else
+                {
+                    CustomMessageBox.Show("No sprites detected.", "Info", MessageBoxButton.OK, MsgImage.Info);
                 }
             }
-            finally { IsSlicing = false; SliceImageCommand.NotifyCanExecuteChanged(); AutoDetectSpritesCommand.NotifyCanExecuteChanged(); }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show($"Detection Error: {ex.Message}", "Error", MessageBoxButton.OK, MsgImage.Error);
+            }
+            finally
+            {
+                IsSlicing = false;
+                SliceImageCommand.NotifyCanExecuteChanged();
+                AutoDetectSpritesCommand.NotifyCanExecuteChanged();
+            }
         }
 
         private List<Int32Rect> GenerateRectsFromGridLines()

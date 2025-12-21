@@ -2,71 +2,50 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+using System.Windows; // Int32Rect üçün (WPF)
 using ImageMagick;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Drawing.Processing; // Fill metodu üçün vacibdir
+using SixLabors.ImageSharp.Drawing; // Path və Polygon üçün
 using SpriteEditor.Data;
+using Path = System.IO.Path;
 
 namespace SpriteEditor.Services
 {
     public class ImageService
     {
-        /// <summary>
-        /// Bir spritesheet-i verilən sətir, sütun və kəsim sahəsinə (crop area) görə kəsir.
-        /// </summary>
-        /// <param name="imagePath">Orijinal faylın yolu</param>
-        /// <param name="columns">Sütun sayı</param>
-        /// <param name="rows">Sətr sayı</param>
-        /// <param name="cropX">Kəsim sahəsinin başlanğıc X koordinatı</param>
-        /// <param name="cropY">Kəsim sahəsinin başlanğıc Y koordinatı</param>
-        /// <param name="cropWidth">Kəsim sahəsinin eni</param>
-        /// <param name="cropHeight">Kəsim sahəsinin hündürlüyü</param>
-        /// <param name="outputDirectory">Kəsilən spritların saxlanacağı qovluq</param>
+        // 1. SPRITE SHEET KƏSİMİ (GRID İLƏ)
         public void SliceSpriteSheet(string imagePath, int columns, int rows,
                                      int cropX, int cropY, int cropWidth, int cropHeight,
                                      string outputDirectory)
         {
-            // 1. Orijinal şəkli ImageSharp ilə yükləyirik
             using (Image sourceImage = Image.Load(imagePath))
             {
-                // === YENİ DÜZƏLİŞ: Fayl adını təmizləyək ===
-                string sanitizedBaseFileName = Path.GetFileNameWithoutExtension(imagePath);
+                string sanitizedBaseFileName = System.IO.Path.GetFileNameWithoutExtension(imagePath);
                 foreach (char c in Path.GetInvalidFileNameChars())
-                {
-                    // Qadağan olunmuş simvolları (məsələn, ':', '/', '?') alt xətlə əvəz edirik
                     sanitizedBaseFileName = sanitizedBaseFileName.Replace(c, '_');
-                }
-                // ==========================================
-                // 2. Hər bir spritın enini və hündürlüyünü Slicer Box-a görə hesablayırıq
+
                 int cellWidth = cropWidth / columns;
                 int cellHeight = cropHeight / rows;
 
-                // 3. Hər bir sətir (row) və sütun (column) üzrə döngü (loop)
                 for (int y = 0; y < rows; y++)
                 {
                     for (int x = 0; x < columns; x++)
                     {
-                        // 4. Kəsiləcək spritın koordinatlarını Slicer Box-a görə təyin edirik
                         var cropRectangle = new Rectangle(
-                            cropX + (x * cellWidth),   // Başlanğıc X (SlicerX + (sütun * hücrə eni))
-                            cropY + (y * cellHeight),  // Başlanğıc Y (SlicerY + (sətr * hücrə hündürlüyü))
-                            cellWidth,                 // En
-                            cellHeight                 // Hündürlük
+                            cropX + (x * cellWidth),
+                            cropY + (y * cellHeight),
+                            cellWidth,
+                            cellHeight
                         );
 
-                        // 5. Şəklin həmin hissəsini klonlayırıq (kəsirik)
                         using (Image sprite = sourceImage.Clone(ctx => ctx.Crop(cropRectangle)))
                         {
-                            // 6. Yeni faylın adını yaradırıq (məs: sprite_sətir_1_sütun_0.png)
                             string outputFileName = $"{sanitizedBaseFileName}_{y}_{x}.png";
                             string outputPath = Path.Combine(outputDirectory, outputFileName);
-
-                            // 7. Kəsilən spritı PNG formatında yaddaşa yazırıq
                             sprite.Save(outputPath, new PngEncoder());
                         }
                     }
@@ -74,260 +53,84 @@ namespace SpriteEditor.Services
             }
         }
 
-
-
-
-
-        /// <summary>
-        /// "Flood Fill" (Magic Wand) alqoritmi ilə arxa fonu şəffaf edir.
-        /// </summary>
-        /// <param name="imagePath">Şəklin yolu</param>
-        /// <param name="startX">Kliklənən pikselin X koordinatı</param>
-        /// <param name="startY">Kliklənən pikselin Y koordinatı</param>
-        /// <param name="tolerancePercent">Həssaslıq (0-100)</param>
-        /// <returns>Nəticənin PNG byte massivi</returns>
-        public byte[] RemoveBackground(string imagePath, int startX, int startY, float tolerancePercent)
+        // 2. POLİQON (PEN TOOL) KƏSİMİ
+        public void SlicePolygons(string sourcePath, IEnumerable<SlicePart> parts, string outputDir)
         {
-            // Orijinal şəkli yükləyirik (tipini Rgba32 məcbur etmədən)
-            using (Image originalImage = Image.Load(imagePath))
+            // Bu metod üçün 'SixLabors.ImageSharp.Drawing' NuGet paketi mütləq yüklənməlidir!
+            using (var sourceImage = Image.Load<Rgba32>(sourcePath))
             {
-                // === YENİ DÜZƏLİŞ: ===
-                // 1. Tamamilə yeni, boş və şəffaf bir Rgba32 kətan (canvas) yaradırıq
-                using (Image<Rgba32> image = new Image<Rgba32>(originalImage.Width, originalImage.Height))
+                foreach (var part in parts)
                 {
-                    // 2. Orijinal şəkli bu yeni kətanın üzərinə çəkirik
-                    image.Mutate(ctx => ctx.DrawImage(originalImage, 1f));
+                    if (part.Points.Count < 3) continue;
 
-                    // Artıq 100% əminik ki, "image" dəyişdirilə bilən Rgba32 formatındadır
+                    // A. Bounding Box tapılması
+                    var minX = (int)part.Points.Min(p => p.X);
+                    var minY = (int)part.Points.Min(p => p.Y);
+                    var maxX = (int)part.Points.Max(p => p.X);
+                    var maxY = (int)part.Points.Max(p => p.Y);
+                    var width = maxX - minX;
+                    var height = maxY - minY;
 
-                    // 3. Başlanğıc rəngi bu yeni kətandan götürürük
-                    Rgba32 targetColor = image[startX, startY];
+                    if (width <= 0 || height <= 0) continue;
 
-                    // 4. Həssaslıq
-                    float maxDistance = (float)Math.Sqrt(Math.Pow(255, 2) * 3);
-                    float toleranceDistance = maxDistance * (tolerancePercent / 100f);
+                    // B. Poliqon nöqtələrini lokal (0,0) koordinata çevirmək
+                    var localPoints = part.Points.Select(p => new PointF((float)(p.X - minX), (float)(p.Y - minY))).ToArray();
 
-                    // 5. Strukturlar
-                    var pixelsToProcess = new Queue<SixLabors.ImageSharp.Point>();
-                    var visitedPixels = new HashSet<SixLabors.ImageSharp.Point>();
-
-                    // 6. Başlanğıc nöqtə
-                    pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(startX, startY));
-
-                    // 7. "Sel" (Flood)
-                    while (pixelsToProcess.Count > 0)
+                    // C. Şəffaf kətan yaradılması
+                    using (var resultImage = new Image<Rgba32>(width, height))
                     {
-                        SixLabors.ImageSharp.Point currentPoint = pixelsToProcess.Dequeue();
-                        int x = currentPoint.X;
-                        int y = currentPoint.Y;
+                        // D. Orijinal şəkildən müvafiq kvadrat hissəni kəsirik
+                        var cropRect = new Rectangle(minX, minY, width, height);
+                        var croppedSection = sourceImage.Clone(ctx => ctx.Crop(cropRect));
 
-                        // A. Sərhəd yoxlaması
-                        if (x < 0 || x >= image.Width || y < 0 || y >= image.Height)
-                            continue;
+                        // E. MASKALAMA (Əsas düzəliş buradadır)
+                        // 'SixLabors.ImageSharp.Drawing.Processing.ImageBrush' tam adını yazırıq ki, WPF ilə qarışmasın
+                        var brush = new SixLabors.ImageSharp.Drawing.Processing.ImageBrush(croppedSection);
 
-                        // B. Ziyarət yoxlaması
-                        if (visitedPixels.Contains(currentPoint))
-                            continue;
-
-                        visitedPixels.Add(currentPoint);
-
-                        // D. Rəng al
-                        Rgba32 currentColor = image[x, y];
-
-                        // E. Fərqi hesabla
-                        double distance = Math.Sqrt(
-                            Math.Pow(currentColor.R - targetColor.R, 2) +
-                            Math.Pow(currentColor.G - targetColor.G, 2) +
-                            Math.Pow(currentColor.B - targetColor.B, 2)
-                        );
-
-                        // F. Əgər rəng həssaslıq daxilindədirsə...
-                        if (distance <= toleranceDistance)
+                        var polygonOptions = new DrawingOptions
                         {
-                            // Rəngi şəffaf et
-                            image[x, y] = new Rgba32(currentColor.R, currentColor.G, currentColor.B, 0);
+                            GraphicsOptions = new GraphicsOptions { Antialias = true }
+                        };
 
-                            // Qonşuları əlavə et
-                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x + 1, y));
-                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x - 1, y));
-                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x, y + 1));
-                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x, y - 1));
-                        }
-                    }
+                        // Poliqon fiqurunu yaradırıq
+                        var polygon = new Polygon(new LinearLineSegment(localPoints));
 
-                    // 8. Nəticəni yaddaşa yaz
-                    using (var ms = new MemoryStream())
-                    {
-                        image.Save(ms, new PngEncoder());
-                        return ms.ToArray();
+                        // Şəkli (brush) poliqonun formasına (polygon) uyğun olaraq 'resultImage'-ə çəkirik (Fill)
+                        resultImage.Mutate(x => x.Fill(polygonOptions, brush, polygon));
+
+                        // F. Yaddaşa yaz
+                        string safeName = string.Join("_", part.Name.Split(Path.GetInvalidFileNameChars()));
+                        resultImage.Save(Path.Combine(outputDir, $"{safeName}.png"));
                     }
                 }
             }
         }
 
-        /// <summary>
-        /// "Flood Fill" (Magic Wand) alqoritmi ilə arxa fonu şəffaf edir (Byte massivindən).
-        /// </summary>
-        /// <param name="imageData">Şəklin byte massivi</param>
-        /// <param name="startX">Kliklənən pikselin X koordinatı</param>
-        /// <param name="startY">Kliklənən pikselin Y koordinatı</param>
-        /// <param name="tolerancePercent">Həssaslıq (0-100)</param>
-        /// <returns>Nəticənin PNG byte massivi</returns>
-        public byte[] RemoveBackground(byte[] imageData, int startX, int startY, float tolerancePercent)
-        {
-            // Orijinal şəkli fayldan yox, MemoryStream-dən yükləyirik
-            using (Image originalImage = Image.Load(new MemoryStream(imageData)))
-            {
-                // === YENİ DÜZƏLİŞ: ===
-                // 1. Tamamilə yeni, boş və şəffaf bir Rgba32 kətan (canvas) yaradırıq
-                using (Image<Rgba32> image = new Image<Rgba32>(originalImage.Width, originalImage.Height))
-                {
-                    // 2. Orijinal şəkli bu yeni kətanın üzərinə çəkirik
-                    image.Mutate(ctx => ctx.DrawImage(originalImage, 1f));
-
-                    // Artıq 100% əminik ki, "image" dəyişdirilə bilən Rgba32 formatındadır
-
-                    // 3. Başlanğıc rəngi bu yeni kətandan götürürük
-                    Rgba32 targetColor = image[startX, startY];
-
-                    // 4. Həssaslıq
-                    float maxDistance = (float)Math.Sqrt(Math.Pow(255, 2) * 3);
-                    float toleranceDistance = maxDistance * (tolerancePercent / 100f);
-
-                    // 5. Strukturlar
-                    var pixelsToProcess = new Queue<SixLabors.ImageSharp.Point>();
-                    var visitedPixels = new HashSet<SixLabors.ImageSharp.Point>();
-
-                    // 6. Başlanğıc nöqtə
-                    pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(startX, startY));
-
-                    // 7. "Sel" (Flood)
-                    while (pixelsToProcess.Count > 0)
-                    {
-                        SixLabors.ImageSharp.Point currentPoint = pixelsToProcess.Dequeue();
-                        int x = currentPoint.X;
-                        int y = currentPoint.Y;
-
-                        // A. Sərhəd yoxlaması
-                        if (x < 0 || x >= image.Width || y < 0 || y >= image.Height)
-                            continue;
-
-                        // B. Ziyarət yoxlaması
-                        if (visitedPixels.Contains(currentPoint))
-                            continue;
-
-                        visitedPixels.Add(currentPoint);
-
-                        // D. Rəng al
-                        Rgba32 currentColor = image[x, y];
-
-                        // E. Fərqi hesabla
-                        double distance = Math.Sqrt(
-                            Math.Pow(currentColor.R - targetColor.R, 2) +
-                            Math.Pow(currentColor.G - targetColor.G, 2) +
-                            Math.Pow(currentColor.B - targetColor.B, 2)
-                        );
-
-                        // F. Əgər rəng həssaslıq daxilindədirsə...
-                        if (distance <= toleranceDistance)
-                        {
-                            // Rəngi şəffaf et
-                            image[x, y] = new Rgba32(currentColor.R, currentColor.G, currentColor.B, 0);
-
-                            // Qonşuları əlavə et
-                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x + 1, y));
-                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x - 1, y));
-                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x, y + 1));
-                            pixelsToProcess.Enqueue(new SixLabors.ImageSharp.Point(x, y - 1));
-                        }
-                    }
-
-                    // 8. Nəticəni yaddaşa yaz
-                    using (var ms = new MemoryStream())
-                    {
-                        image.Save(ms, new PngEncoder());
-                        return ms.ToArray();
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Şəkli yükləyir və yeni formata çevirir. 
-        /// AVIF, HEIC, WEBP kimi mürəkkəb formatları dəstəkləmək üçün Magick.NET istifadə edir.
-        /// </summary>
-        public void ConvertImageFormat(string inputPath, string outputPath)
-        {
-            string extension = Path.GetExtension(inputPath).ToLower();
-
-            // Siyahıya baxırıq: Əgər ImageSharp-ın çətinlik çəkdiyi formatdırsa, Magick.NET işlət
-            if (extension == ".avif" || extension == ".heic" || extension == ".webp" || extension == ".tiff" || extension == ".tif")
-            {
-                try
-                {
-                    // Magick.NET ilə oxu və yaz
-                    using (var magickImage = new MagickImage(inputPath))
-                    {
-                        // ICO üçün xüsusi: Ölçünü 256x256 et (əgər böyükdürsə)
-                        if (Path.GetExtension(outputPath).ToLower() == ".ico")
-                        {
-                            if (magickImage.Width > 256 || magickImage.Height > 256)
-                            {
-                                magickImage.Resize(256, 256);
-                            }
-                        }
-
-                        magickImage.Write(outputPath);
-                    }
-                    return; // Bitdi
-                }
-                catch (Exception ex)
-                {
-                    // Əgər Magick.NET də bacarmasa, davam et və ImageSharp-ı yoxla (ehtiyat)
-                    System.Diagnostics.Debug.WriteLine($"Magick.NET xətası: {ex.Message}");
-                }
-            }
-
-            // Standart ImageSharp üsulu (PNG, JPG, BMP üçün çox sürətlidir)
-            using (Image image = Image.Load(inputPath))
-            {
-                image.Save(outputPath);
-            }
-        }
-
-        /// <summary>
-        /// Şəkil üzərindəki ayrı-ayrı obyektləri (adaları) avtomatik tapır.
-        /// </summary>
+        // 3. AVTO TƏYİN (AUTO DETECT)
         public List<Int32Rect> DetectSprites(string imagePath, byte alphaThreshold = 10)
         {
             var detectedRects = new List<Int32Rect>();
-
             using (Image<Rgba32> image = Image.Load<Rgba32>(imagePath))
             {
                 int width = image.Width;
                 int height = image.Height;
                 bool[,] visited = new bool[width, height];
 
-                // Pikselləri gəzirik
                 for (int y = 0; y < height; y++)
                 {
                     for (int x = 0; x < width; x++)
                     {
-                        // Əgər piksel görünürdürsə (Alpha > threshold) və hələ yoxlanmayıbsa
                         if (!visited[x, y] && image[x, y].A > alphaThreshold)
                         {
-                            // Yeni bir "Ada" tapdıq, onun sərhədlərini hesablayaq (BFS Alqoritmi)
                             var rect = FindBoundingBox(image, visited, x, y, alphaThreshold);
                             detectedRects.Add(rect);
                         }
                     }
                 }
             }
-
             return detectedRects;
         }
 
-        // Flood Fill (BFS) ilə adanın sərhədlərini tapır
         private Int32Rect FindBoundingBox(Image<Rgba32> image, bool[,] visited, int startX, int startY, byte alphaThreshold)
         {
             int minX = startX, minY = startY;
@@ -346,7 +149,6 @@ namespace SpriteEditor.Services
                 if (p.Y < minY) minY = p.Y;
                 if (p.Y > maxY) maxY = p.Y;
 
-                // 4 qonşu pikselə baxırıq
                 int[] dx = { 1, -1, 0, 0 };
                 int[] dy = { 0, 0, 1, -1 };
 
@@ -355,7 +157,6 @@ namespace SpriteEditor.Services
                     int nx = p.X + dx[i];
                     int ny = p.Y + dy[i];
 
-                    // Sərhəd daxilindədirmi?
                     if (nx >= 0 && nx < image.Width && ny >= 0 && ny < image.Height)
                     {
                         if (!visited[nx, ny] && image[nx, ny].A > alphaThreshold)
@@ -366,25 +167,19 @@ namespace SpriteEditor.Services
                     }
                 }
             }
-
             return new Int32Rect(minX, minY, maxX - minX + 1, maxY - minY + 1);
         }
 
-
-        /// <summary>
-        /// Grid yerinə, verilmiş xüsusi koordinatlara (Rect) əsasən kəsim edir.
-        /// </summary>
+        // 4. RECT SİYAHISI İLƏ KƏSİM
         public void SliceByRects(string imagePath, List<Int32Rect> rects, string outputDirectory)
         {
             using (Image sourceImage = Image.Load(imagePath))
             {
                 string sanitizedBaseFileName = Path.GetFileNameWithoutExtension(imagePath);
-
                 for (int i = 0; i < rects.Count; i++)
                 {
                     var r = rects[i];
                     var cropRectangle = new Rectangle(r.X, r.Y, r.Width, r.Height);
-
                     using (Image sprite = sourceImage.Clone(ctx => ctx.Crop(cropRectangle)))
                     {
                         string outputFileName = $"{sanitizedBaseFileName}_sprite_{i}.png";
@@ -395,8 +190,7 @@ namespace SpriteEditor.Services
             }
         }
 
-
-        // Class daxilinə əlavə et:
+        // 5. GIF YARATMA (Unudulmuş metod)
         public void CreateGifFromImages(List<string> imagePaths, int delayMs, string outputPath)
         {
             using (var collection = new MagickImageCollection())
@@ -404,89 +198,42 @@ namespace SpriteEditor.Services
                 foreach (var path in imagePaths)
                 {
                     var img = new MagickImage(path);
-
-                    // Animasiya gecikməsi (100 = 1 saniyə Magick.NET-də, amma biz ms çevirəcəyik)
                     // Magick.NET-də AnimationDelay 1/100 saniyə vahidi ilə ölçülür.
                     img.AnimationDelay = (uint)delayMs / 10;
-
-                    // GIF optimallaşdırılması üçün (ölçünü azaldır)
                     img.GifDisposeMethod = GifDisposeMethod.Background;
-
                     collection.Add(img);
                 }
 
-                // Rəngləri optimallaşdır və yadda saxla
                 collection.Quantize(new QuantizeSettings { Colors = 256 });
                 collection.Optimize();
                 collection.Write(outputPath);
             }
         }
 
-
-        // ImageService.cs daxilinə:
-
-        public void SlicePolygons(string sourcePath, IEnumerable<SlicePart> parts, string outputDir)
+        // 6. FORMAT DƏYİŞMƏ
+        public void ConvertImageFormat(string inputPath, string outputPath)
         {
-            using (var sourceImage = Image.Load<Rgba32>(sourcePath))
+            string extension = Path.GetExtension(inputPath).ToLower();
+            if (extension == ".avif" || extension == ".heic" || extension == ".webp" || extension == ".tiff" || extension == ".tif")
             {
-                foreach (var part in parts)
+                try
                 {
-                    // 1. Poliqonun sərhədlərini (Bounding Box) tap
-                    var minX = (int)part.Points.Min(p => p.X);
-                    var minY = (int)part.Points.Min(p => p.Y);
-                    var maxX = (int)part.Points.Max(p => p.X);
-                    var maxY = (int)part.Points.Max(p => p.Y);
-                    var width = maxX - minX;
-                    var height = maxY - minY;
-
-                    // 2. Boş bir kətan (canvas) yarat (şəffaf)
-                    using (var partImage = new Image<Rgba32>(width, height))
+                    using (var magickImage = new MagickImage(inputPath))
                     {
-                        // 3. Poliqonu (maskanı) çəkmək və original şəkildən pikselləri köçürmək
-                        // ImageSharp-da 'Drawing' kitabxanası ilə Path qura bilərik.
-                        // Sadəlik üçün: Piksel-piksel yoxlama (Ray Casting) və ya ImageSharp.Drawing istifadə etmək olar.
+                        if (Path.GetExtension(outputPath).ToLower() == ".ico" && (magickImage.Width > 256 || magickImage.Height > 256))
+                            magickImage.Resize(256, 256);
 
-                        // Burda sürətli variant: ImageSharp.Drawing istifadə edərək Clip etməkdir.
-                        // (Təxmini kod - ImageSharp versiyanıza uyğunlaşdırmaq lazımdır)
-
-                        var polygonPoints = part.Points.Select(p => new PointF((float)(p.X - minX), (float)(p.Y - minY))).ToArray();
-
-                        // Maskanı tətbiq et və kəs
-                        // ...
-
-                        partImage.Save(Path.Combine(outputDir, $"{part.Name}.png"));
+                        magickImage.Write(outputPath);
                     }
+                    return;
                 }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Magick.NET Error: {ex.Message}"); }
+            }
+
+            using (Image image = Image.Load(inputPath))
+            {
+                image.Save(outputPath);
             }
         }
-
-
-        #region Diagnostika Testi
-        /// <summary>
-        /// === DİAQNOSTİKA TESTİ #2 ===
-        /// ImageSharp-ın "Mutate" API-ı ilə şəffaflığı dəyişməyə çalışır.
-        /// </summary>
-        //public byte[] RemoveBackground(string imagePath, Rgba32 targetColor, float tolerancePercent)
-        //{
-        //    // Şəkli Rgba32 formatında (Alfa kanalı ilə) yükləyirik
-        //    using (Image<Rgba32> image = Image.Load<Rgba32>(imagePath))
-        //    {
-        //        // Pikselləri tək-tək emal etmək əvəzinə,
-        //        // yüksək səviyyəli "Mutate" əməliyyatını yoxlayırıq.
-        //        image.Mutate(ctx =>
-        //        {
-        //            // Bütün şəklin şəffaflığını 50%-ə endir
-        //            ctx.Opacity(0.5f);
-        //        });
-
-        //        // Nəticəni PNG olaraq yaddaşa yazırıq
-        //        using (var ms = new MemoryStream())
-        //        {
-        //            image.Save(ms, new PngEncoder());
-        //            return ms.ToArray();
-        //        }
-        //    }
-        //}
-        #endregion
     }
 }

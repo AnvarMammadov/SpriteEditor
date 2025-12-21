@@ -265,6 +265,11 @@
                         <Polyline Points="{Binding VisualDrawingPoints}" Stroke="#EF4444" StrokeThickness="2"
                                   Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.PolygonPen}}"/>
 
+                        <Line X1="{Binding PreviewX1}" Y1="{Binding PreviewY1}" 
+                              X2="{Binding PreviewX2}" Y2="{Binding PreviewY2}"
+                              Visibility="{Binding PreviewLineVisibility}"
+                              Stroke="#EF4444" StrokeThickness="1" StrokeDashArray="2 2" Opacity="0.7"/>
+
                         <ItemsControl ItemsSource="{Binding CurrentDrawingPoints}" IsHitTestVisible="False"
                                       Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.PolygonPen}}">
                             <ItemsControl.ItemsPanel>
@@ -290,6 +295,7 @@
                         </ItemsControl>
 
                         <Canvas Background="Transparent"
+                                MouseMove="OnCanvasMouseMove"
                                 MouseLeftButtonDown="OnCanvasMouseDown"
                                 MouseRightButtonDown="OnCanvasMouseDown"
                                 Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.PolygonPen}}"/>

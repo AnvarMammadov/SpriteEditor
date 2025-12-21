@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel; // ObservableCollection üçün
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Xml.Linq; // XML Parse üçün vacibdir
+using System.Xml.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageMagick;
@@ -21,45 +21,49 @@ namespace SpriteEditor.ViewModels
     public partial class SvgToolViewModel : ObservableObject
     {
         // ==========================================
-        // PREVIEW IMAGES & STATE
+        // STATE & LAYERS
         // ==========================================
         [ObservableProperty] private ImageSource _fullSvgPreview;
         [ObservableProperty] private bool _isFullSvgMode;
-
-        // ==========================================
-        // LAYERS SYSTEM (YENİ)
-        // ==========================================
-        // Layların siyahısı (View-da ListBox-a bağlanacaq)
         public ObservableCollection<SvgLayerItem> Layers { get; } = new ObservableCollection<SvgLayerItem>();
-
-        // Orijinal SVG başlığı (viewBox, width, height qorumaq üçün)
         private string _originalSvgHeader = "";
         private string _originalSvgFooter = "</svg>";
 
         // ==========================================
-        // DATA & APPEARANCE
+        // PIVOT POINT SYSTEM
         // ==========================================
-        [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(GeometryPreview))]
-        private string _rawPathData;
+        [ObservableProperty] private double _pivotX = 0;
+        [ObservableProperty] private double _pivotY = 0;
+        [ObservableProperty] private bool _isPivotMode;
 
+        // View-dan çağırılacaq metod
+        public void SetPivotFromClick(double x, double y)
+        {
+            PivotX = x;
+            PivotY = y;
+        }
+
+        // ==========================================
+        // APPEARANCE & TRANSFORMS
+        // ==========================================
+        [ObservableProperty][NotifyPropertyChangedFor(nameof(GeometryPreview))] private string _rawPathData;
         [ObservableProperty] private string _fillColor = "#EAB308";
         [ObservableProperty] private string _strokeColor = "#00000000";
         [ObservableProperty] private double _strokeThickness = 0;
 
-        // Transforms
         [ObservableProperty] private double _scaleX = 1.0;
         [ObservableProperty] private double _scaleY = 1.0;
         [ObservableProperty] private double _rotation = 0;
         [ObservableProperty] private double _translateX = 0;
         [ObservableProperty] private double _translateY = 0;
 
-        // Outputs
+        // ==========================================
+        // OUTPUTS
+        // ==========================================
         [ObservableProperty] private string _xamlOutput;
         [ObservableProperty] private string _htmlOutput;
         [ObservableProperty] private bool _isXamlVisible = true;
 
-        // Color Palette
         public List<string> ColorPalette { get; } = new List<string>
         {
             "#000000", "#111827", "#374151", "#6B7280", "#9CA3AF", "#D1D5DB", "#F3F4F6", "#FFFFFF",
@@ -68,9 +72,6 @@ namespace SpriteEditor.ViewModels
             "#3B82F6", "#60A5FA", "#6366F1", "#818CF8", "#8B5CF6", "#A78BFA",
             "#A855F7", "#C084FC", "#EC4899", "#F472B6", "#F43F5E", "#FB7185"
         };
-
-        [RelayCommand] private void ApplyFillColor(string color) { if (!IsFullSvgMode && !string.IsNullOrEmpty(color)) FillColor = color; }
-        [RelayCommand] private void ApplyStrokeColor(string color) { if (!IsFullSvgMode && !string.IsNullOrEmpty(color)) StrokeColor = color; }
 
         public Geometry GeometryPreview
         {
@@ -81,30 +82,19 @@ namespace SpriteEditor.ViewModels
             }
         }
 
-        // ==========================================================
-        // INPUT CHANGE HANDLER
-        // ==========================================================
+        // ==========================================
+        // METHODS
+        // ==========================================
         partial void OnRawPathDataChanged(string value)
         {
-            Layers.Clear(); // Köhnə layları təmizlə
-
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                IsFullSvgMode = false;
-                FullSvgPreview = null;
-                return;
-            }
+            Layers.Clear();
+            if (string.IsNullOrWhiteSpace(value)) { IsFullSvgMode = false; FullSvgPreview = null; return; }
 
             if (value.Trim().StartsWith("<svg", StringComparison.OrdinalIgnoreCase))
             {
                 IsFullSvgMode = true;
-
-                // 1. SVG-ni analiz et və laylara böl
                 ParseSvgLayers(value);
-
-                // 2. İlkin render
                 UpdateFullSvgRender();
-
                 HtmlOutput = value;
                 XamlOutput = "";
             }
@@ -117,79 +107,38 @@ namespace SpriteEditor.ViewModels
             OnPropertyChanged(nameof(GeometryPreview));
         }
 
-        // ----------------------------------------------------------
-        // LAYER PARSING LOGIC (YENİ)
-        // ----------------------------------------------------------
         private void ParseSvgLayers(string svgContent)
         {
             try
             {
                 var doc = XDocument.Parse(svgContent);
                 var root = doc.Root;
-
-                // Headeri saxlayırıq (bütün atributları ilə birlikdə)
-                // Məsələn: <svg width="200" viewBox="0 0 100 100" ...>
                 string fullRootStr = root.ToString();
-                int firstCloseTag = fullRootStr.IndexOf('>');
-                _originalSvgHeader = fullRootStr.Substring(0, firstCloseTag + 1);
+                _originalSvgHeader = fullRootStr.Substring(0, fullRootStr.IndexOf('>') + 1);
 
-                XNamespace ns = root.GetDefaultNamespace();
-
-                // Birbaşa uşaqları (path, g, rect, circle, polygon) tapırıq
-                // Jacksmith tərzi oyunlarda adətən hər hissə bir Group (<g>) və ya Path olur.
                 foreach (var element in root.Elements())
                 {
                     string tagName = element.Name.LocalName;
-
-                    // Yalnız qrafik elementləri götürək
                     if (tagName == "defs" || tagName == "style" || tagName == "metadata") continue;
-
-                    // Adını tapmaq (id="blade" -> "blade")
                     string layerName = element.Attribute("id")?.Value ?? tagName;
 
-                    // Elementin bütün XML-ni saxla
-                    string content = element.ToString();
-
-                    // Lay yarad və siyahıya at
-                    var layerItem = new SvgLayerItem(layerName, content, OnLayerVisibilityChanged);
-                    Layers.Add(layerItem);
+                    // ViewModel-də SvgLayerItem-in OnChanged eventini UpdateFullSvgRender-ə bağlayırıq
+                    Layers.Add(new SvgLayerItem(layerName, element.ToString(), UpdateFullSvgRender));
                 }
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error parsing layers: {ex.Message}");
-            }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); }
         }
 
-        // Hər hansı bir layın checkbox-u dəyişəndə bu işə düşür
-        private void OnLayerVisibilityChanged()
-        {
-            UpdateFullSvgRender();
-        }
-
-        // Görünən laylardan yeni SVG mətni düzəldir və render edir
         private void UpdateFullSvgRender()
         {
             if (!IsFullSvgMode) return;
-
-            // 1. SVG-ni yenidən quraşdır
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine(_originalSvgHeader); // <svg ...>
+            sb.AppendLine(_originalSvgHeader);
+            foreach (var layer in Layers) { if (layer.IsVisible) sb.AppendLine(layer.XmlContent); }
+            sb.AppendLine(_originalSvgFooter);
 
-            foreach (var layer in Layers)
-            {
-                if (layer.IsVisible)
-                {
-                    sb.AppendLine(layer.XmlContent);
-                }
-            }
-
-            sb.AppendLine(_originalSvgFooter); // </svg>
-
-            // 2. Render et
-            string reconstructedSvg = sb.ToString();
-            HtmlOutput = reconstructedSvg; // Kodu da yenilə
-            RenderFullSvgPreview(reconstructedSvg);
+            HtmlOutput = sb.ToString();
+            RenderFullSvgPreview(HtmlOutput);
         }
 
         private void RenderFullSvgPreview(string svgContent)
@@ -198,12 +147,10 @@ namespace SpriteEditor.ViewModels
             {
                 var bytes = Encoding.UTF8.GetBytes(svgContent);
                 var settings = new MagickReadSettings { BackgroundColor = MagickColors.Transparent, Density = new Density(96) };
-
                 using (var image = new MagickImage(bytes, settings))
                 {
                     image.Format = MagickFormat.Png;
                     byte[] pngBytes = image.ToByteArray();
-
                     var bitmap = new BitmapImage();
                     using (var stream = new MemoryStream(pngBytes))
                     {
@@ -216,13 +163,10 @@ namespace SpriteEditor.ViewModels
                     FullSvgPreview = bitmap;
                 }
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Preview Error: {ex.Message}");
-            }
+            catch { }
         }
 
-        // ... (Digər metodlar eynilə qalır)
+        // Change Triggers
         partial void OnFillColorChanged(string value) => GenerateCode();
         partial void OnStrokeColorChanged(string value) => GenerateCode();
         partial void OnStrokeThicknessChanged(double value) => GenerateCode();
@@ -232,124 +176,111 @@ namespace SpriteEditor.ViewModels
         partial void OnTranslateXChanged(double value) => GenerateCode();
         partial void OnTranslateYChanged(double value) => GenerateCode();
 
+        // Commands
+        [RelayCommand] private void ApplyFillColor(string color) { if (!IsFullSvgMode) FillColor = color; }
+        [RelayCommand] private void ApplyStrokeColor(string color) { if (!IsFullSvgMode) StrokeColor = color; }
         [RelayCommand] private void ShowXaml() => IsXamlVisible = true;
         [RelayCommand] private void ShowHtml() => IsXamlVisible = false;
-        [RelayCommand] private void ResetTransforms() { ScaleX = 1.0; ScaleY = 1.0; Rotation = 0; TranslateX = 0; TranslateY = 0; }
+        [RelayCommand] private void ResetTransforms() { ScaleX = 1; ScaleY = 1; Rotation = 0; TranslateX = 0; TranslateY = 0; }
 
         [RelayCommand]
         private void LoadSvgFile()
         {
             OpenFileDialog openDialog = new OpenFileDialog { Filter = "SVG Files (*.svg)|*.svg" };
-            if (openDialog.ShowDialog() == true)
-            {
-                try
-                {
-                    string content = File.ReadAllText(openDialog.FileName);
-                    RawPathData = content;
-                }
-                catch (Exception ex) { GlobalErrorHandler.LogError(ex, "LoadSvg"); }
-            }
+            if (openDialog.ShowDialog() == true) RawPathData = File.ReadAllText(openDialog.FileName);
         }
 
         [RelayCommand]
         private void GenerateCode()
         {
             if (IsFullSvgMode || string.IsNullOrWhiteSpace(RawPathData)) return;
-
-            XamlOutput = $"<Path Data=\"{RawPathData}\"\n" +
-                         $"      Fill=\"{FillColor}\"\n" +
-                         $"      Stroke=\"{StrokeColor}\" StrokeThickness=\"{StrokeThickness}\"\n" +
-                         $"      Stretch=\"Uniform\">\n" +
-                         $"    <Path.RenderTransform>\n" +
-                         $"        <TransformGroup>\n" +
-                         $"            <ScaleTransform ScaleX=\"{ScaleX:F2}\" ScaleY=\"{ScaleY:F2}\"/>\n" +
-                         $"            <RotateTransform Angle=\"{Rotation:F2}\"/>\n" +
-                         $"            <TranslateTransform X=\"{TranslateX:F2}\" Y=\"{TranslateY:F2}\"/>\n" +
-                         $"        </TransformGroup>\n" +
-                         $"    </Path.RenderTransform>\n" +
-                         $"</Path>";
-
-            HtmlOutput = $"<svg viewBox=\"0 0 100 100\" xmlns=\"http://www.w3.org/2000/svg\">\n" +
-                         $"  <g transform=\"translate({TranslateX},{TranslateY}) rotate({Rotation}) scale({ScaleX},{ScaleY})\">\n" +
-                         $"    <path d=\"{RawPathData}\" \n" +
-                         $"          fill=\"{FillColor}\" \n" +
-                         $"          stroke=\"{StrokeColor}\" stroke-width=\"{StrokeThickness}\" />\n" +
-                         $"  </g>\n" +
-                         $"</svg>";
+            XamlOutput = $"<Path Data=\"{RawPathData}\" Fill=\"{FillColor}\" Stroke=\"{StrokeColor}\" StrokeThickness=\"{StrokeThickness}\" Stretch=\"Uniform\">\n" +
+                         $"  <Path.RenderTransform><TransformGroup>\n" +
+                         $"    <ScaleTransform ScaleX=\"{ScaleX:F2}\" ScaleY=\"{ScaleY:F2}\"/>\n" +
+                         $"    <RotateTransform Angle=\"{Rotation:F2}\"/>\n" +
+                         $"    <TranslateTransform X=\"{TranslateX:F2}\" Y=\"{TranslateY:F2}\"/>\n" +
+                         $"  </TransformGroup></Path.RenderTransform>\n</Path>";
+            HtmlOutput = $"<svg...><path d=\"{RawPathData}\" fill=\"{FillColor}\" ... /></svg>";
         }
 
+        // ==========================================
+        // EXPORT LOGIC (PIVOT + BATCH)
+        // ==========================================
+
+        // Single Export
         [RelayCommand]
         private async Task ExportToPng()
         {
-            // RawPathData yox, hal-hazırda görünən (reconstructed) SVG-ni istifadə etmək lazımdır
-            // Əgər Full Mode-dursa HtmlOutput-da bizim ən son renderimiz var.
-            string contentToExport = IsFullSvgMode ? HtmlOutput : RawPathData;
+            string content = IsFullSvgMode ? HtmlOutput : RawPathData;
+            if (string.IsNullOrWhiteSpace(content)) return;
 
-            if (string.IsNullOrWhiteSpace(contentToExport)) return;
-
-            SaveFileDialog saveDialog = new SaveFileDialog { Filter = "PNG Image (*.png)|*.png", FileName = "part_export.png" };
-            if (saveDialog.ShowDialog() == true)
+            SaveFileDialog dlg = new SaveFileDialog { Filter = "PNG (*.png)|*.png", FileName = "export.png" };
+            if (dlg.ShowDialog() == true)
             {
-                try
-                {
-                    double currentRot = Rotation;
-                    double currentScaleX = ScaleX;
-                    double currentScaleY = ScaleY;
-                    string currentFill = FillColor;
-                    string currentStroke = StrokeColor;
-                    double currentThick = StrokeThickness;
-                    bool isFull = IsFullSvgMode;
-
-                    await Task.Run(() =>
-                    {
-                        var settings = new MagickReadSettings { Density = new Density(300), BackgroundColor = MagickColors.Transparent };
-
-                        string svgToRender;
-                        if (isFull)
-                        {
-                            svgToRender = contentToExport; // Artıq süzgəcdən keçmiş SVG
-                        }
-                        else
-                        {
-                            svgToRender = $"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"500\" height=\"500\" viewBox=\"0 0 100 100\">" +
-                                          $"<path d=\"{contentToExport}\" fill=\"{currentFill}\" stroke=\"{currentStroke}\" stroke-width=\"{currentThick}\" />" +
-                                          $"</svg>";
-                        }
-
-                        using (var image = new MagickImage(Encoding.UTF8.GetBytes(svgToRender), settings))
-                        {
-                            if (Math.Abs(currentScaleX - 1.0) > 0.01 || Math.Abs(currentScaleY - 1.0) > 0.01)
-                            {
-                                uint newW = (uint)(image.Width * currentScaleX);
-                                uint newH = (uint)(image.Height * currentScaleY);
-                                image.Resize(new MagickGeometry(newW, newH) { IgnoreAspectRatio = true });
-                            }
-
-                            if (Math.Abs(currentRot) > 0.01)
-                            {
-                                image.BackgroundColor = MagickColors.Transparent;
-                                image.Rotate(currentRot);
-                            }
-
-                            image.Format = MagickFormat.Png;
-                            image.Write(saveDialog.FileName);
-                        }
-                    });
-
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        CustomMessageBox.Show("Image/Layer exported successfully!", "Success", MessageBoxButton.OK, MsgImage.Success);
-                    });
-                }
-                catch (Exception ex)
-                {
-                    GlobalErrorHandler.LogError(ex, "ExportPng");
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        CustomMessageBox.Show($"Export failed: {ex.Message}", "Error", MessageBoxButton.OK, MsgImage.Error);
-                    });
-                }
+                await ExportContent(content, dlg.FileName, IsFullSvgMode);
+                Application.Current.Dispatcher.Invoke(() => CustomMessageBox.Show("Saved!", "Success", MessageBoxButton.OK, MsgImage.Success));
             }
+        }
+
+        // Batch Export
+        [RelayCommand]
+        private async Task BatchExportLayers()
+        {
+            var visibleLayers = Layers.Where(l => l.IsVisible).ToList();
+            if (!visibleLayers.Any()) return;
+
+            SaveFileDialog dlg = new SaveFileDialog { Filter = "PNG (*.png)|*.png", FileName = "Part.png", Title = "Batch Export Base Name" };
+            if (dlg.ShowDialog() == true)
+            {
+                string dir = Path.GetDirectoryName(dlg.FileName);
+                string baseName = Path.GetFileNameWithoutExtension(dlg.FileName);
+
+                await Task.Run(async () =>
+                {
+                    foreach (var layer in visibleLayers)
+                    {
+                        string layerSvg = $"{_originalSvgHeader}\n{layer.XmlContent}\n{_originalSvgFooter}";
+                        string safeName = string.Join("_", layer.Name.Split(Path.GetInvalidFileNameChars()));
+                        string path = Path.Combine(dir, $"{baseName}_{safeName}.png");
+                        await ExportContent(layerSvg, path, true);
+                    }
+                });
+                Application.Current.Dispatcher.Invoke(() => CustomMessageBox.Show($"Batch Export Complete!", "Success", MessageBoxButton.OK, MsgImage.Success));
+            }
+        }
+
+        private async Task ExportContent(string content, string path, bool isFull)
+        {
+            double r = Rotation; double sx = ScaleX; double sy = ScaleY;
+            string f = FillColor; string s = StrokeColor; double st = StrokeThickness;
+            // Capture Pivot for JSON
+            double px = PivotX; double py = PivotY;
+
+            await Task.Run(() =>
+            {
+                var settings = new MagickReadSettings { Density = new Density(300), BackgroundColor = MagickColors.Transparent };
+                string svg = isFull ? content : $"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"500\" height=\"500\" viewBox=\"0 0 100 100\"><path d=\"{content}\" fill=\"{f}\" stroke=\"{s}\" stroke-width=\"{st}\" /></svg>";
+
+                using (var img = new MagickImage(Encoding.UTF8.GetBytes(svg), settings))
+                {
+                    if (Math.Abs(sx - 1) > 0.01 || Math.Abs(sy - 1) > 0.01)
+                        img.Resize(new MagickGeometry((uint)(img.Width * sx), (uint)(img.Height * sy)) { IgnoreAspectRatio = true });
+
+                    if (Math.Abs(r) > 0.01) { img.BackgroundColor = MagickColors.Transparent; img.Rotate(r); }
+
+                    img.Format = MagickFormat.Png;
+                    img.Write(path);
+                }
+            });
+
+            // Write JSON Sidecar for Pivot
+            try
+            {
+                string jsonPath = Path.ChangeExtension(path, ".json");
+                string json = $"{{\n  \"file\": \"{Path.GetFileName(path)}\",\n  \"pivot_x\": {px:F1},\n  \"pivot_y\": {py:F1}\n}}";
+                File.WriteAllText(jsonPath, json);
+            }
+            catch { }
         }
     }
 }

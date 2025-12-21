@@ -110,7 +110,14 @@
                                  BorderBrush="{StaticResource Brush.Border}"/>
 
                         <StackPanel Visibility="{Binding IsFullSvgMode, Converter={StaticResource BoolToVis}}" Margin="0,0,0,20">
-                            <TextBlock Text="LAYERS &amp; PARTS" Style="{StaticResource HeaderStyle}"/>
+                            <Grid Margin="0,20,0,10">
+                                <TextBlock Text="LAYERS &amp; PARTS" Style="{StaticResource HeaderStyle}" Margin="0" VerticalAlignment="Center"/>
+                                <Button Content="Batch Export" Command="{Binding BatchExportLayersCommand}" 
+                                        Style="{StaticResource Style.Button.Primary}"
+                                        HorizontalAlignment="Right"
+                                        FontSize="10" Height="22" Padding="8,0"
+                                        ToolTip="Export each visible layer as a separate PNG"/>
+                            </Grid>
 
                             <Border Background="{StaticResource Brush.Bg.Input}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" CornerRadius="4" MaxHeight="150">
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -138,8 +145,56 @@
                                     </ItemsControl>
                                 </ScrollViewer>
                             </Border>
-                            <TextBlock Text="Uncheck layers to exclude from export." FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,4,0,0"/>
+                            <TextBlock Text="Check layers to include in Batch Export." FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,4,0,0"/>
                         </StackPanel>
+
+                        <Grid Margin="0,20,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="PIVOT POINT" Style="{StaticResource HeaderStyle}" Margin="0" VerticalAlignment="Center"/>
+
+                            <ToggleButton IsChecked="{Binding IsPivotMode}" Content="Set Anchor" 
+                                          Height="22" Padding="8,0" FontSize="10" Cursor="Hand">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="border" 
+                                                Background="Transparent" 
+                                                BorderBrush="{StaticResource Brush.Border}" 
+                                                BorderThickness="1" 
+                                                CornerRadius="4">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="border" Property="Background" Value="{StaticResource Brush.Accent.Blue}"/>
+                                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource Brush.Accent.Blue}"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource Brush.Text.Secondary}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="0,0,5,0">
+                                <TextBlock Text="X" Style="{StaticResource LabelStyle}"/>
+                                <TextBox Text="{Binding PivotX, StringFormat=N1}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                                <TextBlock Text="Y" Style="{StaticResource LabelStyle}"/>
+                                <TextBox Text="{Binding PivotY, StringFormat=N1}"/>
+                            </StackPanel>
+                        </Grid>
 
                         <StackPanel Visibility="{Binding IsFullSvgMode, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                             <TextBlock Text="APPEARANCE" Style="{StaticResource HeaderStyle}"/>
@@ -206,7 +261,7 @@
 
                         <Border Visibility="{Binding IsFullSvgMode, Converter={StaticResource BoolToVis}}"
                                 Background="{StaticResource Brush.Bg.Deep}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" 
-                                CornerRadius="6" Padding="15" Margin="0,0,0,0">
+                                CornerRadius="6" Padding="15" Margin="0,20,0,0">
                             <StackPanel>
                                 <TextBlock Text="FULL SVG MODE" FontWeight="Bold" Foreground="{StaticResource Brush.Accent.Blue}" Margin="0,0,0,5"/>
                                 <TextBlock Text="Colors are defined within SVG. Use Layers to isolate parts." TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource Brush.Text.Secondary}"/>
@@ -316,6 +371,7 @@
                 BorderBrush="{StaticResource Brush.Border}" 
                 BorderThickness="1"
                 ClipToBounds="True">
+
             <Grid x:Name="ZoomArea"
                   Background="Transparent"
                   MouseWheel="OnMouseWheel"
@@ -348,7 +404,7 @@
 
                 <Grid Background="{StaticResource Checkerboard}"/>
 
-                <Grid x:Name="ViewContent" RenderTransformOrigin="0.5,0.5">
+                <Grid x:Name="ViewContent" RenderTransformOrigin="0,0">
                     <Grid.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform x:Name="ViewScaleTransform"/>
@@ -388,6 +444,16 @@
                             </Image>
                         </Grid>
                     </Viewbox>
+
+                    <Canvas IsHitTestVisible="False">
+                        <Grid Canvas.Left="{Binding PivotX}" Canvas.Top="{Binding PivotY}">
+                            <Grid.RenderTransform>
+                                <TranslateTransform X="60" Y="60"/>
+                            </Grid.RenderTransform>
+                            <Path Data="M -10,0 L 10,0 M 0,-10 L 0,10" Stroke="#EF4444" StrokeThickness="2" IsHitTestVisible="False"/>
+                            <Ellipse Width="4" Height="4" Fill="#EF4444" Margin="-2,-2,0,0" IsHitTestVisible="False"/>
+                        </Grid>
+                    </Canvas>
                 </Grid>
 
                 <Border VerticalAlignment="Top" HorizontalAlignment="Right" Margin="20" 
@@ -399,7 +465,7 @@
                             <Ellipse Width="8" Height="8" Fill="{StaticResource Brush.Accent.Green}" Margin="0,0,6,0"/>
                             <TextBlock Text="Live Preview" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Primary}"/>
                         </StackPanel>
-                        <TextBlock Text="Scroll to Zoom • Drag to Pan • Right Click to Reset" 
+                        <TextBlock Text="Scroll to Zoom • Drag to Pan • Set Anchor" 
                                    FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>

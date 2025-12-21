@@ -7,88 +7,118 @@ namespace SpriteEditor.Views
 {
     public partial class SvgToolView : UserControl
     {
-        private Point _origin;
-        private Point _start;
+        private Point _lastMousePosition;
+        private bool _isPanning;
 
         public SvgToolView()
         {
             InitializeComponent();
 
-            // Default Zoom/Pan dəyərlərini sıfırla
+            // Başlanğıc dəyərlər
             ViewScaleTransform.ScaleX = 1;
             ViewScaleTransform.ScaleY = 1;
             ViewTranslateTransform.X = 0;
             ViewTranslateTransform.Y = 0;
         }
 
-        // 1. ZOOM (Mouse Wheel)
+        // ===============================================
+        // 1. ZOOM (MOUSE CURSOR-A GÖRƏ)
+        // ===============================================
         private void OnMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            var zoomFactor = e.Delta > 0 ? 1.1 : 0.9;
+            // Zoom Area (Konteyner) üzərindəki mouse koordinatı
+            Point mousePosInContainer = e.GetPosition(ZoomArea);
 
-            // Cari miqyas
+            // Obyektin (Content) daxilindəki həmin nöqtə (Scale olunmamış koordinat)
+            Point mousePosInContent = e.GetPosition(ViewContent);
+
+            double zoomFactor = e.Delta > 0 ? 1.1 : 0.9;
             double currentScale = ViewScaleTransform.ScaleX;
             double newScale = currentScale * zoomFactor;
 
-            // Limitlər (Çox kiçik və ya çox böyük olmasın)
+            // Limitlər
             if (newScale < 0.1 || newScale > 20) return;
 
-            // Mouse-un olduğu nöqtəyə görə zoom etmək
-            Point mousePos = e.GetPosition(ViewContent);
-
+            // Scale tətbiq edirik
             ViewScaleTransform.ScaleX = newScale;
             ViewScaleTransform.ScaleY = newScale;
 
-            // Sürüşməni düzəlt ki, mouse-un altındakı nöqtə sabit qalsın
-            double absoluteX = mousePos.X * currentScale + ViewTranslateTransform.X;
-            double absoluteY = mousePos.Y * currentScale + ViewTranslateTransform.Y;
-
-            ViewTranslateTransform.X = absoluteX - mousePos.X * newScale;
-            ViewTranslateTransform.Y = absoluteY - mousePos.Y * newScale;
+            // DÜZƏLİŞ: TranslateTransform-u elə dəyişirik ki, mouse eyni nöqtənin üzərində qalsın.
+            // Düstur: YeniOffset = MouseEkranYeri - (ObyektDaxiliYeri * YeniScale)
+            ViewTranslateTransform.X = mousePosInContainer.X - (mousePosInContent.X * newScale);
+            ViewTranslateTransform.Y = mousePosInContainer.Y - (mousePosInContent.Y * newScale);
         }
 
-        // 2. PAN START (Mouse Down)
+        // ===============================================
+        // 2. PAN START & PIVOT SETTING
+        // ===============================================
         private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            var viewModel = this.DataContext as ViewModels.SvgToolViewModel;
+
+            // A) PIVOT REJİMİ
+            if (viewModel != null && viewModel.IsPivotMode)
+            {
+                // Pivot üçün daxili koordinatı alırıq
+                Point p = e.GetPosition(ViewContent);
+
+                // Margin-i (60) çıxırıq
+                viewModel.SetPivotFromClick(p.X - 60, p.Y - 60);
+                return; // Pan etmə, sadəcə pivot qoy
+            }
+
+            // B) PAN REJİMİ (SÜRÜŞDÜRMƏ)
             var border = sender as FrameworkElement;
             if (border != null)
             {
-                // Mouse-u tuturuq ki, çərçivədən çıxanda da işləsin
+                _isPanning = true;
+                _lastMousePosition = e.GetPosition(ZoomArea); // Başlanğıc nöqtə (Konteynerə görə)
                 border.CaptureMouse();
-                _start = e.GetPosition(ZoomArea);
-                _origin = new Point(ViewTranslateTransform.X, ViewTranslateTransform.Y);
-
-                // Cursoru dəyiş (Opsional)
                 Mouse.OverrideCursor = Cursors.SizeAll;
             }
         }
 
-        // 3. PAN END (Mouse Up)
+        // ===============================================
+        // 3. PAN MOVE (REAL VAİXT)
+        // ===============================================
+        private void OnMouseMove(object sender, MouseEventArgs e)
+        {
+            if (_isPanning)
+            {
+                Point currentMousePosition = e.GetPosition(ZoomArea);
+
+                // Nə qədər yer dəyişib?
+                Vector delta = currentMousePosition - _lastMousePosition;
+
+                // Obyekti həmin qədər sürüşdür
+                ViewTranslateTransform.X += delta.X;
+                ViewTranslateTransform.Y += delta.Y;
+
+                // Son mövqeyi yenilə
+                _lastMousePosition = currentMousePosition;
+            }
+        }
+
+        // ===============================================
+        // 4. PAN END
+        // ===============================================
         private void OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            var border = sender as FrameworkElement;
-            if (border != null)
+            if (_isPanning)
             {
-                border.ReleaseMouseCapture();
+                _isPanning = false;
+                var border = sender as FrameworkElement;
+                border?.ReleaseMouseCapture();
                 Mouse.OverrideCursor = null;
             }
         }
 
-        // 4. PAN MOVE (Mouse Move)
-        private void OnMouseMove(object sender, MouseEventArgs e)
-        {
-            if (ZoomArea.IsMouseCaptured)
-            {
-                Vector v = _start - e.GetPosition(ZoomArea);
-                ViewTranslateTransform.X = _origin.X - v.X;
-                ViewTranslateTransform.Y = _origin.Y - v.Y;
-            }
-        }
-
-        // 5. RESET (Right Click)
+        // ===============================================
+        // 5. RESET VIEW
+        // ===============================================
         private void OnMouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            // Görüntünü sıfırla
+            // Reset to default
             ViewScaleTransform.ScaleX = 1;
             ViewScaleTransform.ScaleY = 1;
             ViewTranslateTransform.X = 0;

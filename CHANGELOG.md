@@ -136,3 +136,7 @@ Each release will include:
 
 _For detailed commit history, see the [GitHub repository](https://github.com/yourusername/SpriteEditor/commits/main)._
 
+
+
+
+

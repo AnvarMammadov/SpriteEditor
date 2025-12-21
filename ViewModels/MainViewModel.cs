@@ -32,6 +32,7 @@ namespace SpriteEditor.ViewModels
 
         private readonly TexturePackerViewModel _texturePackerViewModel;
         private readonly StoryEditorViewModel _storyEditorViewModel;
+        private readonly SvgToolViewModel _svgToolViewModel;
 
         public MainViewModel()
         {
@@ -44,6 +45,7 @@ namespace SpriteEditor.ViewModels
             _frameAnimatorViewModel = new FrameAnimatorViewModel();
             _texturePackerViewModel = new TexturePackerViewModel();
             _storyEditorViewModel = new StoryEditorViewModel();
+            _svgToolViewModel = new SvgToolViewModel();
 
             // Proqram açıldıqda "Home" səhifəsini göstər
             _currentViewModel = _homeViewModel;
@@ -102,6 +104,12 @@ namespace SpriteEditor.ViewModels
         private void GoToStoryEditor()
         {
             CurrentViewModel = _storyEditorViewModel;
+        }
+
+        [RelayCommand]
+        private void GoToSvgTool()
+        {
+            CurrentViewModel = _svgToolViewModel;
         }
 
 

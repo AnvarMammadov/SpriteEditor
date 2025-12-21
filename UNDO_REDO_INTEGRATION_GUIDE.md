@@ -321,3 +321,7 @@ public partial class RiggingViewModel : ObservableObject
 
 **Test etmək üçün**: Proqramı run edin, Rigging moduluna gedin və **Ctrl+Z / Ctrl+Y** test edin! 🎉
 
+
+
+
+

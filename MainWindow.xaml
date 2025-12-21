@@ -364,6 +364,24 @@
                                 </Grid>
                             </Button>
 
+                            <Button Command="{Binding GoToSvgToolCommand}" Style="{StaticResource SidebarButtonStyle}" ToolTip="Vector Lab">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Path Grid.Column="0" 
+              Data="M18.5,2.54L15.46,5.58L18.41,8.53L21.45,5.5C21.65,5.3 21.65,5 21.45,4.79L19.21,2.54C19,2.35 18.7,2.35 18.5,2.54M17.71,9.24L14.76,6.29L4.45,16.6C4.35,16.7 4.29,16.83 4.29,16.96V19.7H7.03C7.16,19.7 7.29,19.64 7.39,19.54L17.71,9.24M3,21V17L14,6L18,10L7,21H3Z" 
+              Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+              Width="18" Height="18" Stretch="Uniform"
+              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Column="1" Text="Vector Lab" VerticalAlignment="Center"
+                   Visibility="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </Grid>
+                            </Button>
+
                         </StackPanel>
                     </ScrollViewer>
 

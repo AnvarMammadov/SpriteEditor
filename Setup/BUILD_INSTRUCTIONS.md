@@ -146,3 +146,7 @@ For GitHub Actions or similar:
 
 For questions or issues, contact: dev@spriteeditorpro.com
 
+
+
+
+

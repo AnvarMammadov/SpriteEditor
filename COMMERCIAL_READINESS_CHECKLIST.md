@@ -298,3 +298,7 @@ _Növbəti review: 1 Yanvar 2026_
 
 **İndiki Status**: 🟡 **ALFA/BETA** - Kommersial launch üçün 4-6 həftə qalıb!
 
+
+
+
+

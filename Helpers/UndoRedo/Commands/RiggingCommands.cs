@@ -324,3 +324,7 @@ namespace SpriteEditor.Helpers.UndoRedo.Commands
     }
 }
 
+
+
+
+

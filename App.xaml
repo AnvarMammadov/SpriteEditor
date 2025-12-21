@@ -308,6 +308,16 @@
                 </Style.Resources>
             </Style>
 
+            <Style TargetType="Button" x:Key="Style.Button.Success" BasedOn="{StaticResource Style.Button.Primary}">
+                <Setter Property="Background" Value="{StaticResource Brush.Accent.Green}"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Opacity" Value="0.9"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
 
 
             <Style x:Key="ModernScrollBar" TargetType="{x:Type ScrollBar}">

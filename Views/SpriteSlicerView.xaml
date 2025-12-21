@@ -4,14 +4,16 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:SpriteEditor.Views"
+             xmlns:vm="clr-namespace:SpriteEditor.ViewModels"
              xmlns:converters="clr-namespace:SpriteEditor.Converters"
              mc:Ignorable="d" 
-             d:DesignHeight="600" d:DesignWidth="900">
+             d:DesignHeight="700" d:DesignWidth="1000">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <converters:BooleanToCursorConverter x:Key="BooleanToCursorConverter"/>
-
+        <converters:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
+        <converters:EnumToBooleanConverter x:Key="EnumToBooleanConverter"/>
         <Style x:Key="SlicerThumbStyle" TargetType="Thumb">
             <Setter Property="Width" Value="12"/>
             <Setter Property="Height" Value="12"/>
@@ -22,6 +24,31 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Thumb">
                         <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModeRadioButtonStyle" TargetType="RadioButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Secondary}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="0,0,5,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Background" Value="{StaticResource Brush.Accent.Primary}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent.Primary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -41,54 +68,106 @@
 
                     <Button Command="{Binding LoadImageCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,20">
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="M9 12l2-2 4 4 M15 12l-4-4-4 4 M11 3v9" Stroke="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(TextElement.Foreground)}" StrokeThickness="2" Margin="0,0,8,0"/>
                             <TextBlock Text="{DynamicResource Str_BtnLoadImage}"/>
                         </StackPanel>
                     </Button>
 
                     <Separator Background="{StaticResource Brush.Border}" Margin="0,0,0,20" Opacity="0.3"/>
 
-                    <TextBlock Text="{DynamicResource Str_HeaderGridParams}" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
+                    <TextBlock Text="MODE" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                        <RadioButton Content="Grid" GroupName="SlicerMode" 
+                                     Command="{Binding SetModeCommand}" CommandParameter="{x:Static vm:SpriteSlicerViewModel+SlicerMode.Grid}"
+                                     IsChecked="{Binding CurrentMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.Grid}, Mode=OneWay}"
+                                     Style="{StaticResource ModeRadioButtonStyle}"/>
 
-                    <Grid Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                        <RadioButton Content="Auto" GroupName="SlicerMode" 
+                                     Command="{Binding SetModeCommand}" CommandParameter="{x:Static vm:SpriteSlicerViewModel+SlicerMode.AutoDetect}"
+                                     IsChecked="{Binding CurrentMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.AutoDetect}, Mode=OneWay}"
+                                     Style="{StaticResource ModeRadioButtonStyle}"/>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Str_ColCount}" VerticalAlignment="Center" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,10,0"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Columns, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                        <RadioButton Content="Pen" GroupName="SlicerMode" 
+                                     Command="{Binding SetModeCommand}" CommandParameter="{x:Static vm:SpriteSlicerViewModel+SlicerMode.PolygonPen}"
+                                     IsChecked="{Binding CurrentMode, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.PolygonPen}, Mode=OneWay}"
+                                     Style="{StaticResource ModeRadioButtonStyle}"/>
+                    </StackPanel>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{DynamicResource Str_RowCount}" VerticalAlignment="Center" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,10,0"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Rows, UpdateSourceTrigger=PropertyChanged}"/>
-                    </Grid>
+                    <StackPanel Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.Grid}}">
+                        <TextBlock Text="{DynamicResource Str_HeaderGridParams}" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Str_ColCount}" VerticalAlignment="Center" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,10,0"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Columns, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{DynamicResource Str_RowCount}" VerticalAlignment="Center" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,10,0"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Rows, UpdateSourceTrigger=PropertyChanged}"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.AutoDetect}}">
+                        <TextBlock Text="{DynamicResource Str_HeaderAutoDetect}" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
+                        <Button Command="{Binding AutoDetectSpritesCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,10">
+                            <TextBlock Text="{DynamicResource Str_BtnAutoDetect}"/>
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.PolygonPen}}">
+                        <TextBlock Text="EXTRACTED PARTS" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
+                        <Border Background="#111827" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" CornerRadius="4" Height="200" Margin="0,0,0,10">
+                            <ListBox ItemsSource="{Binding ExtractedParts}" SelectedItem="{Binding SelectedPart}" Background="Transparent" BorderThickness="0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="🗡️" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                            <TextBox Grid.Column="1" Text="{Binding Name, Mode=TwoWay}" Background="Transparent" BorderThickness="0" Foreground="White" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="2" Content="❌" Command="{Binding DataContext.DeleteSelectedPartCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" Background="Transparent" BorderThickness="0" Foreground="#EF4444" Padding="5,0"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                        <TextBlock Text="* Left Click: Add Point&#x0a;* Right Click: Finish Shape" FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" FontStyle="Italic" Margin="0,0,0,10"/>
+                    </StackPanel>
 
                     <Separator Background="{StaticResource Brush.Border}" Margin="0,10,0,20" Opacity="0.3"/>
 
-                    <TextBlock Text="{DynamicResource Str_HeaderAutoDetect}" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
-
-                    <Button Command="{Binding AutoDetectSpritesCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,0,10">
+                    <Button Command="{Binding SliceImageCommand}" Height="40">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource Style.Button.Accent}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentMode}" Value="{x:Static vm:SpriteSlicerViewModel+SlicerMode.Grid}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CurrentMode}" Value="{x:Static vm:SpriteSlicerViewModel+SlicerMode.AutoDetect}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="M7.5,5.6L10,7L8.6,4.5L10,2L7.5,3.4L5,2L6.4,4.5L5,7L7.5,5.6M19.5,15.4L22,14L20.6,16.5L22,19L19.5,17.6L17,19L18.4,16.5L17,14L19.5,15.4M22,2L20.6,4.5L22,7L19.5,5.6L17,7L18.4,4.5L17,2L19.5,3.4L22,2M13.34,12.66L12.6,14.5C12.4,15 11.6,15 11.4,14.5L10.66,12.66L8.8,11.9C8.3,11.7 8.3,10.9 8.8,10.7L10.66,10L11.4,8.1C11.6,7.6 12.4,7.6 12.6,8.1L13.34,10L15.2,10.7C15.7,10.9 15.7,11.7 15.2,11.9L13.34,12.66Z" 
-                                  Fill="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(TextElement.Foreground)}" Width="16" Height="16" Stretch="Uniform" Margin="0,0,8,0"/>
-                            <TextBlock Text="{DynamicResource Str_BtnAutoDetect}"/>
-                        </StackPanel>
-                    </Button>
-
-                    <Button Command="{Binding SliceImageCommand}" Style="{StaticResource Style.Button.Accent}" Height="40">
-                        <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource Icon.Grid}" Fill="#111827" Width="14" Height="14" Stretch="Uniform" Margin="0,0,8,0"/>
                             <TextBlock Text="{DynamicResource Str_BtnSlice}" FontWeight="Bold"/>
                         </StackPanel>
                     </Button>
 
+                    <Button Command="{Binding ExportAllPartsCommand}" Style="{StaticResource Style.Button.Success}" Height="40"
+                            Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.PolygonPen}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="💾 EXPORT ALL PARTS" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Button>
                     <ProgressBar IsIndeterminate="True" Visibility="{Binding IsSlicing, Converter={StaticResource BooleanToVisibilityConverter}}" Height="4" Margin="0,10,0,0" Foreground="{StaticResource Brush.Accent.Blue}" Background="Transparent" BorderThickness="0"/>
-
-                    <TextBlock Text="{DynamicResource Str_HintSlicer}" TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,20,0,0" FontStyle="Italic"/>
                 </StackPanel>
             </ScrollViewer>
         </Border>
@@ -117,7 +196,8 @@
                     <Grid Width="{Binding ImagePixelWidth}" Height="{Binding ImagePixelHeight}">
                         <Image Source="{Binding LoadedImageSource}"/>
 
-                        <ItemsControl ItemsSource="{Binding DetectedRects}">
+                        <ItemsControl ItemsSource="{Binding DetectedRects}" 
+                                      Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.AutoDetect}}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <Canvas/>
@@ -136,33 +216,17 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <Canvas x:Name="SlicerCanvas" SnapsToDevicePixels="True">
-                            <Canvas.Style>
-                                <Style TargetType="Canvas">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding UseAutoDetection}" Value="True">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Canvas.Style>
-
-                            <Border x:Name="SlicerBorder" Canvas.Left="{Binding SlicerX}" Canvas.Top="{Binding SlicerY}" Width="{Binding SlicerWidth}" Height="{Binding SlicerHeight}" BorderBrush="{StaticResource Brush.Accent.Green}" BorderThickness="2" Background="#2222C55E" IsHitTestVisible="False"/>
-
+                        <Canvas x:Name="SlicerCanvas" SnapsToDevicePixels="True"
+                                Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.Grid}}">
+                            <Border Canvas.Left="{Binding SlicerX}" Canvas.Top="{Binding SlicerY}" Width="{Binding SlicerWidth}" Height="{Binding SlicerHeight}" BorderBrush="{StaticResource Brush.Accent.Green}" BorderThickness="2" Background="#2222C55E" IsHitTestVisible="False"/>
                             <Thumb x:Name="ThumbMove" Canvas.Left="{Binding SlicerX}" Canvas.Top="{Binding SlicerY}" Width="{Binding SlicerWidth}" Height="{Binding SlicerHeight}" Cursor="SizeAll" Opacity="0" DragDelta="ThumbMove_DragDelta" />
-
                             <Thumb x:Name="ThumbTopLeft" Cursor="SizeNWSE" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
                             <Thumb x:Name="ThumbTopRight" Cursor="SizeNESW" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
-                            <Thumb x:Name="ThumbBottomLeft" Cursor="SizeNESW" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
                             <Thumb x:Name="ThumbBottomRight" Cursor="SizeNWSE" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
-                            <Thumb x:Name="ThumbTop" Cursor="SizeNS" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
-                            <Thumb x:Name="ThumbBottom" Cursor="SizeNS" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
-                            <Thumb x:Name="ThumbLeft" Cursor="SizeWE" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
-                            <Thumb x:Name="ThumbRight" Cursor="SizeWE" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
                         </Canvas>
 
-                        <ItemsControl ItemsSource="{Binding GridLines}">
+                        <ItemsControl ItemsSource="{Binding GridLines}"
+                                      Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.Grid}}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <Canvas/>
@@ -170,25 +234,12 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Thumb DragDelta="GridLine_DragDelta" 
-           Cursor="{Binding IsVertical, Converter={StaticResource BooleanToCursorConverter}}"
-           Canvas.Left="0" Canvas.Top="0">
+                                    <Thumb DragDelta="GridLine_DragDelta" Cursor="{Binding IsVertical, Converter={StaticResource BooleanToCursorConverter}}" Canvas.Left="0" Canvas.Top="0">
                                         <Thumb.Template>
                                             <ControlTemplate>
                                                 <Grid>
-                                                    <Line X1="{Binding X1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                          Y1="{Binding Y1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                          X2="{Binding X2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                          Y2="{Binding Y2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                          Stroke="{StaticResource Brush.Accent.Blue}" 
-                          StrokeThickness="1"/>
-
-                                                    <Line X1="{Binding X1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                          Y1="{Binding Y1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                          X2="{Binding X2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                          Y2="{Binding Y2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                          Stroke="Transparent" 
-                          StrokeThickness="15"/>
+                                                    <Line X1="{Binding X1}" Y1="{Binding Y1}" X2="{Binding X2}" Y2="{Binding Y2}" Stroke="{StaticResource Brush.Accent.Blue}" StrokeThickness="1"/>
+                                                    <Line X1="{Binding X1}" Y1="{Binding Y1}" X2="{Binding X2}" Y2="{Binding Y2}" Stroke="Transparent" StrokeThickness="15"/>
                                                 </Grid>
                                             </ControlTemplate>
                                         </Thumb.Template>
@@ -196,6 +247,52 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+
+                        <ItemsControl ItemsSource="{Binding ExtractedParts}" IsHitTestVisible="False"
+                                      Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.PolygonPen}}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Polygon Points="{Binding Points}" Stroke="#10B981" StrokeThickness="2" Fill="{Binding FillColor}"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Polyline Points="{Binding VisualDrawingPoints}" Stroke="#EF4444" StrokeThickness="2"
+                                  Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.PolygonPen}}"/>
+
+                        <ItemsControl ItemsSource="{Binding CurrentDrawingPoints}" IsHitTestVisible="False"
+                                      Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.PolygonPen}}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemContainerStyle>
+                                <Style TargetType="ContentPresenter">
+                                    <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                    <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                </Style>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Ellipse Width="6" Height="6" Fill="Yellow" Stroke="Black" StrokeThickness="1">
+                                        <Ellipse.RenderTransform>
+                                            <TranslateTransform X="-3" Y="-3"/>
+                                        </Ellipse.RenderTransform>
+                                    </Ellipse>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Canvas Background="Transparent"
+                                MouseLeftButtonDown="OnCanvasMouseDown"
+                                MouseRightButtonDown="OnCanvasMouseDown"
+                                Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.PolygonPen}}"/>
 
                     </Grid>
                 </Viewbox>

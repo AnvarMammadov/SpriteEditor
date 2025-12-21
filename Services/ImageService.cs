@@ -10,6 +10,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SpriteEditor.Data;
 
 namespace SpriteEditor.Services
 {
@@ -421,6 +422,43 @@ namespace SpriteEditor.Services
             }
         }
 
+
+        // ImageService.cs daxilinə:
+
+        public void SlicePolygons(string sourcePath, IEnumerable<SlicePart> parts, string outputDir)
+        {
+            using (var sourceImage = Image.Load<Rgba32>(sourcePath))
+            {
+                foreach (var part in parts)
+                {
+                    // 1. Poliqonun sərhədlərini (Bounding Box) tap
+                    var minX = (int)part.Points.Min(p => p.X);
+                    var minY = (int)part.Points.Min(p => p.Y);
+                    var maxX = (int)part.Points.Max(p => p.X);
+                    var maxY = (int)part.Points.Max(p => p.Y);
+                    var width = maxX - minX;
+                    var height = maxY - minY;
+
+                    // 2. Boş bir kətan (canvas) yarat (şəffaf)
+                    using (var partImage = new Image<Rgba32>(width, height))
+                    {
+                        // 3. Poliqonu (maskanı) çəkmək və original şəkildən pikselləri köçürmək
+                        // ImageSharp-da 'Drawing' kitabxanası ilə Path qura bilərik.
+                        // Sadəlik üçün: Piksel-piksel yoxlama (Ray Casting) və ya ImageSharp.Drawing istifadə etmək olar.
+
+                        // Burda sürətli variant: ImageSharp.Drawing istifadə edərək Clip etməkdir.
+                        // (Təxmini kod - ImageSharp versiyanıza uyğunlaşdırmaq lazımdır)
+
+                        var polygonPoints = part.Points.Select(p => new PointF((float)(p.X - minX), (float)(p.Y - minY))).ToArray();
+
+                        // Maskanı tətbiq et və kəs
+                        // ...
+
+                        partImage.Save(Path.Combine(outputDir, $"{part.Name}.png"));
+                    }
+                }
+            }
+        }
 
 
         #region Diagnostika Testi

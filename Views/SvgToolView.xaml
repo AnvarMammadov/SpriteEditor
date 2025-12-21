@@ -12,7 +12,6 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
 
-        <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolVis"/>
         <Style x:Key="LabelStyle" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource Brush.Text.Secondary}"/>
             <Setter Property="FontSize" Value="11"/>
@@ -26,6 +25,7 @@
             <Setter Property="Opacity" Value="0.9"/>
             <Setter Property="Margin" Value="0,20,0,10"/>
         </Style>
+
         <Style x:Key="SegmentRadioBase" TargetType="RadioButton">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{StaticResource Brush.Text.Secondary}"/>
@@ -109,6 +109,38 @@
                                  Background="{StaticResource Brush.Bg.Input}"
                                  BorderBrush="{StaticResource Brush.Border}"/>
 
+                        <StackPanel Visibility="{Binding IsFullSvgMode, Converter={StaticResource BoolToVis}}" Margin="0,0,0,20">
+                            <TextBlock Text="LAYERS &amp; PARTS" Style="{StaticResource HeaderStyle}"/>
+
+                            <Border Background="{StaticResource Brush.Bg.Input}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" CornerRadius="4" MaxHeight="150">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding Layers}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Padding="10,6" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <CheckBox IsChecked="{Binding IsVisible, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                            <CheckBox.LayoutTransform>
+                                                                <ScaleTransform ScaleX="0.9" ScaleY="0.9"/>
+                                                            </CheckBox.LayoutTransform>
+                                                        </CheckBox>
+
+                                                        <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="{StaticResource Brush.Text.Primary}" VerticalAlignment="Center" FontSize="11"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Border>
+                            <TextBlock Text="Uncheck layers to exclude from export." FontSize="10" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,4,0,0"/>
+                        </StackPanel>
+
                         <StackPanel Visibility="{Binding IsFullSvgMode, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                             <TextBlock Text="APPEARANCE" Style="{StaticResource HeaderStyle}"/>
 
@@ -174,10 +206,10 @@
 
                         <Border Visibility="{Binding IsFullSvgMode, Converter={StaticResource BoolToVis}}"
                                 Background="{StaticResource Brush.Bg.Deep}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" 
-                                CornerRadius="6" Padding="15" Margin="0,20,0,0">
+                                CornerRadius="6" Padding="15" Margin="0,0,0,0">
                             <StackPanel>
                                 <TextBlock Text="FULL SVG MODE" FontWeight="Bold" Foreground="{StaticResource Brush.Accent.Blue}" Margin="0,0,0,5"/>
-                                <TextBlock Text="Colors and styles are defined within the SVG code." TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource Brush.Text.Secondary}"/>
+                                <TextBlock Text="Colors are defined within SVG. Use Layers to isolate parts." TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource Brush.Text.Secondary}"/>
                             </StackPanel>
                         </Border>
 

@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Xml.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageMagick;
@@ -20,6 +18,12 @@ namespace SpriteEditor.ViewModels
     public partial class SvgToolViewModel : ObservableObject
     {
         // ==========================================
+        // PREVIEW IMAGES & STATE
+        // ==========================================
+        [ObservableProperty] private ImageSource _fullSvgPreview;
+        [ObservableProperty] private bool _isFullSvgMode;
+
+        // ==========================================
         // DATA & APPEARANCE
         // ==========================================
         [ObservableProperty]
@@ -31,7 +35,7 @@ namespace SpriteEditor.ViewModels
         [ObservableProperty] private double _strokeThickness = 0;
 
         // ==========================================
-        // TRANSFORMS (Editor Style)
+        // TRANSFORMS
         // ==========================================
         [ObservableProperty] private double _scaleX = 1.0;
         [ObservableProperty] private double _scaleY = 1.0;
@@ -44,11 +48,10 @@ namespace SpriteEditor.ViewModels
         // ==========================================
         [ObservableProperty] private string _xamlOutput;
         [ObservableProperty] private string _htmlOutput;
-
-        [ObservableProperty] private bool _isXamlVisible = true; // Default XAML
+        [ObservableProperty] private bool _isXamlVisible = true;
 
         // ==========================================
-        // COLOR PALETTE (Professional Tailwind-like)
+        // COLOR PALETTE
         // ==========================================
         public List<string> ColorPalette { get; } = new List<string>
         {
@@ -64,32 +67,91 @@ namespace SpriteEditor.ViewModels
             "#A855F7", "#C084FC", "#EC4899", "#F472B6", "#F43F5E", "#FB7185"
         };
 
-        // Rəng seçimi əmrləri
+        // Rəng tətbiqi (Full SVG rejimində deaktiv edilir)
         [RelayCommand]
         private void ApplyFillColor(string color)
         {
-            if (!string.IsNullOrEmpty(color)) FillColor = color;
+            if (!IsFullSvgMode && !string.IsNullOrEmpty(color)) FillColor = color;
         }
 
         [RelayCommand]
         private void ApplyStrokeColor(string color)
         {
-            if (!string.IsNullOrEmpty(color)) StrokeColor = color;
+            if (!IsFullSvgMode && !string.IsNullOrEmpty(color)) StrokeColor = color;
         }
 
+        // Preview üçün Geometry (Yalnız Path modu üçün)
         public Geometry GeometryPreview
         {
             get
             {
-                if (string.IsNullOrWhiteSpace(RawPathData)) return null;
+                if (IsFullSvgMode || string.IsNullOrWhiteSpace(RawPathData)) return null;
                 try { return Geometry.Parse(RawPathData); } catch { return null; }
             }
         }
 
+        // ==========================================================
+        // INPUT CHANGE HANDLER
+        // ==========================================================
+        partial void OnRawPathDataChanged(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                IsFullSvgMode = false;
+                FullSvgPreview = null;
+                return;
+            }
 
+            // <svg> teqi ilə başlayırsa, Full SVG rejiminə keç
+            if (value.Trim().StartsWith("<svg", StringComparison.OrdinalIgnoreCase))
+            {
+                IsFullSvgMode = true;
+                RenderFullSvgPreview(value);
+                HtmlOutput = value;
+                XamlOutput = "";
+            }
+            else
+            {
+                IsFullSvgMode = false;
+                FullSvgPreview = null;
+                GenerateCode();
+            }
+            OnPropertyChanged(nameof(GeometryPreview));
+        }
 
+        // Ekranda göstərmək üçün SVG Render (Preview)
+        private void RenderFullSvgPreview(string svgContent)
+        {
+            try
+            {
+                var bytes = Encoding.UTF8.GetBytes(svgContent);
+                // Preview üçün orta keyfiyyət (performans üçün)
+                var settings = new MagickReadSettings { BackgroundColor = MagickColors.Transparent, Density = new Density(96) };
 
-        // Dəyişiklik olanda kodu yenilə
+                using (var image = new MagickImage(bytes, settings))
+                {
+                    image.Format = MagickFormat.Png;
+                    byte[] pngBytes = image.ToByteArray();
+
+                    var bitmap = new BitmapImage();
+                    using (var stream = new MemoryStream(pngBytes))
+                    {
+                        bitmap.BeginInit();
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.StreamSource = stream;
+                        bitmap.EndInit();
+                    }
+                    bitmap.Freeze();
+                    FullSvgPreview = bitmap;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SVG Preview Error: {ex.Message}");
+            }
+        }
+
+        // Dəyişiklikləri izlə və kodu yenilə
         partial void OnFillColorChanged(string value) => GenerateCode();
         partial void OnStrokeColorChanged(string value) => GenerateCode();
         partial void OnStrokeThicknessChanged(double value) => GenerateCode();
@@ -99,26 +161,17 @@ namespace SpriteEditor.ViewModels
         partial void OnTranslateXChanged(double value) => GenerateCode();
         partial void OnTranslateYChanged(double value) => GenerateCode();
 
+
         // ==========================================
         // COMMANDS
         // ==========================================
-
-        // View dəyişmə əmrləri
-        [RelayCommand]
-        private void ShowXaml() => IsXamlVisible = true;
-
-        [RelayCommand]
-        private void ShowHtml() => IsXamlVisible = false;
-
+        [RelayCommand] private void ShowXaml() => IsXamlVisible = true;
+        [RelayCommand] private void ShowHtml() => IsXamlVisible = false;
 
         [RelayCommand]
         private void ResetTransforms()
         {
-            ScaleX = 1.0;
-            ScaleY = 1.0;
-            Rotation = 0;
-            TranslateX = 0;
-            TranslateY = 0;
+            ScaleX = 1.0; ScaleY = 1.0; Rotation = 0; TranslateX = 0; TranslateY = 0;
         }
 
         [RelayCommand]
@@ -129,17 +182,8 @@ namespace SpriteEditor.ViewModels
             {
                 try
                 {
-                    string xmlContent = File.ReadAllText(openDialog.FileName);
-                    var doc = XDocument.Parse(xmlContent);
-                    XNamespace ns = "http://www.w3.org/2000/svg";
-                    var pathElement = doc.Descendants(ns + "path").FirstOrDefault();
-
-                    if (pathElement?.Attribute("d") != null)
-                    {
-                        RawPathData = pathElement.Attribute("d").Value;
-                        // Rəngləri də oxumağa cəhd edə bilərik (sadəlik üçün hələlik saxlayıram)
-                        GenerateCode();
-                    }
+                    string content = File.ReadAllText(openDialog.FileName);
+                    RawPathData = content;
                 }
                 catch (Exception ex) { GlobalErrorHandler.LogError(ex, "LoadSvg"); }
             }
@@ -148,9 +192,9 @@ namespace SpriteEditor.ViewModels
         [RelayCommand]
         private void GenerateCode()
         {
-            if (string.IsNullOrWhiteSpace(RawPathData)) return;
+            if (IsFullSvgMode || string.IsNullOrWhiteSpace(RawPathData)) return;
 
-            // XAML Generation (RenderTransform istifadə edərək)
+            // XAML Output
             XamlOutput = $"<Path Data=\"{RawPathData}\"\n" +
                          $"      Fill=\"{FillColor}\"\n" +
                          $"      Stroke=\"{StrokeColor}\" StrokeThickness=\"{StrokeThickness}\"\n" +
@@ -164,7 +208,7 @@ namespace SpriteEditor.ViewModels
                          $"    </Path.RenderTransform>\n" +
                          $"</Path>";
 
-            // HTML/SVG Generation (Group Transform)
+            // HTML Output
             HtmlOutput = $"<svg viewBox=\"0 0 100 100\" xmlns=\"http://www.w3.org/2000/svg\">\n" +
                          $"  <g transform=\"translate({TranslateX},{TranslateY}) rotate({Rotation}) scale({ScaleX},{ScaleY})\">\n" +
                          $"    <path d=\"{RawPathData}\" \n" +
@@ -174,40 +218,94 @@ namespace SpriteEditor.ViewModels
                          $"</svg>";
         }
 
+        // ==========================================
+        // EXPORT LOGIC (DÜZƏLDİLMİŞ HİSSƏ)
+        // ==========================================
         [RelayCommand]
         private async Task ExportToPng()
         {
             if (string.IsNullOrWhiteSpace(RawPathData)) return;
 
-            SaveFileDialog saveDialog = new SaveFileDialog { Filter = "PNG Image (*.png)|*.png", FileName = "vector_design.png" };
+            SaveFileDialog saveDialog = new SaveFileDialog { Filter = "PNG Image (*.png)|*.png", FileName = "vector_export.png" };
             if (saveDialog.ShowDialog() == true)
             {
                 try
                 {
-                    // SVG-ni Transformlarla birlikdə yaradırıq
-                    string tempSvg = Path.GetTempFileName() + ".svg";
+                    // 1. UI Thread-dən dəyərləri əldə edirik (Thread-safety üçün)
+                    double currentRot = Rotation;
+                    double currentScaleX = ScaleX;
+                    double currentScaleY = ScaleY;
+                    string currentFill = FillColor;
+                    string currentStroke = StrokeColor;
+                    double currentThick = StrokeThickness;
+                    bool isFull = IsFullSvgMode;
+                    string rawData = RawPathData;
 
-                    // ViewBox-u genişləndiririk ki, sürüşdürmə (translate) zamanı kəsilməsin
-                    string svgContent = $"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"2048\" height=\"2048\" viewBox=\"-50 -50 200 200\">\n" +
-                                        $"  <g transform=\"translate({TranslateX + 50},{TranslateY + 50}) rotate({Rotation}) scale({ScaleX},{ScaleY})\">\n" +
-                                        $"      <path d=\"{RawPathData}\" fill=\"{FillColor}\" stroke=\"{StrokeColor}\" stroke-width=\"{StrokeThickness}\" />\n" +
-                                        $"  </g>\n" +
-                                        $"</svg>";
-
-                    File.WriteAllText(tempSvg, svgContent);
-
+                    // 2. Arxa planda emal edirik
                     await Task.Run(() =>
                     {
-                        var settings = new MagickReadSettings { Density = new Density(300), BackgroundColor = MagickColors.Transparent };
-                        using (var image = new MagickImage(tempSvg, settings))
+                        var settings = new MagickReadSettings
                         {
+                            Density = new Density(300), // Çap keyfiyyəti (300 DPI)
+                            BackgroundColor = MagickColors.Transparent
+                        };
+
+                        string svgToRender;
+
+                        if (isFull)
+                        {
+                            // Full SVG rejimidirsə, olduğu kimi götürürük
+                            svgToRender = rawData;
+                        }
+                        else
+                        {
+                            // Path rejimidirsə, onu rənglərlə birlikdə SVG içinə qoyuruq
+                            // viewBox-u genişləndiririk ki, fırladanda kənarlar kəsilməsin (təxmini 500x500)
+                            svgToRender = $"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"500\" height=\"500\" viewBox=\"0 0 100 100\">" +
+                                          $"<path d=\"{rawData}\" fill=\"{currentFill}\" stroke=\"{currentStroke}\" stroke-width=\"{currentThick}\" />" +
+                                          $"</svg>";
+                        }
+
+                        using (var image = new MagickImage(Encoding.UTF8.GetBytes(svgToRender), settings))
+                        {
+                            // A) SCALE (Böyütmə/Kiçiltmə)
+                            // Orijinal ölçünü alıb əmsala vururuq
+                            if (Math.Abs(currentScaleX - 1.0) > 0.01 || Math.Abs(currentScaleY - 1.0) > 0.01)
+                            {
+                                uint newW = (uint)(image.Width * currentScaleX);
+                                uint newH = (uint)(image.Height * currentScaleY);
+                                // Aspect Ratio qorunmadan dəqiq ölçü verir
+                                image.Resize(new MagickGeometry(newW, newH) { IgnoreAspectRatio = true });
+                            }
+
+                            // B) ROTATION (Döndərmə)
+                            // Magick.NET dönmə zamanı kətanı avtomatik böyüdür
+                            if (Math.Abs(currentRot) > 0.01)
+                            {
+                                image.BackgroundColor = MagickColors.Transparent;
+                                image.Rotate(currentRot);
+                            }
+
+                            // C) YADDAŞA YAZ
                             image.Format = MagickFormat.Png;
                             image.Write(saveDialog.FileName);
                         }
                     });
-                    if (File.Exists(tempSvg)) File.Delete(tempSvg);
+
+                    // Bitdikdən sonra mesaj
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        CustomMessageBox.Show("Image exported successfully!", "Success", MessageBoxButton.OK, MsgImage.Success);
+                    });
                 }
-                catch (Exception ex) { GlobalErrorHandler.LogError(ex, "ExportPng"); }
+                catch (Exception ex)
+                {
+                    GlobalErrorHandler.LogError(ex, "ExportPng");
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        CustomMessageBox.Show($"Export failed: {ex.Message}", "Error", MessageBoxButton.OK, MsgImage.Error);
+                    });
+                }
             }
         }
     }

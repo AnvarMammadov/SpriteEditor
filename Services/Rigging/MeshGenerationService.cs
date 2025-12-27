@@ -15,8 +15,8 @@ namespace SpriteEditor.Services.Rigging
     /// </summary>
     public class MeshGenerationService
     {
-        private const float POISSON_RADIUS = 30f; // Smaller radius for better detail
-        private const int POISSON_ATTEMPTS = 30;
+        private const float POISSON_RADIUS = 15f; // Higher density for better deformation (Unity standard)
+        private const int POISSON_ATTEMPTS = 40; // More attempts for better coverage
         private const float SIMPLIFICATION_EPSILON = 2.0f; // RDP epsilon (pixels)
 
         /// <summary>

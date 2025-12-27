@@ -16,7 +16,7 @@ namespace SpriteEditor.Services.Rigging
         // Auto-weight parameters (will be configurable)
         public float SigmaFactor { get; set; } = 0.20f;
         public float RadialPower { get; set; } = 1.0f;
-        public float LongitudinalPower { get; set; } = 0.5f;
+        public float LongitudinalPower { get; set; } = 0f; // CRITICAL: Was 0.5f, but that zeros weights at bone endpoints!
         public float MinKeepThreshold { get; set; } = 0.02f;
         public int TopK { get; set; } = 4;
         public float ParentBlend { get; set; } = 0.25f;
@@ -25,7 +25,7 @@ namespace SpriteEditor.Services.Rigging
         public float SmoothMu { get; set; } = 0.30f;
 
         // CRITICAL: Region filtering to prevent cross-contamination
-        public bool UseRegionFiltering { get; set; } = true;
+        public bool UseRegionFiltering { get; set; } = false; // TEMP: Disabled for debug
         private Data.RigTemplate _currentTemplate;
 
         /// <summary>
@@ -40,9 +40,17 @@ namespace SpriteEditor.Services.Rigging
         {
             _currentTemplate = template;
             var bones = BuildBoneSegments(joints);
-            if (bones.Count == 0) return;
+            
+            System.Diagnostics.Debug.WriteLine($"=== AUTO WEIGHT: Bones={bones.Count}, Vertices={vertices.Count} ===");
+            
+            if (bones.Count == 0) 
+            {
+                System.Diagnostics.Debug.WriteLine("WARNING: No bones found! Skipping weight calculation.");
+                return;
+            }
 
             // Step 1: Calculate raw weights for each vertex
+            int vertexIndex = 0;
             foreach (var vertex in vertices)
             {
                 var rawWeights = new Dictionary<int, float>();
@@ -74,9 +82,27 @@ namespace SpriteEditor.Services.Rigging
                     longitudinalFalloff = MathF.Pow(longitudinalFalloff, LongitudinalPower);
 
                     float weight = radialFalloff * longitudinalFalloff;
+                    
+                    // DEBUG: Log first vertex, first bone
+                    if (vertexIndex == 0 && rawWeights.Count == 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"  Bone {bone.ChildId}: dist={distance:F1}, boneLen={boneLength:F1}, sigma={sigma:F1}, t={t:F2}");
+                        System.Diagnostics.Debug.WriteLine($"    radial={radialFalloff:F3}, longit={longitudinalFalloff:F3}, weight={weight:F3}");
+                    }
+                    
                     if (weight > 0f)
                     {
                         AddWeight(rawWeights, bone.ChildId, weight);
+                    }
+                }
+
+                // DEBUG: Log first vertex
+                if (vertexIndex == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Vertex 0 raw weights: {rawWeights.Count} bones");
+                    foreach (var w in rawWeights.Take(3))
+                    {
+                        System.Diagnostics.Debug.WriteLine($"  Joint {w.Key}: {w.Value:F3}");
                     }
                 }
 
@@ -110,6 +136,8 @@ namespace SpriteEditor.Services.Rigging
 
                 // Step 3: Prune and normalize
                 PruneAndNormalize(vertex.Weights, TopK, MinKeepThreshold);
+                
+                vertexIndex++;
             }
 
             // Step 4: Smooth weights (optional, requires mesh topology)
@@ -121,6 +149,8 @@ namespace SpriteEditor.Services.Rigging
                     SmoothWeightsOnce(vertices, neighbors, SmoothMu, TopK, MinKeepThreshold);
                 }
             }
+            
+            System.Diagnostics.Debug.WriteLine("=== AUTO WEIGHT COMPLETE ===");
         }
 
         #region Helper Methods
@@ -197,12 +227,19 @@ namespace SpriteEditor.Services.Rigging
                 {
                     bones.Add(new BoneSegment
                     {
-                        ParentPos = joint.Parent.Position,
-                        ChildPos = joint.Position,
+                        ParentPos = joint.Parent.BindPosition, // CRITICAL: Use BindPosition, not Position!
+                        ChildPos = joint.BindPosition,
                         ChildId = joint.Id
                     });
                 }
             }
+            
+            System.Diagnostics.Debug.WriteLine($"Built {bones.Count} bone segments");
+            if (bones.Count > 0)
+            {
+                System.Diagnostics.Debug.WriteLine($"  First bone: Parent=({bones[0].ParentPos.X:F1}, {bones[0].ParentPos.Y:F1}), Child=({bones[0].ChildPos.X:F1}, {bones[0].ChildPos.Y:F1})");
+            }
+            
             return bones;
         }
 

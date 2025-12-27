@@ -281,6 +281,10 @@ namespace SpriteEditor.ViewModels
                 foreach (var triangle in result.Triangles)
                     Triangles.Add(triangle);
 
+                // CRITICAL FIX: Calculate BindRotation for all joints IMMEDIATELY
+                // This must happen BEFORE mesh skinning so vertices reference correct orientations
+                CalculateBindRotations();
+
                 // Update state
                 IsTemplateBound = true;
                 IsOverlayVisible = false;
@@ -304,6 +308,46 @@ namespace SpriteEditor.ViewModels
             catch (Exception ex)
             {
                 CustomMessageBox.Show($"Binding failed:\n{ex.Message}", "Error", MessageBoxButton.OK, MsgImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Calculate BindRotation for all joints based on their initial world positions.
+        /// MUST be called after binding, BEFORE physics starts.
+        /// </summary>
+        private void CalculateBindRotations()
+        {
+            System.Diagnostics.Debug.WriteLine("=== BIND ROTATIONS ===");
+            foreach (var joint in Joints)
+            {
+                if (joint.Parent != null)
+                {
+                    float dx = joint.Position.X - joint.Parent.Position.X;
+                    float dy = joint.Position.Y - joint.Parent.Position.Y;
+                    joint.BindRotation = MathF.Atan2(dy, dx);
+                    joint.Rotation = joint.BindRotation; // Initialize current rotation too
+                    
+                    System.Diagnostics.Debug.WriteLine($"Joint {joint.Name}: BindPos=({joint.BindPosition.X:F1}, {joint.BindPosition.Y:F1}), BindRot={joint.BindRotation * 180f / MathF.PI:F1}°");
+                }
+                else
+                {
+                    joint.BindRotation = 0f;
+                    joint.Rotation = 0f;
+                    System.Diagnostics.Debug.WriteLine($"Joint {joint.Name} (ROOT): BindPos=({joint.BindPosition.X:F1}, {joint.BindPosition.Y:F1})");
+                }
+            }
+            
+            // DEBUG: Log first 3 vertices and their weights
+            System.Diagnostics.Debug.WriteLine("=== VERTEX WEIGHTS (first 3) ===");
+            for (int i = 0; i < Math.Min(3, Vertices.Count); i++)
+            {
+                var v = Vertices[i];
+                System.Diagnostics.Debug.WriteLine($"Vertex {i}: BindPos=({v.BindPosition.X:F1}, {v.BindPosition.Y:F1}), Weights={v.Weights.Count}");
+                foreach (var w in v.Weights)
+                {
+                    var j = Joints.FirstOrDefault(jnt => jnt.Id == w.Key);
+                    System.Diagnostics.Debug.WriteLine($"  → {j?.Name ?? "?"}: {w.Value:F3}");
+                }
             }
         }
 

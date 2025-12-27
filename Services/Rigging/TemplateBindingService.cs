@@ -106,6 +106,7 @@ namespace SpriteEditor.Services.Rigging
 
         /// <summary>
         /// Transform normalized template position to world coordinates.
+        /// Applies overlay transform for consistent positioning.
         /// </summary>
         private SKPoint TransformTemplatePosition(
             SKPoint normalizedPos,
@@ -253,6 +254,7 @@ namespace SpriteEditor.Services.Rigging
 
             return result;
         }
+
         private void GenerateAndWeightMesh(
             BindingResult result, 
             SKBitmap sprite, 
@@ -272,37 +274,44 @@ namespace SpriteEditor.Services.Rigging
                 result.Vertices.AddRange(rawVertices);
                 result.Triangles.AddRange(rawTriangles);
 
-                // 3. Transform Vertices to World Space (Overlay Space)
-                // This ensures the mesh aligns with the skeleton
-                // CRITICAL: Must use sprite bounds for normalization to match TransformTemplatePosition logic
-                var bounds = DetectSpriteBounds(sprite);
+                // 2. Transform Vertices to World Space (same as joints)
+                // CRITICAL: Vertices must be in SAME coordinate system as joints!
+                var spriteBounds = DetectSpriteBounds(sprite);
+                SKPoint spriteCenter = new SKPoint(
+                    spriteBounds.Left + spriteBounds.Width / 2f,
+                    spriteBounds.Top + spriteBounds.Height / 2f
+                );
 
                 foreach (var v in result.Vertices)
                 {
                     // Save original local position as Texture Coordinate
                     v.TextureCoordinate = new SKPoint(v.BindPosition.X, v.BindPosition.Y);
 
-                    // Normalize based on SPRITE BOUNDS (not full image)
-                    // This creates the inverse of the mapping in TransformTemplatePosition
-                    float nx = (v.BindPosition.X - bounds.Left) / bounds.Width;
-                    float ny = (v.BindPosition.Y - bounds.Top) / bounds.Height;
+                    // Apply Overlay Transform to match joint coordinate system
+                    // 1. Center vertices around sprite center
+                    float localX = v.BindPosition.X - spriteCenter.X;
+                    float localY = v.BindPosition.Y - spriteCenter.Y;
 
-                    // Transform to world space using the same logic as joints
-                    var worldPos = TransformTemplatePosition(
-                        new SKPoint(nx, ny),
-                        sprite,
-                        overlayPos,
-                        overlayScale,
-                        overlayRot
-                    );
+                    // 2. Apply Rotation
+                    float cos = MathF.Cos(overlayRot);
+                    float sin = MathF.Sin(overlayRot);
+                    float rotX = localX * cos - localY * sin;
+                    float rotY = localX * sin + localY * cos;
 
-                    // Update Vertex Position
-                    v.BindPosition = worldPos;
-                    v.CurrentPosition = worldPos;
+                    // 3. Apply Scale
+                    rotX *= overlayScale;
+                    rotY *= overlayScale;
+
+                    // 4. Apply Translation
+                    float worldX = overlayPos.X + rotX;
+                    float worldY = overlayPos.Y + rotY;
+
+                    // Update Vertex Position (now in world space, matching joints)
+                    v.BindPosition = new SKPoint(worldX, worldY);
+                    v.CurrentPosition = new SKPoint(worldX, worldY);
                 }
 
-                // 4. Auto-Weight
-                // AutoWeightService expects ObservableCollection, create temporary ones
+                // 3. Auto-Weight
                 var obsVertices = new System.Collections.ObjectModel.ObservableCollection<VertexModel>(result.Vertices);
                 var obsJoints = new System.Collections.ObjectModel.ObservableCollection<JointModel>(result.Joints);
                 var obsTriangles = new System.Collections.ObjectModel.ObservableCollection<TriangleModel>(result.Triangles);
@@ -315,7 +324,6 @@ namespace SpriteEditor.Services.Rigging
             }
         }
     }
-
     /// <summary>
     /// Result of template binding operation.
     /// </summary>

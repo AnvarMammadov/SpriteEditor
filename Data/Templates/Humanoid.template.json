@@ -164,9 +164,9 @@
       "symmetryPair": "RightHip",
       "mass": 1.8,
       "isAnchored": false,
-      "minAngle": -30,
-      "maxAngle": 30,
-      "stiffness": 0.8
+      "minAngle": -45,
+      "maxAngle": 45,
+      "stiffness": 0.9
     },
     {
       "name": "LeftKnee",
@@ -179,9 +179,9 @@
       "symmetryPair": "RightKnee",
       "mass": 1.0,
       "isAnchored": false,
-      "minAngle": -120,
-      "maxAngle": 10,
-      "stiffness": 0.6
+      "minAngle": 0,
+      "maxAngle": 120,
+      "stiffness": 0.7
     },
     {
       "name": "LeftAnkle",
@@ -209,9 +209,9 @@
       "symmetryPair": "LeftHip",
       "mass": 1.8,
       "isAnchored": false,
-      "minAngle": -30,
-      "maxAngle": 30,
-      "stiffness": 0.8
+      "minAngle": -45,
+      "maxAngle": 45,
+      "stiffness": 0.9
     },
     {
       "name": "RightKnee",
@@ -224,9 +224,9 @@
       "symmetryPair": "LeftKnee",
       "mass": 1.0,
       "isAnchored": false,
-      "minAngle": -120,
-      "maxAngle": 10,
-      "stiffness": 0.6
+      "minAngle": 0,
+      "maxAngle": 120,
+      "stiffness": 0.7
     },
     {
       "name": "RightAnkle",

@@ -16,7 +16,7 @@ namespace SpriteEditor.Services.Rigging
     {
         // Physics parameters
         public float Gravity { get; set; } = 800f;   
-        public float Damping { get; set; } = 0.92f;  
+        public float Damping { get; set; } = 0.88f;  // Reduced for faster energy absorption  
         public int SubSteps { get; set; } = 8;       
         public float PoseStiffness { get; set; } = 0.6f; 
         public float GroundY { get; set; } = 600f;   
@@ -44,21 +44,10 @@ namespace SpriteEditor.Services.Rigging
                 _joints[joint.Id] = joint;
                 joint.PreviousPosition = joint.Position; // Reset velocity
 
-                // 1. AUTO-CALCULATE BIND ROTATION (CRITICAL FIX)
-                // Stores the exact angle of the limb in the initial pose (A-Pose).
-                // Relative constraints will use THIS as the "0" reference.
-                if (joint.Parent != null)
-                {
-                    float dx = joint.Position.X - joint.Parent.Position.X;
-                    float dy = joint.Position.Y - joint.Parent.Position.Y;
-                    joint.BindRotation = MathF.Atan2(dy, dx);
-                }
-                else
-                {
-                    joint.BindRotation = 0f;
-                }
+                // NOTE: BindRotation is now calculated in TemplateRiggingViewModel.BindTemplate()
+                // No need to recalculate here - it's already correct!
 
-                // 2. Add Distance Constraint
+                // Add Distance Constraint
                 if (joint.Parent != null && joint.BoneLength > 0)
                 {
                     _constraints.Add(new DistanceConstraint
@@ -134,13 +123,23 @@ namespace SpriteEditor.Services.Rigging
 
         private void ApplyConstraints()
         {
-            for (int i = 0; i < 2; i++) 
+            // CRITICAL: Higher iterations = Less jitter (Industry Standard: 5-10)
+            // Distance constraints need multiple passes to converge
+            for (int i = 0; i < 8; i++) 
             {
                 foreach (var c in _constraints)
                     SolveDistanceConstraint(c);
             }
 
-            SolveAngleConstraints(); 
+            // Angle constraints also need refinement
+            for (int i = 0; i < 3; i++)
+            {
+                SolveAngleConstraints(); 
+            }
+            
+            // CRITICAL: Active Ragdoll - Pull toward bind pose (Standing!)
+            ApplyPoseForces();
+            
             ApplyGroundCollision();
         }
 
@@ -267,6 +266,33 @@ namespace SpriteEditor.Services.Rigging
             }
         }
 
+        /// <summary>
+        /// ACTIVE RAGDOLL: Pulls joints toward their bind pose (standing position)
+        /// This creates the "WOW" effect - character wants to stand!
+        /// </summary>
+        private void ApplyPoseForces()
+        {
+            if (PoseStiffness <= 0) return;
+
+            foreach (var joint in _joints.Values)
+            {
+                if (joint.IsAnchored) continue;
+
+                // Calculate offset from bind position
+                float dx = joint.BindPosition.X - joint.Position.X;
+                float dy = joint.BindPosition.Y - joint.Position.Y;
+
+                // Apply force by manipulating previous position (Verlet style)
+                // Higher PoseStiffness = stronger pull toward bind pose
+                float forceFactor = PoseStiffness * 0.1f; // Scale down for stability
+                
+                joint.PreviousPosition = new SKPoint(
+                    joint.PreviousPosition.X - dx * forceFactor,
+                    joint.PreviousPosition.Y - dy * forceFactor
+                );
+            }
+        }
+
         private float NormalizeAngle(float angle)
         {
             while (angle <= -MathF.PI) angle += 2 * MathF.PI;
@@ -274,18 +300,36 @@ namespace SpriteEditor.Services.Rigging
             return angle;
         }
 
+        /// <summary>
+        /// Professional Ground Collision: SOLID FLOOR with bounce damping
+        /// Character stands naturally on ground, cannot penetrate.
+        /// </summary>
         private void ApplyGroundCollision()
         {
             foreach (var joint in _joints.Values)
             {
                 if (joint.Position.Y > GroundY)
                 {
+                    // HARD CONSTRAINT: Cannot penetrate ground!
                     joint.Position = new SKPoint(joint.Position.X, GroundY);
                     
-                    float friction = 0.8f;
-                    float vx = (joint.Position.X - joint.PreviousPosition.X) * friction;
+                    //Calculate vertical velocity
+                    float vy = joint.Position.Y - joint.PreviousPosition.Y;
                     
-                    joint.PreviousPosition = new SKPoint(joint.Position.X - vx, GroundY);
+                    // Bounce with strong damping (realistic foot-ground contact)
+                    float bounceDamping = 0.1f; // Almost no bounce (realistic)
+                    float newVy = -vy * bounceDamping;
+                    
+                    // Strong horizontal friction for standing stability
+                    float vx = joint.Position.X - joint.PreviousPosition.X;
+                    float friction = 0.4f; // Strong friction (character doesn't slide)
+                    float newVx = vx * friction;
+                    
+                    // Update previous position to create new velocity
+                    joint.PreviousPosition = new SKPoint(
+                        joint.Position.X - newVx,
+                        GroundY - newVy
+                    );
                 }
             }
         }

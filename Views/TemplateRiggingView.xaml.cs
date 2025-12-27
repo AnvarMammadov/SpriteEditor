@@ -35,6 +35,9 @@ namespace SpriteEditor.Views
         private readonly SKPaint _overlayMeshFillPaint = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true };
         private readonly SKPaint _overlayMeshEdgePaint = new SKPaint { StrokeWidth = 1.5f, Style = SKPaintStyle.Stroke, IsAntialias = true };
         private readonly SKPaint _overlayVertexPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill };
+        
+        // Texture Mesh Paint
+        private SKPaint _texturePaint;
 
         // Camera
         private bool _isPanning = false;
@@ -81,17 +84,20 @@ namespace SpriteEditor.Views
                 canvas.Translate(offsetX, offsetY);
                 canvas.Scale(scale, scale);
 
-                // Draw sprite
-                canvas.DrawBitmap(ViewModel.LoadedSprite, 0, 0);
-
-                // Draw mesh if bound
-                if (ViewModel.IsTemplateBound && ViewModel.Triangles.Count > 0)
+                // Draw sprite or deformed mesh
+                if (ViewModel.IsTemplateBound && ViewModel.Vertices.Count > 0)
                 {
+                    // Render DEFORMED MESH (This makes the sprite bend!)
                     RenderMesh(canvas);
                 }
+                else
+                {
+                    // Draw static sprite
+                    canvas.DrawBitmap(ViewModel.LoadedSprite, SKPoint.Empty);
+                }
 
-                // Draw skeleton if bound
-                if (ViewModel.IsTemplateBound && ViewModel.Joints.Count > 0)
+                // Render skeleton (bones + joints)
+                if (ViewModel.Joints.Count > 0)
                 {
                     RenderSkeleton(canvas, scale);
                 }
@@ -135,20 +141,55 @@ namespace SpriteEditor.Views
 
         private void RenderMesh(SKCanvas canvas)
         {
-            // Draw triangles
+            if (ViewModel.LoadedSprite == null) return;
+
+            // Initialize texture paint if needed (or if sprite changed)
+            if (_texturePaint == null || _texturePaint.Shader == null)
+            {
+                _texturePaint = new SKPaint
+                {
+                    IsAntialias = true,
+                    FilterQuality = SKFilterQuality.Medium // Smooth scaling
+                };
+                
+                // Create shader from the sprite
+                // TileMode.Clamp ensures edges don't repeat weirdly
+                _texturePaint.Shader = SKShader.CreateBitmap(
+                    ViewModel.LoadedSprite, 
+                    SKShaderTileMode.Clamp, 
+                    SKShaderTileMode.Clamp);
+            }
+
+            // Prepare SkiaSharp data structures for DrawVertices
+            // PERFORMANCE NOTE: In production, consider caching arrays if vertex count is huge.
+            // For 2D sprites (usually < 500 verts), doing this every frame 60fps is fine on GPU.
+            
+            var positions = ViewModel.Vertices.Select(v => v.CurrentPosition).ToArray();
+            var texCoords = ViewModel.Vertices.Select(v => v.TextureCoordinate).ToArray();
+            
+            // Convert triangle list to indices array
+            var indices = new List<ushort>();
             foreach (var tri in ViewModel.Triangles)
             {
-                using (var path = new SKPath())
-                {
-                    path.MoveTo(tri.V1.CurrentPosition);
-                    path.LineTo(tri.V2.CurrentPosition);
-                    path.LineTo(tri.V3.CurrentPosition);
-                    path.Close();
-
-                    canvas.DrawPath(path, _meshPaint);
-                    canvas.DrawPath(path, _meshEdgePaint);
-                }
+                indices.Add((ushort)tri.V1.Id);
+                indices.Add((ushort)tri.V2.Id);
+                indices.Add((ushort)tri.V3.Id);
             }
+
+            // Draw the textured mesh!
+            // SKVertexMode.Triangles means every 3 indices form a triangle
+            using (var vertices = SKVertices.CreateCopy(
+                SKVertexMode.Triangles, 
+                positions, 
+                texCoords, 
+                null, // No colors (using texture)
+                indices.ToArray()))
+            {
+                canvas.DrawVertices(vertices, SKBlendMode.Modulate, _texturePaint);
+            }
+
+            // Optional: Draw wireframe overlay for debugging if needed (commented out for clean look)
+            // canvas.DrawVertices(vertices, SKBlendMode.SrcOver, _meshEdgePaint);
         }
 
         private void Canvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -359,7 +400,8 @@ namespace SpriteEditor.Views
         }
 
         // Camera controls
-        private void SKCanvasView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        // Camera controls
+        private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (ViewModel == null) return;
 
@@ -381,7 +423,7 @@ namespace SpriteEditor.Views
             {
                 _isPanning = true;
                 _lastPanPos = new SKPoint((float)e.GetPosition(SKCanvasView).X, (float)e.GetPosition(SKCanvasView).Y);
-                CanvasBorder.CaptureMouse();
+                SKCanvasView.CaptureMouse();
             }
         }
 
@@ -390,7 +432,7 @@ namespace SpriteEditor.Views
             if (e.MiddleButton == MouseButtonState.Released)
             {
                 _isPanning = false;
-                CanvasBorder.ReleaseMouseCapture();
+                SKCanvasView.ReleaseMouseCapture();
             }
         }
     }

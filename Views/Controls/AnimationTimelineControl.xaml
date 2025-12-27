@@ -1,0 +1,107 @@
+<UserControl x:Class="SpriteEditor.Views.Controls.AnimationTimelineControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SpriteEditor.Views.Controls"
+             mc:Ignorable="d" 
+             d:DesignHeight="150" d:DesignWidth="800"
+             Background="{StaticResource Brush.Bg.Panel}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Toolbar -->
+            <RowDefinition Height="*"/>    <!-- Timeline Canvas -->
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Background="#111827" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1" Padding="10,5">
+            <StackPanel Orientation="Horizontal">
+                <!-- Playback Controls -->
+                <Button Content="▶" 
+                        Command="{Binding PlayCommand}" 
+                        Width="35" Height="30"
+                        Margin="0,0,5,0"
+                        ToolTip="Play (Space)"
+                        Style="{StaticResource Style.Button.Accent}"/>
+                
+                <Button Content="⏸" 
+                        Command="{Binding PauseCommand}" 
+                        Width="35" Height="30"
+                        Margin="0,0,5,0"
+                        ToolTip="Pause"
+                        Style="{StaticResource Style.Button.Primary}"/>
+                
+                <Button Content="⏹" 
+                        Command="{Binding StopCommand}" 
+                        Width="35" Height="30"
+                        Margin="0,0,15,0"
+                        ToolTip="Stop"
+                        Style="{StaticResource Style.Button.Primary}"/>
+
+                <!-- Current Time Display -->
+                <Border Background="#1F2937" Padding="10,5" CornerRadius="3" Margin="0,0,15,0">
+                    <TextBlock Foreground="{StaticResource Brush.Text.Primary}" FontFamily="Consolas">
+                        <Run Text="{Binding CurrentTime, StringFormat='{}{0:F2}s'}" FontWeight="Bold"/>
+                        <Run Text="/" Foreground="{StaticResource Brush.Text.Secondary}"/>
+                        <Run Text="{Binding CurrentClip.Duration, StringFormat='{}{0:F2}s'}" Foreground="{StaticResource Brush.Text.Secondary}"/>
+                    </TextBlock>
+                </Border>
+
+                <!-- Record Keyframe Button -->
+                <Button Content="➕ Keyframe" 
+                        Command="{Binding RecordKeyframeCommand}" 
+                        Height="30"
+                        Padding="15,0"
+                        Margin="0,0,5,0"
+                        ToolTip="Record keyframe at current time (K)"
+                        Style="{StaticResource Style.Button.Accent}"/>
+
+                <Separator Width="20" Background="Transparent"/>
+
+                <!-- Animation Clip Selector -->
+                <TextBlock Text="Clip:" 
+                           VerticalAlignment="Center" 
+                           Foreground="{StaticResource Brush.Text.Secondary}"
+                           Margin="0,0,5,0"/>
+                
+                <ComboBox ItemsSource="{Binding AnimationClips}"
+                          SelectedItem="{Binding CurrentClip}"
+                          DisplayMemberPath="Name"
+                          Width="150"
+                          Margin="0,0,5,0"/>
+                
+                <Button Content="+" 
+                        Command="{Binding CreateNewClipCommand}"
+                        CommandParameter="New Animation"
+                        Width="30" Height="30"
+                        ToolTip="Create new animation clip"
+                        Style="{StaticResource Style.Button.Primary}"/>
+
+                <!-- Spacer -->
+                <Rectangle Width="1" Fill="{StaticResource Brush.Border}" Margin="10,0"/>
+
+                <!-- Keyframe Count -->
+                <TextBlock VerticalAlignment="Center" Foreground="{StaticResource Brush.Text.Secondary}" Margin="10,0,0,0">
+                    <Run Text="{Binding CurrentClip.Keyframes.Count, FallbackValue=0}"/>
+                    <Run Text="keyframes"/>
+                </TextBlock>
+            </StackPanel>
+        </Border>
+
+        <!-- Timeline Canvas -->
+        <Border Grid.Row="1" Background="#0F1218" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0">
+            <Canvas x:Name="TimelineCanvas"
+                    Background="Transparent"
+                    ClipToBounds="True"
+                    MouseLeftButtonDown="TimelineCanvas_MouseLeftButtonDown"
+                    MouseMove="TimelineCanvas_MouseMove"
+                    MouseLeftButtonUp="TimelineCanvas_MouseLeftButtonUp">
+                
+                <!-- Time Ruler (will be drawn in code-behind) -->
+                <!-- Keyframe Markers (will be drawn in code-behind) -->
+                <!-- Playhead (will be drawn in code-behind) -->
+                
+            </Canvas>
+        </Border>
+    </Grid>
+</UserControl>

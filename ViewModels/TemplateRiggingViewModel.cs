@@ -25,10 +25,18 @@ namespace SpriteEditor.ViewModels
         private readonly TemplateBindingService _bindingService = new TemplateBindingService();
         private readonly PhysicsService _physicsService = new PhysicsService();
         private readonly TemplateOverlayInteractionService _overlayInteractionService = new TemplateOverlayInteractionService();
-        // private readonly AnimationRecorder _animationRecorder = new AnimationRecorder(); // Phase 6
+        private readonly Services.Animation.AnimationRecorderService _animationRecorderService = new Services.Animation.AnimationRecorderService();
+        
+        // PERFORMANCE: Cache joint lookup dictionary to avoid LINQ in hot path
+        private Dictionary<int, JointModel> _jointLookup = new Dictionary<int, JointModel>();
+        
+        // === ANIMATION ===
+        public AnimationViewModel AnimationVM { get; private set; }
 
         // === SPRITE ===
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(BindTemplateCommand))]
+        [NotifyCanExecuteChangedFor(nameof(SelectTemplateCommand))]
         private SKBitmap _loadedSprite;
 
         [ObservableProperty]
@@ -38,12 +46,16 @@ namespace SpriteEditor.ViewModels
 
         // === TEMPLATE ===
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(BindTemplateCommand))]
         private RigTemplate _selectedTemplate;
 
         [ObservableProperty]
         private ObservableCollection<RigTemplate> _availableTemplates = new ObservableCollection<RigTemplate>();
 
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(BindTemplateCommand))]
+        [NotifyCanExecuteChangedFor(nameof(SelectTemplateCommand))]
+        [NotifyCanExecuteChangedFor(nameof(StartPhysicsCommand))]
         private bool _isTemplateBound;
 
         // === OVERLAY (Fitting Phase) ===
@@ -125,6 +137,10 @@ namespace SpriteEditor.ViewModels
             _physicsTimer = new DispatcherTimer();
             _physicsTimer.Interval = TimeSpan.FromMilliseconds(16); // 60 FPS
             _physicsTimer.Tick += PhysicsTimer_Tick;
+            
+            // Setup animation system
+            AnimationVM = new AnimationViewModel(_animationRecorderService, () => Joints);
+            AnimationVM.RequestRedraw += (s, e) => RequestRedraw?.Invoke(this, EventArgs.Empty);
         }
 
         // ========================================
@@ -229,7 +245,10 @@ namespace SpriteEditor.ViewModels
                     result = _bindingService.BindTemplateWithEditedJoints(
                         SelectedTemplate,
                         LoadedSprite,
-                        OverlayJoints.ToList()
+                        OverlayJoints.ToList(),
+                        OverlayPosition,
+                        OverlayScale,
+                        OverlayRotation
                     );
                 }
                 else
@@ -246,8 +265,13 @@ namespace SpriteEditor.ViewModels
 
                 // Apply binding result
                 Joints.Clear();
+                _jointLookup.Clear(); // PERFORMANCE: Clear cache
+                
                 foreach (var joint in result.Joints)
+                {
                     Joints.Add(joint);
+                    _jointLookup[joint.Id] = joint; // PERFORMANCE: Build O(1) lookup
+                }
 
                 Vertices.Clear();
                 foreach (var vertex in result.Vertices)
@@ -300,6 +324,12 @@ namespace SpriteEditor.ViewModels
         private void StartPhysics()
         {
             if (IsPhysicsActive) return;
+            
+            // Exit recording mode when entering physics mode
+            if (AnimationVM.IsRecordingMode)
+            {
+                AnimationVM.IsRecordingMode = false;
+            }
 
             _physicsService.Initialize(Joints);
             _physicsService.Gravity = Gravity;
@@ -327,11 +357,107 @@ namespace SpriteEditor.ViewModels
         private void PhysicsTimer_Tick(object sender, EventArgs e)
         {
             _physicsService.VerletStep(deltaTime: 0.016f);
+            
+            // 1. Update Joint Rotations based on new positions
+            UpdateJointRotations();
+
+            // 2. CRITICAL: Update mesh vertices to follow skeleton (skinning)
+            UpdateMeshVertices();
+            
             RequestRedraw?.Invoke(this, EventArgs.Empty);
         }
 
+        private void UpdateJointRotations()
+        {
+            foreach (var joint in Joints)
+            {
+                if (joint.Parent != null)
+                {
+                    float dx = joint.Position.X - joint.Parent.Position.X;
+                    float dy = joint.Position.Y - joint.Parent.Position.Y;
+                    joint.Rotation = MathF.Atan2(dy, dx);
+                }
+            }
+        }
+
+        /// <summary>
+        /// CRITICAL: Update mesh vertices based on skeleton pose (Skinning/Deformation).
+        /// Each vertex is influenced by multiple joints based on weights.
+        /// </summary>
+        private void UpdateMeshVertices()
+        {
+            if (Vertices.Count == 0 || _jointLookup.Count == 0) return;
+
+            // PERFORMANCE: Avoid LINQ, use cached dictionary for O(1) joint lookup
+            for (int i = 0; i < Vertices.Count; i++)
+            {
+                var vertex = Vertices[i];
+                
+                // Skip vertices with no joint influences
+                if (vertex.Weights.Count == 0)
+                {
+                    vertex.CurrentPosition = vertex.BindPosition;
+                    continue;
+                }
+
+                // Weighted blend position from all influencing joints
+                float totalX = 0f;
+                float totalY = 0f;
+                float totalWeight = 0f;
+
+                foreach (var weightEntry in vertex.Weights)
+                {
+                    int jointId = weightEntry.Key;
+                    float influence = weightEntry.Value;
+
+                    // PERFORMANCE: O(1) lookup instead of LINQ FirstOrDefault
+                    if (_jointLookup.TryGetValue(jointId, out var joint))
+                    {
+                        // Linear Blend Skinning (LBS) with Rotation
+                        // 1. Calculate local offset from joint in BIND pose
+                        // Rotate bind offset by -BindRotation to get local axes aligned offset
+                        float dx = vertex.BindPosition.X - joint.BindPosition.X;
+                        float dy = vertex.BindPosition.Y - joint.BindPosition.Y;
+                        
+                        // Un-rotate by BindRotation
+                        float cosBind = MathF.Cos(-joint.BindRotation);
+                        float sinBind = MathF.Sin(-joint.BindRotation);
+                        float localX = dx * cosBind - dy * sinBind;
+                        float localY = dx * sinBind + dy * cosBind;
+
+                        // 2. Apply CURRENT Rotation
+                        float cosCurr = MathF.Cos(joint.Rotation);
+                        float sinCurr = MathF.Sin(joint.Rotation);
+                        float rotatedX = localX * cosCurr - localY * sinCurr;
+                        float rotatedY = localX * sinCurr + localY * cosCurr;
+
+                        // 3. Add to Current Joint Position
+                        float finalX = joint.Position.X + rotatedX;
+                        float finalY = joint.Position.Y + rotatedY;
+                        
+                        totalX += finalX * influence;
+                        totalY += finalY * influence;
+                        totalWeight += influence;
+                    }
+                }
+
+                // Normalize if total weight != 1.0 (safety)
+                if (totalWeight > 0.001f)
+                {
+                    vertex.CurrentPosition = new SKPoint(
+                        totalX / totalWeight,
+                        totalY / totalWeight
+                    );
+                }
+                else
+                {
+                    vertex.CurrentPosition = vertex.BindPosition;
+                }
+            }
+        }
+
         // ========================================
-        // === HELPER METHODS ===
+        // === HELPER METHODS (Restored) ===
         // ========================================
 
         private void LoadAvailableTemplates()
@@ -361,7 +487,7 @@ namespace SpriteEditor.ViewModels
         }
 
         // ========================================
-        // === MOUSE INTERACTION (Placeholder) ===
+        // === MOUSE INTERACTION ===
         // ========================================
 
         public void OnCanvasLeftClicked(SKPoint worldPos)
@@ -435,8 +561,7 @@ namespace SpriteEditor.ViewModels
                 OverlayRotation = transform.Rotation;
                 
                 // PERFORMANCE: Only update joints if transform actually changed
-                // This reduces unnecessary calculations during small mouse movements
-                // UpdateOverlayJointsTransform();  // REMOVED - too expensive on every mouse move
+                UpdateOverlayJointsTransform();
                 
                 RequestRedraw?.Invoke(this, EventArgs.Empty);
             }
@@ -680,5 +805,35 @@ namespace SpriteEditor.ViewModels
             }
             return _cachedSpriteBounds;
         }
+
+        // ========================================
+        // === ANIMATION COMMANDS ===
+        // ========================================
+
+        [RelayCommand]
+        private void ToggleRecordMode()
+        {
+            AnimationVM.IsRecordingMode = !AnimationVM.IsRecordingMode;
+            
+            if (AnimationVM.IsRecordingMode)
+            {
+                // Stop physics when entering record mode
+                if (IsPhysicsActive)
+                {
+                    StopPhysics();
+                }
+                
+                CustomMessageBox.Show(
+                    "Recording Mode Enabled\n\n" +
+                    "• Use Physics to pose your character\n" +
+                    "• Click 'Record Keyframe' to save the pose\n" +
+                    "• Create multiple keyframes to build your animation",
+                    "Recording Mode",
+                    System.Windows.MessageBoxButton.OK,
+                    MsgImage.Info
+                );
+            }
+        }
+
     }
 }

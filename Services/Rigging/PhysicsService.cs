@@ -7,23 +7,26 @@ using SpriteEditor.ViewModels;
 namespace SpriteEditor.Services.Rigging
 {
     /// <summary>
-    /// Physics engine for ragdoll simulation using Verlet integration.
-    /// Provides realistic gravity, momentum, and constraint-based bone behavior.
+    /// Professional Physics Engine for Rigging.
+    /// Uses Sub-Stepping Verlet Integration for industrial-grade stability.
+    /// Features: Rigid constraints, Active Ragdoll (Pose Matching), Ground Collision.
+    /// Includes Safety Clamps (MaxVelocity, NaN Check) to prevent explosion.
     /// </summary>
     public class PhysicsService
     {
         // Physics parameters
-        public float Gravity { get; set; } = 500f;  // pixels/sec^2 (downward)
-        public float Damping { get; set; } = 0.98f;  // Air resistance (0-1)
-        public int ConstraintIterations { get; set; } = 12;  // IMPROVED: More iterations for stability
-        public float StiffnessMultiplier { get; set; } = 1.0f;  // NEW: Global stiffness control
-
+        public float Gravity { get; set; } = 800f;   
+        public float Damping { get; set; } = 0.92f;  
+        public int SubSteps { get; set; } = 8;       
+        public float PoseStiffness { get; set; } = 0.6f; 
+        public float GroundY { get; set; } = 600f;   
+        public float MaxVelocity { get; set; } = 1500f; 
+        
         private Dictionary<int, JointModel> _joints;
         private List<DistanceConstraint> _constraints;
         private JointModel _draggedJoint;
         private SKPoint _dragTarget;
-        private float _dragStrength = 1.2f;  // IMPROVED: Stronger drag for better control
-        private float _dragRadius = 80f;  // NEW: Radius of influence for drag force
+        private float _dragStrength = 0.2f;
 
         public PhysicsService()
         {
@@ -31,9 +34,6 @@ namespace SpriteEditor.Services.Rigging
             _constraints = new List<DistanceConstraint>();
         }
 
-        /// <summary>
-        /// Initialize physics simulation with current skeleton.
-        /// </summary>
         public void Initialize(IEnumerable<JointModel> joints)
         {
             _joints.Clear();
@@ -42,11 +42,23 @@ namespace SpriteEditor.Services.Rigging
             foreach (var joint in joints)
             {
                 _joints[joint.Id] = joint;
-                
-                // Initialize Verlet integration (PreviousPosition = CurrentPosition)
-                joint.PreviousPosition = joint.Position;
+                joint.PreviousPosition = joint.Position; // Reset velocity
 
-                // Create distance constraint with parent
+                // 1. AUTO-CALCULATE BIND ROTATION (CRITICAL FIX)
+                // Stores the exact angle of the limb in the initial pose (A-Pose).
+                // Relative constraints will use THIS as the "0" reference.
+                if (joint.Parent != null)
+                {
+                    float dx = joint.Position.X - joint.Parent.Position.X;
+                    float dy = joint.Position.Y - joint.Parent.Position.Y;
+                    joint.BindRotation = MathF.Atan2(dy, dx);
+                }
+                else
+                {
+                    joint.BindRotation = 0f;
+                }
+
+                // 2. Add Distance Constraint
                 if (joint.Parent != null && joint.BoneLength > 0)
                 {
                     _constraints.Add(new DistanceConstraint
@@ -59,239 +71,234 @@ namespace SpriteEditor.Services.Rigging
             }
         }
 
-        /// <summary>
-        /// Main physics update loop (call at 60 FPS).
-        /// </summary>
         public void VerletStep(float deltaTime)
         {
             if (_joints.Count == 0) return;
 
-            // Step 1: Apply forces (gravity)
+            float dt = Math.Clamp(deltaTime, 0.001f, 0.03f); 
+            float subStepDt = dt / SubSteps;
+
+            for (int i = 0; i < SubSteps; i++)
+            {
+                ApplyForces(subStepDt);
+                ApplyConstraints(); 
+            }
+        }
+
+        private void ApplyForces(float dt)
+        {
             foreach (var joint in _joints.Values)
             {
                 if (joint.IsAnchored) continue;
 
-                // Calculate velocity (Verlet: velocity = current - previous)
-                SKPoint velocity = new SKPoint(
-                    joint.Position.X - joint.PreviousPosition.X,
-                    joint.Position.Y - joint.PreviousPosition.Y
-                );
+                SKPoint tempPos = joint.Position;
+                
+                float vx = (joint.Position.X - joint.PreviousPosition.X);
+                float vy = (joint.Position.Y - joint.PreviousPosition.Y);
 
-                // Apply damping (air resistance)
-                velocity = new SKPoint(
-                    velocity.X * Damping,
-                    velocity.Y * Damping
-                );
+                // --- SAFETY: CLAMP VELOCITY ---
+                float speedSq = vx*vx + vy*vy;
+                if (speedSq > (MaxVelocity * dt) * (MaxVelocity * dt))
+                {
+                    float speed = MathF.Sqrt(speedSq);
+                    float scale = (MaxVelocity * dt) / speed;
+                    vx *= scale;
+                    vy *= scale;
+                }
 
-                // Apply gravity
-                float gravityForce = Gravity * deltaTime * deltaTime / joint.Mass;
-                velocity = new SKPoint(
-                    velocity.X,
-                    velocity.Y + gravityForce
-                );
+                vx *= Damping;
+                vy *= Damping;
+                vy += Gravity * dt * dt; 
 
-                // Store current position as previous
-                joint.PreviousPosition = joint.Position;
+                float newX = joint.Position.X + vx;
+                float newY = joint.Position.Y + vy;
 
-                // Update position (Verlet integration)
-                joint.Position = new SKPoint(
-                    joint.Position.X + velocity.X,
-                    joint.Position.Y + velocity.Y
-                );
+                // --- SAFETY: NaN CHECK ---
+                if (float.IsNaN(newX) || float.IsInfinity(newX)) newX = joint.PreviousPosition.X;
+                if (float.IsNaN(newY) || float.IsInfinity(newY)) newY = joint.PreviousPosition.Y;
+
+                joint.Position = new SKPoint(newX, newY);
+                joint.PreviousPosition = tempPos;
             }
 
-            // Step 2: Apply mouse drag force (IMPROVED with radius of influence)
             if (_draggedJoint != null)
             {
-                // Direct drag - pull dragged joint toward target
-                SKPoint delta = new SKPoint(
-                    _dragTarget.X - _draggedJoint.Position.X,
-                    _dragTarget.Y - _draggedJoint.Position.Y
-                );
-
-                // Strong pull for dragged joint
+                var deltaX = _dragTarget.X - _draggedJoint.Position.X;
+                var deltaY = _dragTarget.Y - _draggedJoint.Position.Y;
                 _draggedJoint.Position = new SKPoint(
-                    _draggedJoint.Position.X + delta.X * _dragStrength,
-                    _draggedJoint.Position.Y + delta.Y * _dragStrength
+                    _draggedJoint.Position.X + deltaX * _dragStrength,
+                    _draggedJoint.Position.Y + deltaY * _dragStrength
                 );
-
-                // NEW: Apply influence to nearby joints (creates natural body follow)
-                foreach (var joint in _joints.Values)
-                {
-                    if (joint == _draggedJoint || joint.IsAnchored) continue;
-
-                    float distance = Distance(_draggedJoint.Position, joint.Position);
-                    if (distance < _dragRadius)
-                    {
-                        // Proximity-based influence (inverse square falloff)
-                        float influence = 1.0f - (distance / _dragRadius);
-                        influence = influence * influence; // Square for smoother falloff
-                        influence *= 0.3f; // Reduce strength
-
-                        SKPoint deltaToJoint = new SKPoint(
-                            delta.X * influence,
-                            delta.Y * influence
-                        );
-
-                        joint.Position = new SKPoint(
-                            joint.Position.X + deltaToJoint.X,
-                            joint.Position.Y + deltaToJoint.Y
-                        );
-                    }
-                }
             }
+        }
 
-            // Step 3: Solve constraints (distance, angle, anchors)
-            for (int iteration = 0; iteration < ConstraintIterations; iteration++)
+        private void ApplyConstraints()
+        {
+            for (int i = 0; i < 2; i++) 
             {
-                SolveDistanceConstraints();
-                SolveAngleConstraints();
-                SolveAnchorConstraints();
+                foreach (var c in _constraints)
+                    SolveDistanceConstraint(c);
             }
+
+            SolveAngleConstraints(); 
+            ApplyGroundCollision();
         }
 
-        /// <summary>
-        /// Start dragging a joint toward mouse position.
-        /// </summary>
-        public void StartDragging(JointModel joint, SKPoint mousePosition)
+        private void SolveDistanceConstraint(DistanceConstraint c)
         {
-            _draggedJoint = joint;
-            _dragTarget = mousePosition;
-        }
+            if (c.JointA.IsAnchored && c.JointB.IsAnchored) return;
 
-        /// <summary>
-        /// Update drag target position (call on mouse move).
-        /// </summary>
-        public void UpdateDragTarget(SKPoint mousePosition)
-        {
-            _dragTarget = mousePosition;
-        }
+            float dx = c.JointB.Position.X - c.JointA.Position.X;
+            float dy = c.JointB.Position.Y - c.JointA.Position.Y;
+            float currentDist = MathF.Sqrt(dx * dx + dy * dy);
+            
+            if (currentDist < 0.001f || float.IsNaN(currentDist)) return;
 
-        /// <summary>
-        /// Stop dragging (call on mouse release).
-        /// </summary>
-        public void StopDragging()
-        {
-            _draggedJoint = null;
-        }
+            float diff = (currentDist - c.RestLength) / currentDist;
+            if (MathF.Abs(diff) > 0.5f) diff = 0.5f * MathF.Sign(diff);
 
-        /// <summary>
-        /// Maintain bone lengths (distance constraints) with stiffness support.
-        /// </summary>
-        private void SolveDistanceConstraints()
-        {
-            foreach (var constraint in _constraints)
+            float offsetX = dx * diff * 0.5f;
+            float offsetY = dy * diff * 0.5f;
+
+            float totalMass = c.JointA.Mass + c.JointB.Mass;
+            float ratioA = c.JointB.Mass / totalMass;
+            float ratioB = c.JointA.Mass / totalMass;
+
+            if (c.JointA.IsAnchored)
             {
-                var jointA = constraint.JointA;
-                var jointB = constraint.JointB;
-
-                // Skip if either joint is anchored
-                bool aAnchored = jointA.IsAnchored;
-                bool bAnchored = jointB.IsAnchored;
-
-                if (aAnchored && bAnchored) continue;
-
-                // Calculate current distance
-                SKPoint delta = new SKPoint(
-                    jointB.Position.X - jointA.Position.X,
-                    jointB.Position.Y - jointA.Position.Y
-                );
-                float currentLength = MathF.Sqrt(delta.X * delta.X + delta.Y * delta.Y);
-
-                if (currentLength < 1e-6f) continue;
-
-                // IMPROVED: Apply joint stiffness (0.0 = floppy, 1.0 = rigid)
-                float stiffness = jointB.Stiffness * StiffnessMultiplier;
-                stiffness = Math.Clamp(stiffness, 0.0f, 1.0f);
-
-                // Calculate correction with stiffness
-                float diff = (currentLength - constraint.RestLength) / currentLength;
-                diff *= stiffness; // Apply stiffness
-                SKPoint correction = new SKPoint(delta.X * diff * 0.5f, delta.Y * diff * 0.5f);
-
-                // Apply correction (push/pull joints to maintain distance)
-                if (!aAnchored)
-                {
-                    jointA.Position = new SKPoint(
-                        jointA.Position.X + correction.X,
-                        jointA.Position.Y + correction.Y
-                    );
-                }
-
-                if (!bAnchored)
-                {
-                    jointB.Position = new SKPoint(
-                        jointB.Position.X - correction.X,
-                        jointB.Position.Y - correction.Y
-                    );
-                }
+                c.JointB.Position = new SKPoint(c.JointB.Position.X - offsetX * 2.0f, c.JointB.Position.Y - offsetY * 2.0f);
+            }
+            else if (c.JointB.IsAnchored)
+            {
+                c.JointA.Position = new SKPoint(c.JointA.Position.X + offsetX * 2.0f, c.JointA.Position.Y + offsetY * 2.0f);
+            }
+            else
+            {
+                c.JointA.Position = new SKPoint(c.JointA.Position.X + offsetX * 2.0f * ratioA, c.JointA.Position.Y + offsetY * 2.0f * ratioA);
+                c.JointB.Position = new SKPoint(c.JointB.Position.X - offsetX * 2.0f * ratioB, c.JointB.Position.Y - offsetY * 2.0f * ratioB);
             }
         }
 
         /// <summary>
-        /// Enforce angle limits (prevent unrealistic joint bending).
+        /// Solves Angle Constraints relative to BIND POSE (Rest Pose).
+        /// Updated to rely on correct BindRotation calculated in Initialize.
         /// </summary>
         private void SolveAngleConstraints()
         {
             foreach (var joint in _joints.Values)
             {
                 if (joint.Parent == null) continue;
-                if (joint.MinAngle <= -180f && joint.MaxAngle >= 180f) continue;  // No limits
+                if (float.IsNaN(joint.Position.X)) continue;
 
-                // Calculate current angle
-                SKPoint delta = new SKPoint(
-                    joint.Position.X - joint.Parent.Position.X,
-                    joint.Position.Y - joint.Parent.Position.Y
-                );
-                float currentAngle = MathF.Atan2(delta.Y, delta.X) * 180f / MathF.PI;
-
-                // Clamp angle
-                float clampedAngle = Math.Clamp(currentAngle, joint.MinAngle, joint.MaxAngle);
-
-                if (MathF.Abs(clampedAngle - currentAngle) > 0.1f)
+                // 1. Calculate Parent Angle (World Space)
+                float parentAngle = 0f;
+                if (joint.Parent.Parent != null)
                 {
-                    // Reposition joint to satisfy angle constraint
-                    float angleRad = clampedAngle * MathF.PI / 180f;
-                    float length = MathF.Sqrt(delta.X * delta.X + delta.Y * delta.Y);
+                    float pdx = joint.Parent.Position.X - joint.Parent.Parent.Position.X;
+                    float pdy = joint.Parent.Position.Y - joint.Parent.Parent.Position.Y;
+                    parentAngle = MathF.Atan2(pdy, pdx);
+                }
+                
+                // 2. Calculate Current Angle (World Space)
+                float dx = joint.Position.X - joint.Parent.Position.X;
+                float dy = joint.Position.Y - joint.Parent.Position.Y;
+                float currentAngle = MathF.Atan2(dy, dx);
 
-                    joint.Position = new SKPoint(
-                        joint.Parent.Position.X + MathF.Cos(angleRad) * length,
-                        joint.Parent.Position.Y + MathF.Sin(angleRad) * length
-                    );
+                // 3. Current Local Angle (Relative to Parent)
+                float localAngle = currentAngle - parentAngle;
+                localAngle = NormalizeAngle(localAngle);
+
+                // 4. Calculate Rest (Bind) Local Angle
+                // Local Bind Angle = Joint.BindRotation - Parent.BindRotation
+                // Note: We use the stored BindRotations because Physics works in global space but limits are local logic
+                float parentBindRot = (joint.Parent != null) ? joint.Parent.BindRotation : 0f;
+                float jointBindRot = joint.BindRotation;
+                float targetLocalAngle = jointBindRot - parentBindRot;
+                targetLocalAngle = NormalizeAngle(targetLocalAngle);
+                
+                // 5. Calculate Deviation from Bind Pose
+                float deviation = localAngle - targetLocalAngle;
+                deviation = NormalizeAngle(deviation);
+                float deviationDeg = deviation * 180f / MathF.PI;
+
+                // --- ACTIVE RAGDOLL (Pose Matching) ---
+                if (PoseStiffness > 0)
+                {
+                     if (MathF.Abs(deviation) > 0.01f)
+                     {
+                         float correction = deviation * PoseStiffness;
+                         float newAngle = currentAngle - correction;
+                         float len = MathF.Sqrt(dx*dx + dy*dy);
+                         
+                         joint.Position = new SKPoint(
+                            joint.Parent.Position.X + MathF.Cos(newAngle) * len,
+                            joint.Parent.Position.Y + MathF.Sin(newAngle) * len
+                         );
+                         
+                         // Recalculate
+                         dx = joint.Position.X - joint.Parent.Position.X;
+                         dy = joint.Position.Y - joint.Parent.Position.Y;
+                         currentAngle = MathF.Atan2(dy, dx);
+                         localAngle = NormalizeAngle(currentAngle - parentAngle);
+                         deviation = NormalizeAngle(localAngle - targetLocalAngle);
+                         deviationDeg = deviation * 180f / MathF.PI;
+                     }
+                }
+
+                // --- ANGULAR LIMITS (Relative to Bind Pose) ---
+                if (joint.MinAngle > -180 && joint.MaxAngle < 180)
+                {
+                    float clampedDev = Math.Clamp(deviationDeg, joint.MinAngle, joint.MaxAngle);
+                    
+                    if (MathF.Abs(clampedDev - deviationDeg) > 0.1f)
+                    {
+                        // Convert clamped deviation back to World Angle
+                        float targetDevRad = clampedDev * MathF.PI / 180f;
+                        float targetLocal = targetLocalAngle + targetDevRad;
+                        float targetWorld = parentAngle + targetLocal;
+                        
+                        float len = MathF.Sqrt(dx*dx + dy*dy);
+                        joint.Position = new SKPoint(
+                            joint.Parent.Position.X + MathF.Cos(targetWorld) * len,
+                            joint.Parent.Position.Y + MathF.Sin(targetWorld) * len
+                        );
+                    }
                 }
             }
         }
 
-        /// <summary>
-        /// Keep anchored joints in place.
-        /// </summary>
-        private void SolveAnchorConstraints()
+        private float NormalizeAngle(float angle)
+        {
+            while (angle <= -MathF.PI) angle += 2 * MathF.PI;
+            while (angle > MathF.PI) angle -= 2 * MathF.PI;
+            return angle;
+        }
+
+        private void ApplyGroundCollision()
         {
             foreach (var joint in _joints.Values)
             {
-                if (joint.IsAnchored)
+                if (joint.Position.Y > GroundY)
                 {
-                    // Reset to bind position (anchored joints don't move)
-                    // Note: We need to store bind positions separately or in joint
-                    // For now, just prevent velocity accumulation
-                    joint.PreviousPosition = joint.Position;
+                    joint.Position = new SKPoint(joint.Position.X, GroundY);
+                    
+                    float friction = 0.8f;
+                    float vx = (joint.Position.X - joint.PreviousPosition.X) * friction;
+                    
+                    joint.PreviousPosition = new SKPoint(joint.Position.X - vx, GroundY);
                 }
             }
         }
 
-        /// <summary>
-        /// Helper: Calculate distance between two points.
-        /// </summary>
-        private float Distance(SKPoint a, SKPoint b)
+        public void StartDragging(JointModel joint, SKPoint mousePosition)
         {
-            float dx = a.X - b.X;
-            float dy = a.Y - b.Y;
-            return MathF.Sqrt(dx * dx + dy * dy);
+            _draggedJoint = joint;
+            _dragTarget = mousePosition;
         }
 
-        /// <summary>
-        /// Distance constraint between two joints.
-        /// </summary>
+        public void UpdateDragTarget(SKPoint mousePosition) => _dragTarget = mousePosition;
+        public void StopDragging() => _draggedJoint = null;
+
         private class DistanceConstraint
         {
             public JointModel JointA { get; set; }

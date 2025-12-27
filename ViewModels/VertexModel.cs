@@ -22,6 +22,12 @@ namespace SpriteEditor.ViewModels
         public SKPoint BindPosition { get; set; }
 
         /// <summary>
+        /// Texture Coordinate (UV) - Şəklin hansı hissəsinin bu verteksə aid olduğunu bildirir.
+        /// (Pixel koordinatları ilə)
+        /// </summary>
+        public SKPoint TextureCoordinate { get; set; }
+
+        /// <summary>
         /// Nöqtənin skelet deformasiyasından sonrakı cari mövqeyi
         /// </summary>
         [ObservableProperty]

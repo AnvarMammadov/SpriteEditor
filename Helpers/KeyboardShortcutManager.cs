@@ -44,18 +44,62 @@ namespace SpriteEditor.Helpers
                 var modifiers = Keyboard.Modifiers;
                 var key = e.Key == Key.System ? e.SystemKey : e.Key;
 
-                var gesture = new KeyGesture(key, modifiers);
-
-                if (_shortcuts.TryGetValue(gesture, out var action))
+                // Filter out invalid keys that are actually modifiers
+                if (IsModifierKey(key))
                 {
-                    action?.Invoke();
-                    e.Handled = true;
+                    return; // Don't process modifier keys as regular keys
+                }
+
+                // Don't create gestures for keys without modifiers (except function keys, etc.)
+                if (modifiers == ModifierKeys.None && !IsStandaloneKey(key))
+                {
+                    return;
+                }
+
+                try
+                {
+                    var gesture = new KeyGesture(key, modifiers);
+
+                    if (_shortcuts.TryGetValue(gesture, out var action))
+                    {
+                        action?.Invoke();
+                        e.Handled = true;
+                    }
+                }
+                catch (NotSupportedException)
+                {
+                    // Ignore invalid gestures (e.g., specific keys without modifiers that KeyGesture doesn't support)
                 }
             }
             catch (Exception ex)
             {
                 GlobalErrorHandler.LogError(ex, "KeyboardShortcut");
             }
+        }
+
+        /// <summary>
+        /// Checks if a key is a modifier key (Ctrl, Alt, Shift, Win)
+        /// </summary>
+        private static bool IsModifierKey(Key key)
+        {
+            return key == Key.LeftCtrl || key == Key.RightCtrl ||
+                   key == Key.LeftAlt || key == Key.RightAlt ||
+                   key == Key.LeftShift || key == Key.RightShift ||
+                   key == Key.LWin || key == Key.RWin;
+        }
+
+        /// <summary>
+        /// Checks if a key can be used standalone without modifiers
+        /// </summary>
+        private static bool IsStandaloneKey(Key key)
+        {
+            // Function keys, Escape, Delete, etc. can be standalone
+            return (key >= Key.F1 && key <= Key.F24) ||
+                   key == Key.Escape ||
+                   key == Key.Delete ||
+                   key == Key.Tab ||
+                   key == Key.Enter ||
+                   key == Key.Space;
         }
 
         public static Dictionary<string, string> GetAllShortcuts()

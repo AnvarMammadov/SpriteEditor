@@ -246,17 +246,17 @@ namespace SpriteEditor.ViewModels
                 // Step 3: Apply template (creates joints)
                 _templateService.ApplyTemplate(template, LoadedBitmap, Joints, ref _jointIdCounter);
 
-                // Step 4: Generate mesh vertices
-                var generatedVertices = _meshGenerationService.GenerateVerticesFromImage(LoadedBitmap, _vertexIdCounter);
+                // Step 4: Generate Mesh (Vertices + Triangles)
+                var (generatedVertices, generatedTriangles) = _meshGenerationService.GenerateMesh(LoadedBitmap, _vertexIdCounter);
+                
                 foreach (var vertex in generatedVertices)
                 {
                     Vertices.Add(vertex);
                 }
                 _vertexIdCounter += generatedVertices.Count;
 
-                // Step 5: Triangulate
-                var triangles = _meshGenerationService.TriangulateVertices(generatedVertices);
-                foreach (var triangle in triangles)
+                // Step 5: Add Triangles
+                foreach (var triangle in generatedTriangles)
                 {
                     Triangles.Add(triangle);
                 }

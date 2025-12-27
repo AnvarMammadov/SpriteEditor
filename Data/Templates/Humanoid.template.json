@@ -1,7 +1,7 @@
 {
   "name": "Humanoid",
   "category": "Character",
-  "description": "Standard bipedal character (human, elf, robot, etc.) - A-pose",
+  "description": "Standard bipedal character - Adaptive Physics limits relative to Bind Pose",
   "joints": [
     {
       "name": "Root",
@@ -11,7 +11,12 @@
       },
       "parentName": null,
       "regionName": "Torso",
-      "symmetryPair": null
+      "symmetryPair": null,
+      "mass": 3.0,
+      "isAnchored": false,
+      "minAngle": -180,
+      "maxAngle": 180,
+      "stiffness": 0.95
     },
     {
       "name": "Spine",
@@ -21,7 +26,12 @@
       },
       "parentName": "Root",
       "regionName": "Torso",
-      "symmetryPair": null
+      "symmetryPair": null,
+      "mass": 3.0,
+      "isAnchored": false,
+      "minAngle": -20,
+      "maxAngle": 20,
+      "stiffness": 0.9
     },
     {
       "name": "Neck",
@@ -31,7 +41,12 @@
       },
       "parentName": "Spine",
       "regionName": "Head",
-      "symmetryPair": null
+      "symmetryPair": null,
+      "mass": 0.8,
+      "isAnchored": false,
+      "minAngle": -30,
+      "maxAngle": 30,
+      "stiffness": 0.8
     },
     {
       "name": "Head",
@@ -41,7 +56,12 @@
       },
       "parentName": "Neck",
       "regionName": "Head",
-      "symmetryPair": null
+      "symmetryPair": null,
+      "mass": 1.5,
+      "isAnchored": false,
+      "minAngle": -45,
+      "maxAngle": 45,
+      "stiffness": 0.7
     },
     {
       "name": "LeftShoulder",
@@ -51,7 +71,12 @@
       },
       "parentName": "Spine",
       "regionName": "LeftArm",
-      "symmetryPair": "RightShoulder"
+      "symmetryPair": "RightShoulder",
+      "mass": 1.2,
+      "isAnchored": false,
+      "minAngle": -130,
+      "maxAngle": 130,
+      "stiffness": 0.7
     },
     {
       "name": "LeftElbow",
@@ -61,7 +86,12 @@
       },
       "parentName": "LeftShoulder",
       "regionName": "LeftArm",
-      "symmetryPair": "RightElbow"
+      "symmetryPair": "RightElbow",
+      "mass": 0.8,
+      "isAnchored": false,
+      "minAngle": -10,
+      "maxAngle": 130,
+      "stiffness": 0.5
     },
     {
       "name": "LeftHand",
@@ -71,7 +101,12 @@
       },
       "parentName": "LeftElbow",
       "regionName": "LeftArm",
-      "symmetryPair": "RightHand"
+      "symmetryPair": "RightHand",
+      "mass": 0.4,
+      "isAnchored": false,
+      "minAngle": -60,
+      "maxAngle": 60,
+      "stiffness": 0.3
     },
     {
       "name": "RightShoulder",
@@ -81,7 +116,12 @@
       },
       "parentName": "Spine",
       "regionName": "RightArm",
-      "symmetryPair": "LeftShoulder"
+      "symmetryPair": "LeftShoulder",
+      "mass": 1.2,
+      "isAnchored": false,
+      "minAngle": -130,
+      "maxAngle": 130,
+      "stiffness": 0.7
     },
     {
       "name": "RightElbow",
@@ -91,7 +131,12 @@
       },
       "parentName": "RightShoulder",
       "regionName": "RightArm",
-      "symmetryPair": "LeftElbow"
+      "symmetryPair": "LeftElbow",
+      "mass": 0.8,
+      "isAnchored": false,
+      "minAngle": -10,
+      "maxAngle": 130,
+      "stiffness": 0.5
     },
     {
       "name": "RightHand",
@@ -101,7 +146,12 @@
       },
       "parentName": "RightElbow",
       "regionName": "RightArm",
-      "symmetryPair": "LeftHand"
+      "symmetryPair": "LeftHand",
+      "mass": 0.4,
+      "isAnchored": false,
+      "minAngle": -60,
+      "maxAngle": 60,
+      "stiffness": 0.3
     },
     {
       "name": "LeftHip",
@@ -111,7 +161,12 @@
       },
       "parentName": "Root",
       "regionName": "LeftLeg",
-      "symmetryPair": "RightHip"
+      "symmetryPair": "RightHip",
+      "mass": 1.8,
+      "isAnchored": false,
+      "minAngle": -30,
+      "maxAngle": 30,
+      "stiffness": 0.8
     },
     {
       "name": "LeftKnee",
@@ -121,7 +176,12 @@
       },
       "parentName": "LeftHip",
       "regionName": "LeftLeg",
-      "symmetryPair": "RightKnee"
+      "symmetryPair": "RightKnee",
+      "mass": 1.0,
+      "isAnchored": false,
+      "minAngle": -120,
+      "maxAngle": 10,
+      "stiffness": 0.6
     },
     {
       "name": "LeftAnkle",
@@ -131,7 +191,12 @@
       },
       "parentName": "LeftKnee",
       "regionName": "LeftLeg",
-      "symmetryPair": "RightAnkle"
+      "symmetryPair": "RightAnkle",
+      "mass": 0.6,
+      "isAnchored": false,
+      "minAngle": -30,
+      "maxAngle": 30,
+      "stiffness": 0.4
     },
     {
       "name": "RightHip",
@@ -141,7 +206,12 @@
       },
       "parentName": "Root",
       "regionName": "RightLeg",
-      "symmetryPair": "LeftHip"
+      "symmetryPair": "LeftHip",
+      "mass": 1.8,
+      "isAnchored": false,
+      "minAngle": -30,
+      "maxAngle": 30,
+      "stiffness": 0.8
     },
     {
       "name": "RightKnee",
@@ -151,7 +221,12 @@
       },
       "parentName": "RightHip",
       "regionName": "RightLeg",
-      "symmetryPair": "LeftKnee"
+      "symmetryPair": "LeftKnee",
+      "mass": 1.0,
+      "isAnchored": false,
+      "minAngle": -120,
+      "maxAngle": 10,
+      "stiffness": 0.6
     },
     {
       "name": "RightAnkle",
@@ -161,7 +236,12 @@
       },
       "parentName": "RightKnee",
       "regionName": "RightLeg",
-      "symmetryPair": "LeftAnkle"
+      "symmetryPair": "LeftAnkle",
+      "mass": 0.6,
+      "isAnchored": false,
+      "minAngle": -30,
+      "maxAngle": 30,
+      "stiffness": 0.4
     }
   ],
   "regions": [

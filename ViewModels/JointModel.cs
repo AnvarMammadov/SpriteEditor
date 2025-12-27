@@ -38,6 +38,18 @@ namespace SpriteEditor.ViewModels
         private string _name;
         // ===========================
 
+        /// <summary>
+        /// Oynaq yaradılanda (bind olunan anda) olan mövqeyi.
+        /// Skinning hesablamaları üçün lazımdır.
+        /// </summary>
+        public SKPoint BindPosition { get; set; }
+
+        /// <summary>
+        /// Oynaq yaradılanda (bind olunan anda) olan fırlanma bucağı.
+        /// Skinning hesablamaları üçün lazımdır.
+        /// </summary>
+        public float BindRotation { get; set; }
+
         // === PHYSICS PROPERTIES (for ragdoll simulation) ===
         public SKPoint PreviousPosition { get; set; }  // For Verlet integration
         public float Mass { get; set; } = 1.0f;

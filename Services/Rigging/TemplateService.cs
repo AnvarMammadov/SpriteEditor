@@ -135,6 +135,20 @@ namespace SpriteEditor.Services.Rigging
                     float dx = joint.Position.X - parent.Position.X;
                     float dy = joint.Position.Y - parent.Position.Y;
                     joint.BoneLength = MathF.Sqrt(dx * dx + dy * dy);
+                    
+                    // Calculate and set initial rotation
+                    joint.Rotation = MathF.Atan2(dy, dx);
+                    joint.BindRotation = joint.Rotation;
+                }
+                
+                
+                // Set BindPosition for all joints
+                joint.BindPosition = joint.Position;
+
+                // Anchor the ROOT (Head/Hips) by default so it doesn't fall
+                if (joint.Parent == null)
+                {
+                    joint.IsAnchored = true;
                 }
             }
         }

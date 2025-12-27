@@ -4,16 +4,25 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:SpriteEditor.Views"
+             xmlns:controls="clr-namespace:SpriteEditor.Views.Controls"
              xmlns:skia="clr-namespace:SkiaSharp.Views.WPF;assembly=SkiaSharp.Views.WPF"
              xmlns:vm="clr-namespace:SpriteEditor.ViewModels" 
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1000">
 
+
     <Grid Background="{StaticResource Brush.Bg.Deep}">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>    <!-- Main content -->
+            <RowDefinition Height="Auto"/> <!-- Timeline (collapsible) -->
+        </Grid.RowDefinitions>
+
+        <!-- Main Content Grid -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="280"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
         <!-- LEFT PANEL -->
         <Border Grid.Column="0" Background="{StaticResource Brush.Bg.Panel}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,1,0" Padding="20">
@@ -124,20 +133,16 @@
 
             <Rectangle Fill="#0F1218" Opacity="0.9" IsHitTestVisible="False"/>
 
-            <!-- CANVAS FOR RENDERING -->
-            <Border x:Name="CanvasBorder" 
-                    Background="Transparent" 
-                    MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
-                    MouseMove="Canvas_MouseMove"
-                    MouseLeftButtonUp="Canvas_MouseLeftButtonUp"
-                    MouseDown="Canvas_MouseDown"
-                    MouseUp="Canvas_MouseUp"
-                    PreviewMouseWheel="SKCanvasView_PreviewMouseWheel"
-                    Focusable="True">
-                <skia:SKElement x:Name="SKCanvasView" 
-                                IgnorePixelScaling="True" 
-                                PaintSurface="SKCanvasView_PaintSurface"/>
-            </Border>
+            <!-- CANVAS (SkiaSharp with GPU Acceleration) -->
+            <skia:SKElement x:Name="SKCanvasView" 
+                            IgnorePixelScaling="False"
+                            PaintSurface="SKCanvasView_PaintSurface"
+                            MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
+                            MouseMove="Canvas_MouseMove"
+                            MouseLeftButtonUp="Canvas_MouseLeftButtonUp"
+                            MouseDown="Canvas_MouseDown"
+                            MouseUp="Canvas_MouseUp"
+                            MouseWheel="Canvas_MouseWheel"/>
 
             <!-- INFO OVERLAY -->
             <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="15" Background="#CC111827" CornerRadius="4" Padding="10,5" IsHitTestVisible="False">
@@ -166,5 +171,71 @@
                 </StackPanel>
             </Border>
         </Grid>
+        </Grid> <!-- End Main Content Grid -->
+
+        <!-- ANIMATION TIMELINE (Bottom Panel) -->
+        <Border Grid.Row="1" 
+                Height="180"
+                BorderBrush="{StaticResource Brush.Border}"
+                BorderThickness="0,1,0,0">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsTemplateBound}" Value="True">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Animation Toolbar -->
+                <Border Grid.Row="0" Background="#111827" Padding="10,5">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🎬 ANIMATION" 
+                                   Foreground="{StaticResource Brush.Accent.Primary}" 
+                                   FontWeight="Bold" 
+                                   FontSize="13"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,20,0"/>
+
+                        <Button Content="⏺ Record Mode" 
+                                Command="{Binding ToggleRecordModeCommand}"
+                                Height="28"
+                                Padding="12,0"
+                                Margin="0,0,10,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource Style.Button.Accent}">
+                                    <Setter Property="Background" Value="#374151"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AnimationVM.IsRecordingMode}" Value="True">
+                                            <Setter Property="Background" Value="#DC2626"/>
+                                            <Setter Property="Content" Value="⏺ Recording..."/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <TextBlock Text="Enabled animations use Physics for posing, then record keyframes for smooth playback." 
+                                   Foreground="{StaticResource Brush.Text.Secondary}" 
+                                   FontSize="10"
+                                   VerticalAlignment="Center"
+                                   Opacity="0.7"
+                                   Margin="0,0,10,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Timeline Control -->
+                <controls:AnimationTimelineControl Grid.Row="1" DataContext="{Binding AnimationVM}"/>
+            </Grid>
+        </Border>
+
     </Grid>
 </UserControl>

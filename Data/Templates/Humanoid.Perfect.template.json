@@ -1,0 +1,752 @@
+{
+    "name": "Humanoid (Perfect)",
+    "category": "Character",
+    "description": "Production-ready humanoid template with embedded mesh and pre-configured weights. Zero configuration needed.",
+    "joints": [
+        {
+            "name": "Root",
+            "normalizedPosition": {
+                "x": 0.5,
+                "y": 0.76
+            },
+            "parentName": null,
+            "regionName": "Torso",
+            "symmetryPair": null,
+            "mass": 3.0,
+            "isAnchored": true,
+            "minAngle": -180,
+            "maxAngle": 180,
+            "stiffness": 0.9,
+            "ikChainName": null
+        },
+        {
+            "name": "Spine",
+            "normalizedPosition": {
+                "x": 0.5,
+                "y": 0.60
+            },
+            "parentName": "Root",
+            "regionName": "Torso",
+            "symmetryPair": null,
+            "mass": 2.5,
+            "isAnchored": false,
+            "minAngle": -30,
+            "maxAngle": 30,
+            "stiffness": 0.8,
+            "ikChainName": null
+        },
+        {
+            "name": "Chest",
+            "normalizedPosition": {
+                "x": 0.5,
+                "y": 0.40
+            },
+            "parentName": "Spine",
+            "regionName": "Torso",
+            "symmetryPair": null,
+            "mass": 2.0,
+            "isAnchored": false,
+            "minAngle": -20,
+            "maxAngle": 20,
+            "stiffness": 0.7,
+            "ikChainName": null
+        },
+        {
+            "name": "Neck",
+            "normalizedPosition": {
+                "x": 0.5,
+                "y": 0.25
+            },
+            "parentName": "Chest",
+            "regionName": "Head",
+            "symmetryPair": null,
+            "mass": 0.8,
+            "isAnchored": false,
+            "minAngle": -45,
+            "maxAngle": 45,
+            "stiffness": 0.6,
+            "ikChainName": null
+        },
+        {
+            "name": "Head",
+            "normalizedPosition": {
+                "x": 0.5,
+                "y": 0.10
+            },
+            "parentName": "Neck",
+            "regionName": "Head",
+            "symmetryPair": null,
+            "mass": 2.0,
+            "isAnchored": false,
+            "minAngle": -60,
+            "maxAngle": 60,
+            "stiffness": 0.5,
+            "ikChainName": null
+        },
+        {
+            "name": "LeftShoulder",
+            "normalizedPosition": {
+                "x": 0.35,
+                "y": 0.35
+            },
+            "parentName": "Chest",
+            "regionName": "LeftArm",
+            "symmetryPair": "RightShoulder",
+            "mass": 1.0,
+            "isAnchored": false,
+            "minAngle": -180,
+            "maxAngle": 180,
+            "stiffness": 0.4,
+            "ikChainName": "LeftArm"
+        },
+        {
+            "name": "LeftElbow",
+            "normalizedPosition": {
+                "x": 0.22,
+                "y": 0.55
+            },
+            "parentName": "LeftShoulder",
+            "regionName": "LeftArm",
+            "symmetryPair": "RightElbow",
+            "mass": 0.7,
+            "isAnchored": false,
+            "minAngle": 0,
+            "maxAngle": 160,
+            "stiffness": 0.3,
+            "ikChainName": "LeftArm"
+        },
+        {
+            "name": "LeftHand",
+            "normalizedPosition": {
+                "x": 0.12,
+                "y": 0.72
+            },
+            "parentName": "LeftElbow",
+            "regionName": "LeftArm",
+            "symmetryPair": "RightHand",
+            "mass": 0.5,
+            "isAnchored": false,
+            "minAngle": -90,
+            "maxAngle": 90,
+            "stiffness": 0.2,
+            "ikChainName": "LeftArm"
+        },
+        {
+            "name": "RightShoulder",
+            "normalizedPosition": {
+                "x": 0.65,
+                "y": 0.35
+            },
+            "parentName": "Chest",
+            "regionName": "RightArm",
+            "symmetryPair": "LeftShoulder",
+            "mass": 1.0,
+            "isAnchored": false,
+            "minAngle": -180,
+            "maxAngle": 180,
+            "stiffness": 0.4,
+            "ikChainName": "RightArm"
+        },
+        {
+            "name": "RightElbow",
+            "normalizedPosition": {
+                "x": 0.78,
+                "y": 0.55
+            },
+            "parentName": "RightShoulder",
+            "regionName": "RightArm",
+            "symmetryPair": "LeftElbow",
+            "mass": 0.7,
+            "isAnchored": false,
+            "minAngle": 0,
+            "maxAngle": 160,
+            "stiffness": 0.3,
+            "ikChainName": "RightArm"
+        },
+        {
+            "name": "RightHand",
+            "normalizedPosition": {
+                "x": 0.88,
+                "y": 0.72
+            },
+            "parentName": "RightElbow",
+            "regionName": "RightArm",
+            "symmetryPair": "LeftHand",
+            "mass": 0.5,
+            "isAnchored": false,
+            "minAngle": -90,
+            "maxAngle": 90,
+            "stiffness": 0.2,
+            "ikChainName": "RightArm"
+        },
+        {
+            "name": "LeftHip",
+            "normalizedPosition": {
+                "x": 0.42,
+                "y": 0.77
+            },
+            "parentName": "Root",
+            "regionName": "LeftLeg",
+            "symmetryPair": "RightHip",
+            "mass": 1.5,
+            "isAnchored": false,
+            "minAngle": -120,
+            "maxAngle": 60,
+            "stiffness": 0.6,
+            "ikChainName": "LeftLeg"
+        },
+        {
+            "name": "LeftKnee",
+            "normalizedPosition": {
+                "x": 0.41,
+                "y": 0.88
+            },
+            "parentName": "LeftHip",
+            "regionName": "LeftLeg",
+            "symmetryPair": "RightKnee",
+            "mass": 1.2,
+            "isAnchored": false,
+            "minAngle": 0,
+            "maxAngle": 160,
+            "stiffness": 0.4,
+            "ikChainName": "LeftLeg"
+        },
+        {
+            "name": "LeftFoot",
+            "normalizedPosition": {
+                "x": 0.40,
+                "y": 0.98
+            },
+            "parentName": "LeftKnee",
+            "regionName": "LeftLeg",
+            "symmetryPair": "RightFoot",
+            "mass": 0.8,
+            "isAnchored": true,
+            "minAngle": -45,
+            "maxAngle": 45,
+            "stiffness": 0.5,
+            "ikChainName": "LeftLeg"
+        },
+        {
+            "name": "RightHip",
+            "normalizedPosition": {
+                "x": 0.58,
+                "y": 0.77
+            },
+            "parentName": "Root",
+            "regionName": "RightLeg",
+            "symmetryPair": "LeftHip",
+            "mass": 1.5,
+            "isAnchored": false,
+            "minAngle": -120,
+            "maxAngle": 60,
+            "stiffness": 0.6,
+            "ikChainName": "RightLeg"
+        },
+        {
+            "name": "RightKnee",
+            "normalizedPosition": {
+                "x": 0.59,
+                "y": 0.88
+            },
+            "parentName": "RightHip",
+            "regionName": "RightLeg",
+            "symmetryPair": "LeftKnee",
+            "mass": 1.2,
+            "isAnchored": false,
+            "minAngle": 0,
+            "maxAngle": 160,
+            "stiffness": 0.4,
+            "ikChainName": "RightLeg"
+        },
+        {
+            "name": "RightFoot",
+            "normalizedPosition": {
+                "x": 0.60,
+                "y": 0.98
+            },
+            "parentName": "RightKnee",
+            "regionName": "RightLeg",
+            "symmetryPair": "LeftFoot",
+            "mass": 0.8,
+            "isAnchored": true,
+            "minAngle": -45,
+            "maxAngle": 45,
+            "stiffness": 0.5,
+            "ikChainName": "RightLeg"
+        }
+    ],
+    "regions": [
+        {
+            "name": "Torso",
+            "allowedJoints": [
+                "Root",
+                "Spine",
+                "Chest"
+            ]
+        },
+        {
+            "name": "Head",
+            "allowedJoints": [
+                "Neck",
+                "Head",
+                "Chest"
+            ]
+        },
+        {
+            "name": "LeftArm",
+            "allowedJoints": [
+                "LeftShoulder",
+                "LeftElbow",
+                "LeftHand",
+                "Chest"
+            ]
+        },
+        {
+            "name": "RightArm",
+            "allowedJoints": [
+                "RightShoulder",
+                "RightElbow",
+                "RightHand",
+                "Chest"
+            ]
+        },
+        {
+            "name": "LeftLeg",
+            "allowedJoints": [
+                "LeftHip",
+                "LeftKnee",
+                "LeftFoot",
+                "Root"
+            ]
+        },
+        {
+            "name": "RightLeg",
+            "allowedJoints": [
+                "RightHip",
+                "RightKnee",
+                "RightFoot",
+                "Root"
+            ]
+        }
+    ],
+    "mesh": {
+        "vertices": [
+            {
+                "id": 0,
+                "normalizedPosition": {
+                    "x": 0.50,
+                    "y": 0.10
+                },
+                "weights": {
+                    "Head": 1.0
+                }
+            },
+            {
+                "id": 1,
+                "normalizedPosition": {
+                    "x": 0.45,
+                    "y": 0.15
+                },
+                "weights": {
+                    "Head": 0.8,
+                    "Neck": 0.2
+                }
+            },
+            {
+                "id": 2,
+                "normalizedPosition": {
+                    "x": 0.55,
+                    "y": 0.15
+                },
+                "weights": {
+                    "Head": 0.8,
+                    "Neck": 0.2
+                }
+            },
+            {
+                "id": 3,
+                "normalizedPosition": {
+                    "x": 0.50,
+                    "y": 0.25
+                },
+                "weights": {
+                    "Neck": 1.0
+                }
+            },
+            {
+                "id": 4,
+                "normalizedPosition": {
+                    "x": 0.45,
+                    "y": 0.30
+                },
+                "weights": {
+                    "Neck": 0.5,
+                    "Chest": 0.5
+                }
+            },
+            {
+                "id": 5,
+                "normalizedPosition": {
+                    "x": 0.55,
+                    "y": 0.30
+                },
+                "weights": {
+                    "Neck": 0.5,
+                    "Chest": 0.5
+                }
+            },
+            {
+                "id": 6,
+                "normalizedPosition": {
+                    "x": 0.50,
+                    "y": 0.40
+                },
+                "weights": {
+                    "Chest": 1.0
+                }
+            },
+            {
+                "id": 7,
+                "normalizedPosition": {
+                    "x": 0.35,
+                    "y": 0.35
+                },
+                "weights": {
+                    "LeftShoulder": 0.7,
+                    "Chest": 0.3
+                }
+            },
+            {
+                "id": 8,
+                "normalizedPosition": {
+                    "x": 0.65,
+                    "y": 0.35
+                },
+                "weights": {
+                    "RightShoulder": 0.7,
+                    "Chest": 0.3
+                }
+            },
+            {
+                "id": 9,
+                "normalizedPosition": {
+                    "x": 0.28,
+                    "y": 0.45
+                },
+                "weights": {
+                    "LeftShoulder": 0.6,
+                    "LeftElbow": 0.4
+                }
+            },
+            {
+                "id": 10,
+                "normalizedPosition": {
+                    "x": 0.72,
+                    "y": 0.45
+                },
+                "weights": {
+                    "RightShoulder": 0.6,
+                    "RightElbow": 0.4
+                }
+            },
+            {
+                "id": 11,
+                "normalizedPosition": {
+                    "x": 0.22,
+                    "y": 0.55
+                },
+                "weights": {
+                    "LeftElbow": 1.0
+                }
+            },
+            {
+                "id": 12,
+                "normalizedPosition": {
+                    "x": 0.78,
+                    "y": 0.55
+                },
+                "weights": {
+                    "RightElbow": 1.0
+                }
+            },
+            {
+                "id": 13,
+                "normalizedPosition": {
+                    "x": 0.17,
+                    "y": 0.63
+                },
+                "weights": {
+                    "LeftElbow": 0.5,
+                    "LeftHand": 0.5
+                }
+            },
+            {
+                "id": 14,
+                "normalizedPosition": {
+                    "x": 0.83,
+                    "y": 0.63
+                },
+                "weights": {
+                    "RightElbow": 0.5,
+                    "RightHand": 0.5
+                }
+            },
+            {
+                "id": 15,
+                "normalizedPosition": {
+                    "x": 0.12,
+                    "y": 0.72
+                },
+                "weights": {
+                    "LeftHand": 1.0
+                }
+            },
+            {
+                "id": 16,
+                "normalizedPosition": {
+                    "x": 0.88,
+                    "y": 0.72
+                },
+                "weights": {
+                    "RightHand": 1.0
+                }
+            },
+            {
+                "id": 17,
+                "normalizedPosition": {
+                    "x": 0.50,
+                    "y": 0.50
+                },
+                "weights": {
+                    "Chest": 0.6,
+                    "Spine": 0.4
+                }
+            },
+            {
+                "id": 18,
+                "normalizedPosition": {
+                    "x": 0.50,
+                    "y": 0.60
+                },
+                "weights": {
+                    "Spine": 1.0
+                }
+            },
+            {
+                "id": 19,
+                "normalizedPosition": {
+                    "x": 0.50,
+                    "y": 0.70
+                },
+                "weights": {
+                    "Spine": 0.5,
+                    "Root": 0.5
+                }
+            },
+            {
+                "id": 20,
+                "normalizedPosition": {
+                    "x": 0.42,
+                    "y": 0.77
+                },
+                "weights": {
+                    "LeftHip": 0.8,
+                    "Root": 0.2
+                }
+            },
+            {
+                "id": 21,
+                "normalizedPosition": {
+                    "x": 0.58,
+                    "y": 0.77
+                },
+                "weights": {
+                    "RightHip": 0.8,
+                    "Root": 0.2
+                }
+            },
+            {
+                "id": 22,
+                "normalizedPosition": {
+                    "x": 0.41,
+                    "y": 0.82
+                },
+                "weights": {
+                    "LeftHip": 0.6,
+                    "LeftKnee": 0.4
+                }
+            },
+            {
+                "id": 23,
+                "normalizedPosition": {
+                    "x": 0.59,
+                    "y": 0.82
+                },
+                "weights": {
+                    "RightHip": 0.6,
+                    "RightKnee": 0.4
+                }
+            },
+            {
+                "id": 24,
+                "normalizedPosition": {
+                    "x": 0.41,
+                    "y": 0.88
+                },
+                "weights": {
+                    "LeftKnee": 1.0
+                }
+            },
+            {
+                "id": 25,
+                "normalizedPosition": {
+                    "x": 0.59,
+                    "y": 0.88
+                },
+                "weights": {
+                    "RightKnee": 1.0
+                }
+            },
+            {
+                "id": 26,
+                "normalizedPosition": {
+                    "x": 0.40,
+                    "y": 0.93
+                },
+                "weights": {
+                    "LeftKnee": 0.5,
+                    "LeftFoot": 0.5
+                }
+            },
+            {
+                "id": 27,
+                "normalizedPosition": {
+                    "x": 0.60,
+                    "y": 0.93
+                },
+                "weights": {
+                    "RightKnee": 0.5,
+                    "RightFoot": 0.5
+                }
+            },
+            {
+                "id": 28,
+                "normalizedPosition": {
+                    "x": 0.40,
+                    "y": 0.98
+                },
+                "weights": {
+                    "LeftFoot": 1.0
+                }
+            },
+            {
+                "id": 29,
+                "normalizedPosition": {
+                    "x": 0.60,
+                    "y": 0.98
+                },
+                "weights": {
+                    "RightFoot": 1.0
+                }
+            }
+        ],
+        "triangles": [
+            {
+                "v1": 0,
+                "v2": 1,
+                "v3": 2
+            },
+            {
+                "v1": 1,
+                "v2": 3,
+                "v3": 4
+            },
+            {
+                "v1": 2,
+                "v2": 3,
+                "v3": 5
+            },
+            {
+                "v1": 4,
+                "v2": 6,
+                "v3": 5
+            },
+            {
+                "v1": 4,
+                "v2": 7,
+                "v3": 6
+            },
+            {
+                "v1": 5,
+                "v2": 6,
+                "v3": 8
+            },
+            {
+                "v1": 7,
+                "v2": 9,
+                "v3": 11
+            },
+            {
+                "v1": 8,
+                "v2": 10,
+                "v3": 12
+            },
+            {
+                "v1": 9,
+                "v2": 11,
+                "v3": 13
+            },
+            {
+                "v1": 10,
+                "v2": 12,
+                "v3": 14
+            },
+            {
+                "v1": 11,
+                "v2": 13,
+                "v3": 15
+            },
+            {
+                "v1": 12,
+                "v2": 14,
+                "v3": 16
+            },
+            {
+                "v1": 6,
+                "v2": 17,
+                "v3": 18
+            },
+            {
+                "v1": 18,
+                "v2": 19,
+                "v3": 20
+            },
+            {
+                "v1": 18,
+                "v2": 19,
+                "v3": 21
+            },
+            {
+                "v1": 20,
+                "v2": 22,
+                "v3": 24
+            },
+            {
+                "v1": 21,
+                "v2": 23,
+                "v3": 25
+            },
+            {
+                "v1": 24,
+                "v2": 26,
+                "v3": 28
+            },
+            {
+                "v1": 25,
+                "v2": 27,
+                "v3": 29
+            }
+        ]
+    }
+}

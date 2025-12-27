@@ -38,6 +38,16 @@ namespace SpriteEditor.ViewModels
         private string _name;
         // ===========================
 
+        // === PHYSICS PROPERTIES (for ragdoll simulation) ===
+        public SKPoint PreviousPosition { get; set; }  // For Verlet integration
+        public float Mass { get; set; } = 1.0f;
+        public bool IsAnchored { get; set; } = false;
+        public float MinAngle { get; set; } = -180f;
+        public float MaxAngle { get; set; } = 180f;
+        public float Stiffness { get; set; } = 0.5f;
+        public string IKChainName { get; set; }
+        // ===================================================
+
         public JointModel(int id, SKPoint position, JointModel parent = null)
         {
             Id = id;
@@ -48,6 +58,9 @@ namespace SpriteEditor.ViewModels
             Rotation = 0;
             // Başlanğıcda adı ID-yə görə təyin edək
             _name = $"Joint_{id}";
+            
+            // Initialize physics properties
+            PreviousPosition = position;  // For Verlet integration
         }
 
         // Adı TextBox-da göstərmək üçün (istəyə bağlı, amma faydalıdır)

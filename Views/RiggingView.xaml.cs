@@ -16,6 +16,7 @@ using System.Windows.Shapes;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
 using SpriteEditor.ViewModels;
+using SpriteEditor.Helpers; // For KeyboardShortcutManager
 
 namespace SpriteEditor.Views
 {
@@ -95,6 +96,31 @@ namespace SpriteEditor.Views
 
             // Hadisələr XAML-da CanvasBorder-ə bağlıdır
             this.DataContextChanged += RiggingView_DataContextChanged;
+            this.PreviewKeyDown += RiggingView_PreviewKeyDown;
+        }
+
+        private void RiggingView_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (_viewModel == null) return;
+
+            // Ctrl+Z - Undo
+            if (e.Key == Key.Z && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                if (_viewModel.UndoCommand.CanExecute(null))
+                {
+                    _viewModel.UndoCommand.Execute(null);
+                    e.Handled = true;
+                }
+            }
+            // Ctrl+Y - Redo
+            else if (e.Key == Key.Y && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                if (_viewModel.RedoCommand.CanExecute(null))
+                {
+                    _viewModel.RedoCommand.Execute(null);
+                    e.Handled = true;
+                }
+            }
         }
 
         private void RiggingView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)

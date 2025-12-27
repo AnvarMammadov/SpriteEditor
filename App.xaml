@@ -453,6 +453,9 @@
             <DataTemplate DataType="{x:Type viewmodels:SvgToolViewModel}">
                 <views:SvgToolView />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type viewmodels:TemplateRiggingViewModel}">
+                <views:TemplateRiggingView />
+            </DataTemplate>
 
         </ResourceDictionary>
     </Application.Resources>

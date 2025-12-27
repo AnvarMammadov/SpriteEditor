@@ -1,0 +1,220 @@
+{
+  "name": "Humanoid",
+  "category": "Character",
+  "description": "Standard bipedal character (human, elf, robot, etc.) - A-pose",
+  "joints": [
+    {
+      "name": "Root",
+      "normalizedPosition": {
+        "x": 0.5,
+        "y": 0.75
+      },
+      "parentName": null,
+      "regionName": "Torso",
+      "symmetryPair": null
+    },
+    {
+      "name": "Spine",
+      "normalizedPosition": {
+        "x": 0.5,
+        "y": 0.50
+      },
+      "parentName": "Root",
+      "regionName": "Torso",
+      "symmetryPair": null
+    },
+    {
+      "name": "Neck",
+      "normalizedPosition": {
+        "x": 0.5,
+        "y": 0.30
+      },
+      "parentName": "Spine",
+      "regionName": "Head",
+      "symmetryPair": null
+    },
+    {
+      "name": "Head",
+      "normalizedPosition": {
+        "x": 0.5,
+        "y": 0.10
+      },
+      "parentName": "Neck",
+      "regionName": "Head",
+      "symmetryPair": null
+    },
+    {
+      "name": "LeftShoulder",
+      "normalizedPosition": {
+        "x": 0.38,
+        "y": 0.45
+      },
+      "parentName": "Spine",
+      "regionName": "LeftArm",
+      "symmetryPair": "RightShoulder"
+    },
+    {
+      "name": "LeftElbow",
+      "normalizedPosition": {
+        "x": 0.30,
+        "y": 0.60
+      },
+      "parentName": "LeftShoulder",
+      "regionName": "LeftArm",
+      "symmetryPair": "RightElbow"
+    },
+    {
+      "name": "LeftHand",
+      "normalizedPosition": {
+        "x": 0.25,
+        "y": 0.72
+      },
+      "parentName": "LeftElbow",
+      "regionName": "LeftArm",
+      "symmetryPair": "RightHand"
+    },
+    {
+      "name": "RightShoulder",
+      "normalizedPosition": {
+        "x": 0.62,
+        "y": 0.45
+      },
+      "parentName": "Spine",
+      "regionName": "RightArm",
+      "symmetryPair": "LeftShoulder"
+    },
+    {
+      "name": "RightElbow",
+      "normalizedPosition": {
+        "x": 0.70,
+        "y": 0.60
+      },
+      "parentName": "RightShoulder",
+      "regionName": "RightArm",
+      "symmetryPair": "LeftElbow"
+    },
+    {
+      "name": "RightHand",
+      "normalizedPosition": {
+        "x": 0.75,
+        "y": 0.72
+      },
+      "parentName": "RightElbow",
+      "regionName": "RightArm",
+      "symmetryPair": "LeftHand"
+    },
+    {
+      "name": "LeftHip",
+      "normalizedPosition": {
+        "x": 0.44,
+        "y": 0.76
+      },
+      "parentName": "Root",
+      "regionName": "LeftLeg",
+      "symmetryPair": "RightHip"
+    },
+    {
+      "name": "LeftKnee",
+      "normalizedPosition": {
+        "x": 0.43,
+        "y": 0.88
+      },
+      "parentName": "LeftHip",
+      "regionName": "LeftLeg",
+      "symmetryPair": "RightKnee"
+    },
+    {
+      "name": "LeftAnkle",
+      "normalizedPosition": {
+        "x": 0.42,
+        "y": 0.98
+      },
+      "parentName": "LeftKnee",
+      "regionName": "LeftLeg",
+      "symmetryPair": "RightAnkle"
+    },
+    {
+      "name": "RightHip",
+      "normalizedPosition": {
+        "x": 0.56,
+        "y": 0.76
+      },
+      "parentName": "Root",
+      "regionName": "RightLeg",
+      "symmetryPair": "LeftHip"
+    },
+    {
+      "name": "RightKnee",
+      "normalizedPosition": {
+        "x": 0.57,
+        "y": 0.88
+      },
+      "parentName": "RightHip",
+      "regionName": "RightLeg",
+      "symmetryPair": "LeftKnee"
+    },
+    {
+      "name": "RightAnkle",
+      "normalizedPosition": {
+        "x": 0.58,
+        "y": 0.98
+      },
+      "parentName": "RightKnee",
+      "regionName": "RightLeg",
+      "symmetryPair": "LeftAnkle"
+    }
+  ],
+  "regions": [
+    {
+      "name": "Torso",
+      "allowedJoints": [
+        "Root",
+        "Spine"
+      ]
+    },
+    {
+      "name": "Head",
+      "allowedJoints": [
+        "Neck",
+        "Head",
+        "Spine"
+      ]
+    },
+    {
+      "name": "LeftArm",
+      "allowedJoints": [
+        "LeftShoulder",
+        "LeftElbow",
+        "LeftHand",
+        "Spine"
+      ]
+    },
+    {
+      "name": "RightArm",
+      "allowedJoints": [
+        "RightShoulder",
+        "RightElbow",
+        "RightHand",
+        "Spine"
+      ]
+    },
+    {
+      "name": "LeftLeg",
+      "allowedJoints": [
+        "LeftHip",
+        "LeftKnee",
+        "LeftAnkle",
+        "Root"
+      ]
+    },
+    {
+      "name": "RightLeg",
+      "allowedJoints": [
+        "RightHip",
+        "RightKnee",
+        "RightAnkle",
+        "Root"
+      ]
+    }
+  ]
+}

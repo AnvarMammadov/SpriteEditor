@@ -292,7 +292,26 @@
                                 </Grid>
                             </Button>
 
+                            <!-- TEMPLATE RIGGING (NEW!) -->
+                            <Button Command="{Binding GoToTemplateRiggingCommand}" Style="{StaticResource SidebarButtonStyle}" ToolTip="Template Rigging (Zero-Config)">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Path Grid.Column="0" Data="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z" 
+                                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+                                          Width="18" Height="18" Stretch="Uniform"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Column="1" Text="🎯 Template Rigging" VerticalAlignment="Center"
+                                               Visibility="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </Grid>
+                            </Button>
+
                             <!-- CONVERTER -->
+
                             <Button Command="{Binding GoToFormatConverterCommand}" Style="{StaticResource SidebarButtonStyle}" ToolTip="{DynamicResource Str_Converter}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>

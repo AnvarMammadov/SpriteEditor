@@ -24,4 +24,11 @@
     <PackageReference Include="Unofficial.Triangle.NET" Version="0.0.1" />
   </ItemGroup>
 
+  <!-- Copy template files to output directory -->
+  <ItemGroup>
+    <None Update="Data\Templates\*.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

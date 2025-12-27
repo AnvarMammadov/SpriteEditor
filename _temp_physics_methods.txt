@@ -1,0 +1,30 @@
+        // === PHYSICS SIMULATION METHODS (Phase 2) ===
+
+        private void StartPhysicsSimulation()
+        {
+            if (_isPhysicsRunning || Joints.Count == 0) return;
+            _physicsService.Initialize(Joints);
+            if (_physicsTimer == null)
+            {
+                _physicsTimer = new DispatcherTimer();
+                _physicsTimer.Interval = TimeSpan.FromMilliseconds(16);
+                _physicsTimer.Tick += PhysicsTimer_Tick;
+            }
+            _physicsTimer.Start();
+            _isPhysicsRunning = true;
+        }
+
+        private void StopPhysicsSimulation()
+        {
+            if (!_isPhysicsRunning) return;
+            _physicsTimer?.Stop();
+            _isPhysicsRunning = false;
+            _physicsDraggedJoint = null;
+        }
+
+        private void PhysicsTimer_Tick(object sender, EventArgs e)
+        {
+            _physicsService.VerletStep(deltaTime: 0.016f);
+            DeformMesh();
+            RequestRedraw?.Invoke(this, EventArgs.Empty);
+        }

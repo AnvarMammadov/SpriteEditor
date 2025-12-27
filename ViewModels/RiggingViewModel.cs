@@ -15,6 +15,8 @@ using Microsoft.Win32;
 using SkiaSharp;
 using SpriteEditor.Data; // Yaratdığımız Data modelləri üçün
 using SpriteEditor.Views;
+using SpriteEditor.Services.Commands; // Command Pattern
+using SpriteEditor.Services.Rigging; // Services
 using TriangleNet.Geometry; // Triangle.NET üçün
 using TriangleNet.Meshing;
 
@@ -29,6 +31,7 @@ namespace SpriteEditor.ViewModels
         CreateJoint,
         Pose,
         EditMesh,
+        PhysicsPose  // NEW: Physics-based interactive dragging
     }
 
     public partial class RiggingViewModel : ObservableObject
@@ -119,6 +122,20 @@ namespace SpriteEditor.ViewModels
 
         private const float EPS = 1e-4f;
 
+        // === COMMAND PATTERN: Undo/Redo System ===
+        private readonly CommandHistory _commandHistory = new CommandHistory(maxHistorySize: 100);
+
+        // === SERVICES ===
+        private readonly AutoWeightService _autoWeightService = new AutoWeightService();
+        private readonly MeshGenerationService _meshGenerationService = new MeshGenerationService();
+        private readonly TemplateService _templateService = new TemplateService();
+        private readonly PhysicsService _physicsService = new PhysicsService();  // NEW: Physics engine
+
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(UndoCommand))]
+        [NotifyCanExecuteChangedFor(nameof(RedoCommand))]
+        private string _lastActionDescription = string.Empty;
+
         // === ANİMASİYA SİSTEMİ ===
 
         [ObservableProperty]
@@ -142,8 +159,13 @@ namespace SpriteEditor.ViewModels
             ApplyAnimationAtTime((float)value);
         }
 
-        // === Timer Dəyişəni ===
+        // === Timer Dəyişənləri ===
         private DispatcherTimer _animationTimer;
+        private DispatcherTimer _physicsTimer;  // NEW: Physics simulation timer (60 FPS)
+        
+        // === Physics State ===
+        private bool _isPhysicsRunning = false;
+        private JointModel _physicsDraggedJoint = null;
 
         private void SetupTimer()
         {
@@ -153,8 +175,15 @@ namespace SpriteEditor.ViewModels
         }
         public RiggingViewModel()
         {
-
             SetupTimer();
+
+            // Subscribe to command history state changes
+            _commandHistory.StateChanged += (s, e) =>
+            {
+                UndoCommand?.NotifyCanExecuteChanged();
+                RedoCommand?.NotifyCanExecuteChanged();
+                LastActionDescription = _commandHistory.LastExecutedCommand?.Description ?? string.Empty;
+            };
              // (İstəyə bağlı) başlanğıc AutoWeight presetləri
              // Bunları istəmirsənsə, silə bilərsən.
              AwSigmaFactor = 0.20f;
@@ -198,113 +227,106 @@ namespace SpriteEditor.ViewModels
 
 
 
-        // === YENİ (PLAN 3): AVTO AĞIRLIQLANDIRMA ƏMRİ ===
+        // === AUTO-RIG (One-Click Template-Based Rigging) ===
+        [RelayCommand(CanExecute = nameof(CanAutoRig))]
+        private void AutoRig()
+        {
+            if (!CanAutoRig()) return;
+
+            try
+            {
+                // Step 1: Load Humanoid template
+                var template = _templateService.LoadHumanoidTemplate();
+
+                // Step 2: Clear existing rig
+                Joints.Clear();
+                Vertices.Clear();
+                Triangles.Clear();
+
+                // Step 3: Apply template (creates joints)
+                _templateService.ApplyTemplate(template, LoadedBitmap, Joints, ref _jointIdCounter);
+
+                // Step 4: Generate mesh vertices
+                var generatedVertices = _meshGenerationService.GenerateVerticesFromImage(LoadedBitmap, _vertexIdCounter);
+                foreach (var vertex in generatedVertices)
+                {
+                    Vertices.Add(vertex);
+                }
+                _vertexIdCounter += generatedVertices.Count;
+
+                // Step 5: Triangulate
+                var triangles = _meshGenerationService.TriangulateVertices(generatedVertices);
+                foreach (var triangle in triangles)
+                {
+                    Triangles.Add(triangle);
+                }
+
+                // Step 6: Auto-weight WITH REGIONS (prevents cross-contamination!)
+                _autoWeightService.CalculateWeights(Vertices, Joints, Triangles, template);
+
+                // Step 7: Update UI
+                SaveRigCommand.NotifyCanExecuteChanged();
+                RequestRedraw?.Invoke(this, EventArgs.Empty);
+
+                CustomMessageBox.Show(
+                    $"Auto-Rig Complete!\n\n" +
+                    $"• {Joints.Count} joints created\n" +
+                    $"• {Vertices.Count} vertices generated\n" +
+                    $"• {Triangles.Count} triangles\n\n" +
+                    $"Ready to animate!",
+                    "Success",
+                    MessageBoxButton.OK,
+                    MsgImage.Success);
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show(
+                    $"Auto-Rig failed:\n{ex.Message}\n\nTry manual rigging instead.",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MsgImage.Error);
+            }
+        }
+
+        private bool CanAutoRig()
+        {
+            return LoadedBitmap != null;
+        }
+
+        // === AUTO-WEIGHT (Refactored to use Service) ===
         [RelayCommand(CanExecute = nameof(CanAutoWeight))]
         private void AutoWeight()
         {
-
-
-
             if (!CanAutoWeight()) return;
 
-            // Parametrlər (istəyə görə tənzimlə)
-            float sigmaFactor = AwSigmaFactor;          // σ = boneLength * sigmaFactor (0.15–0.25 yaxşıdır)
-            float radialPower = AwRadialPower;        // f_r ^ radialPower
-            float longPower = AwLongPower;      // f_l ^ longPower
-            float minKeep = AwMinKeep;        // çox kiçik çəkiləri at
-            int topK = AwTopK;           // hər vertex üçün ən çox N sümük
-            float parentBlend = AwParentBlend;    // valideynə pay (birinci ata)
-            float ancestorDecay = AwAncestorDecay;  // daha yuxarı ancestorlara eksponensial azalma
-            int smoothIters = AwSmoothIters;    // smoothing iterasiyası
-            float smoothMu = AwSmoothMu;       // smoothing qarışdırma əmsalı
+            // Configure service with current parameters
+            _autoWeightService.SigmaFactor = AwSigmaFactor;
+            _autoWeightService.RadialPower = AwRadialPower;
+            _autoWeightService.LongitudinalPower = AwLongPower;
+            _autoWeightService.MinKeepThreshold = AwMinKeep;
+            _autoWeightService.TopK = AwTopK;
+            _autoWeightService.ParentBlend = AwParentBlend;
+            _autoWeightService.AncestorDecay = AwAncestorDecay;
+            _autoWeightService.SmoothIterations = AwSmoothIters;
+            _autoWeightService.SmoothMu = AwSmoothMu;
 
-            // 1) Sümükləri (seqmentləri) hazırla (Bind pose-da işlədiyindən əmin ol)
-            var bones = BuildBoneSegments(Joints);
-            if (bones.Count == 0) return;
-
-            // 2) Hər vertex üçün raw çəkilər (bone->weight)
-            foreach (var v in Vertices)
+            try
             {
-                var raw = new Dictionary<int, float>(); // jointId -> weight (uşaq oynaq ID-si)
-                foreach (var b in bones)
-                {
-                    // Sümüyə (P->C) məsafəyə görə radial təsir + uzunluq boyu window
-                    float t, dist;
-                    ProjectToSegment(v.BindPosition, b.P, b.C, out t, out dist);
+                // Delegate to service
+                _autoWeightService.CalculateWeights(Vertices, Joints, Triangles);
 
-                    // Radial gaussian təsir
-                    float len = Distance(b.P, b.C);
-                    float sigma = MathF.Max(1e-3f, len * sigmaFactor);
-                    float fr = 1.0f / (1.0f + (dist / sigma) * (dist / sigma)); // daha linear, daha yumşa
-                    fr = MathF.Pow(fr, radialPower);
-
-                    // Uzunluq boyu "window" – mərkəzdə bir az güclü (ucda yumşalır)
-                    // 0..1 aralığında cosine window: max t=0.5, min t≈0/1
-                    float fl = 0.5f * (1f + MathF.Cos(MathF.PI * MathF.Abs(2f * t - 1f)));
-                    fl = MathF.Pow(fl, longPower);
-
-                    float w = fr * fl;
-                    if (w <= 0f) continue;
-
-                    // Çəkini uşaq oynağın ID-sinə yazırıq (bone.ChildId)
-                    AddWeight(raw, b.ChildId, w);
-                }
-
-                // 3) Zəncir paylanması (parent/ancestor-lara azca pay)
-                if (raw.Count > 0)
-                {
-                    var blended = new Dictionary<int, float>(raw);
-                    foreach (var kv in raw)
-                    {
-                        int jointId = kv.Key;
-                        float w = kv.Value;
-                        float carry = w * parentBlend;
-                        var cur = FindJointById(jointId);
-                        float factor = 1.0f;
-                        while (carry > 1e-5f && cur != null && cur.Parent != null)
-                        {
-                            cur = cur.Parent;
-                            factor *= ancestorDecay;
-                            float give = carry * factor;
-                            if (give <= 1e-5f) break;
-                            AddWeight(blended, cur.Id, give);
-                        }
-                    }
-                    v.Weights = blended;
-                }
-                else
-                {
-                    v.Weights.Clear();
-                }
-
-                // 4) Top-K, threshold və normalizasiya
-                PruneAndNormalize(v.Weights, topK, minKeep);
+                SaveRigCommand.NotifyCanExecuteChanged();
+                CustomMessageBox.Show("Str_Msg_SuccessAutoWeight", "Str_Title_Success", MessageBoxButton.OK, MsgImage.Success);
             }
-
-            // 5) Mesh qonşuluğunda weight smoothing (Laplacian-vari)
-            if (Triangles.Count > 0 && Vertices.Count > 0 && smoothIters > 0)
+            catch (Exception ex)
             {
-                var neighbors = BuildVertexNeighbors(Vertices, Triangles);
-                for (int it = 0; it < smoothIters; it++)
-                {
-                    SmoothWeightsOnce(Vertices, neighbors, smoothMu, topK, minKeep);
-                }
+                CustomMessageBox.Show($"Auto-weight error: {ex.Message}", "Str_Title_Error", MessageBoxButton.OK, MsgImage.Error);
             }
-            // === YENİ ƏLAVƏ: XƏBƏRDARLIQ ===
-            else if (smoothIters > 0 && Triangles.Count == 0)
-            {
-                // Yumşaltma istənilib, amma üçbucaq yoxdur
-                CustomMessageBox.Show("Str_Msg_WarnSmoothing", "Str_Title_Warning", MessageBoxButton.OK, MsgImage.Warning);
-            }
-            // ================================
-
-            SaveRigCommand.NotifyCanExecuteChanged();
-            CustomMessageBox.Show("Str_Msg_SuccessAutoWeight", "Str_Title_Success", MessageBoxButton.OK, MsgImage.Success);
         }
 
         private bool CanAutoWeight()
         {
-            return IsImageLoaded && Joints.Count > 0 && Vertices.Count > 0;
+            return Vertices.Count > 0 && Joints.Count > 0;
         }
 
         // ======================= Köməkçilər =======================
@@ -485,6 +507,7 @@ namespace SpriteEditor.ViewModels
                     }
                     IsImageLoaded = true;
                     ClearRiggingData();
+                    AutoRigCommand?.NotifyCanExecuteChanged();
                     ResetCamera();
                     RequestCenterCamera?.Invoke(this, EventArgs.Empty);
                 }
@@ -1181,11 +1204,17 @@ namespace SpriteEditor.ViewModels
             AutoWeightCommand?.NotifyCanExecuteChanged();
         }
 
-        // === YENİLƏNMİŞ (PLAN 3 - FINAL): ALƏT DƏYİŞMƏ MƏNTİQİ ===
+        // === YENİLƏNMİŞ (PLAN 3 - FINAL + PHYSICS): ALƏT DƏYİŞMƏ MƏNTİQİ ===
         partial void OnCurrentToolChanged(RiggingToolMode value)
         {
+            // Stop physics if switching away from PhysicsPose
+            if (_isPhysicsRunning && value != RiggingToolMode.PhysicsPose)
+            {
+                StopPhysicsSimulation();
+            }
+
             // Alət dəyişəndə köhnə vəziyyəti təmizlə
-            if (_jointBindPositions.Count > 0)
+            if (_jointBindPositions.Count > 0 && value != RiggingToolMode.Pose)
             {
                 ResetPoseToBindPose(); // Pose rejimindən çıxırıqsa, hər şeyi sıfırla
             }
@@ -1194,6 +1223,12 @@ namespace SpriteEditor.ViewModels
             if (value == RiggingToolMode.Pose)
             {
                 StoreBindPose(); // Pose rejiminə giririksə, "sakit" vəziyyəti yadda saxla
+            }
+            else if (value == RiggingToolMode.PhysicsPose)
+            {
+                // PhysicsPose mode - start physics simulation
+                StoreBindPose(); // Also store bind pose for physics
+                StartPhysicsSimulation();
             }
 
             // Bütün seçimləri ləğv et
@@ -1249,32 +1284,57 @@ namespace SpriteEditor.ViewModels
             _jointBindRotations.Clear();
         }
 
-        // === YENİ: Siyahı dəyişikliklərini izləmək üçün köməkçi metodlar ===
+        // === COMMAND PATTERN: Undo/Redo Commands ===
+        [RelayCommand(CanExecute = nameof(CanUndo))]
+        private void Undo()
+        {
+            _commandHistory.Undo();
+            RequestRedraw?.Invoke(this, EventArgs.Empty);
+        }
+
+        private bool CanUndo() => _commandHistory.CanUndo;
+
+        [RelayCommand(CanExecute = nameof(CanRedo))]
+        private void Redo()
+        {
+            _commandHistory.Redo();
+            RequestRedraw?.Invoke(this, EventArgs.Empty);
+        }
+
+        private bool CanRedo() => _commandHistory.CanRedo;
+
+        // === UPDATED: Köməkçi metodlar (Command pattern ilə) ===
         private void AddJoint(JointModel newJoint)
         {
-            Joints.Add(newJoint);
+            var command = new AddJointCommand(Joints, newJoint);
+            _commandHistory.ExecuteCommand(command);
             AutoWeightCommand.NotifyCanExecuteChanged();
             AutoTriangleCommand.NotifyCanExecuteChanged();
-            //AutoGenerateVerticesCommand.NotifyCanExecuteChanged(); // <-- əlavə et
+            RequestRedraw?.Invoke(this, EventArgs.Empty);
         }
         private void AddVertex(VertexModel newVertex)
         {
-            Vertices.Add(newVertex);
+            var command = new AddVertexCommand(Vertices, newVertex);
+            _commandHistory.ExecuteCommand(command);
             AutoWeightCommand.NotifyCanExecuteChanged();
             AutoTriangleCommand.NotifyCanExecuteChanged();
+            RequestRedraw?.Invoke(this, EventArgs.Empty);
         }
         private void RemoveJoint(JointModel jointToRemove)
         {
-            Joints.Remove(jointToRemove);
+            var command = new RemoveJointCommand(Joints, jointToRemove);
+            _commandHistory.ExecuteCommand(command);
             AutoWeightCommand.NotifyCanExecuteChanged();
             AutoTriangleCommand.NotifyCanExecuteChanged();
-            //AutoGenerateVerticesCommand.NotifyCanExecuteChanged(); // <-- əlavə et
+            RequestRedraw?.Invoke(this, EventArgs.Empty);
         }
         private void RemoveVertex(VertexModel vertexToRemove)
         {
-            Vertices.Remove(vertexToRemove);
+            var command = new RemoveVertexCommand(Vertices, vertexToRemove);
+            _commandHistory.ExecuteCommand(command);
             AutoWeightCommand.NotifyCanExecuteChanged();
             AutoTriangleCommand.NotifyCanExecuteChanged();
+            RequestRedraw?.Invoke(this, EventArgs.Empty);
         }
 
 
@@ -1998,6 +2058,38 @@ namespace SpriteEditor.ViewModels
             CurrentTime = 0; // Başa sarı
         }
 
+
+
+        // === PHYSICS SIMULATION METHODS (Phase 2) ===
+
+        private void StartPhysicsSimulation()
+        {
+            if (_isPhysicsRunning || Joints.Count == 0) return;
+            _physicsService.Initialize(Joints);
+            if (_physicsTimer == null)
+            {
+                _physicsTimer = new DispatcherTimer();
+                _physicsTimer.Interval = TimeSpan.FromMilliseconds(16);
+                _physicsTimer.Tick += PhysicsTimer_Tick;
+            }
+            _physicsTimer.Start();
+            _isPhysicsRunning = true;
+        }
+
+        private void StopPhysicsSimulation()
+        {
+            if (!_isPhysicsRunning) return;
+            _physicsTimer?.Stop();
+            _isPhysicsRunning = false;
+            _physicsDraggedJoint = null;
+        }
+
+        private void PhysicsTimer_Tick(object sender, EventArgs e)
+        {
+            _physicsService.VerletStep(deltaTime: 0.016f);
+            DeformMesh();
+            RequestRedraw?.Invoke(this, EventArgs.Empty);
+        }
 
     }
 }

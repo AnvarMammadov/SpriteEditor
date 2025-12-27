@@ -12,6 +12,7 @@
 
     <UserControl.Resources>
         <converters:EnumToBooleanConverter x:Key="EnumToBooleanConverter"/>
+        <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
     </UserControl.Resources>
 
     <Grid Background="{StaticResource Brush.Bg.Deep}">
@@ -34,6 +35,42 @@
                                 </StackPanel>
                             </DataTemplate>
                         </Button.ContentTemplate>
+                    </Button>
+
+                    <Separator Background="{StaticResource Brush.Border}" Margin="0,0,0,20" Opacity="0.3"/>
+
+                    <TextBlock Text="{DynamicResource Str_HeaderActions}" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Secondary}" FontSize="11" Margin="0,0,0,10"/>
+                    
+                    <!-- Undo/Redo Buttons -->
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="↶ Undo" Command="{Binding UndoCommand}" Style="{StaticResource Style.Button.Primary}" Margin="0,0,4,0" FontSize="11" ToolTip="Ctrl+Z"/>
+                        <Button Grid.Column="1" Content="↷ Redo" Command="{Binding RedoCommand}" Style="{StaticResource Style.Button.Primary}" Margin="4,0,0,0" FontSize="11" ToolTip="Ctrl+Y"/>
+                    </Grid>
+                    
+                    <!-- Last Action Display -->
+                    <Border Background="#1F2937" CornerRadius="4" Padding="8,4" Margin="0,0,0,10" Visibility="{Binding LastActionDescription, Converter={StaticResource StringToVisibilityConverter}}">
+                        <TextBlock Text="{Binding LastActionDescription}" Foreground="{StaticResource Brush.Accent.Green}" FontSize="10" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <Separator Background="{StaticResource Brush.Border}" Margin="0,0,0,20" Opacity="0.3"/>
+
+                    <!-- AUTO-RIG (WOW FACTOR!) -->
+                    <Button Command="{Binding AutoRigCommand}" 
+                            Style="{StaticResource Style.Button.Primary}"
+                            Background="#10B981"
+                            Height="50"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Margin="0,0,0,15"
+                            ToolTip="One-click rigging with Humanoid template">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="✨ " FontSize="20" Margin="0,0,8,0"/>
+                            <TextBlock Text="AUTO-RIG" VerticalAlignment="Center"/>
+                        </StackPanel>
                     </Button>
 
                     <Separator Background="{StaticResource Brush.Border}" Margin="0,0,0,20" Opacity="0.3"/>
@@ -65,6 +102,14 @@
                                  IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.Pose}}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{DynamicResource Str_ModePose}" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton GroupName="ToolMode" Style="{StaticResource Style.RadioButton.Tool}"
+                                 IsChecked="{Binding CurrentTool, Mode=TwoWay, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static vm:RiggingToolMode.PhysicsPose}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🎮 " FontSize="14" Margin="0,0,5,0"/>
+                            <TextBlock Text="Physics Pose" FontWeight="SemiBold"/>
                         </StackPanel>
                     </RadioButton>
 

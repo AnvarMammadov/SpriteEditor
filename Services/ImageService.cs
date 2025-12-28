@@ -179,6 +179,16 @@ namespace SpriteEditor.Services
                 for (int i = 0; i < rects.Count; i++)
                 {
                     var r = rects[i];
+                    
+                    // Validate crop rectangle is within image bounds
+                    if (r.X < 0 || r.Y < 0 || 
+                        r.X + r.Width > sourceImage.Width || 
+                        r.Y + r.Height > sourceImage.Height)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Skipping sprite {i}: crop rectangle ({r.X},{r.Y},{r.Width},{r.Height}) exceeds image bounds ({sourceImage.Width}x{sourceImage.Height})");
+                        continue; // Skip invalid rectangles
+                    }
+                    
                     var cropRectangle = new Rectangle(r.X, r.Y, r.Width, r.Height);
                     using (Image sprite = sourceImage.Clone(ctx => ctx.Crop(cropRectangle)))
                     {

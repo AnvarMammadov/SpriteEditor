@@ -237,17 +237,39 @@ namespace SpriteEditor.Views
             if (ViewModel?.LoadedSprite == null)
                 return screenPos;
 
+            // Rendering transform sequence:
+            // 1. canvas.Scale(CameraScale)
+            // 2. canvas.Translate(CameraOffset.X / CameraScale, CameraOffset.Y / CameraScale)
+            // 3. canvas.Translate(offsetX, offsetY)
+            // 4. canvas.Scale(scale, scale)
+            //
+            // To reverse, work backwards:
+
+            // Get sprite centering parameters (step 3 & 4)
             int width = (int)SKCanvasView.ActualWidth;
             int height = (int)SKCanvasView.ActualHeight;
-
             float scale = Math.Min((float)width / ViewModel.LoadedSprite.Width,
                                   (float)height / ViewModel.LoadedSprite.Height) * 0.8f;
             float offsetX = (width - ViewModel.LoadedSprite.Width * scale) / 2f;
             float offsetY = (height - ViewModel.LoadedSprite.Height * scale) / 2f;
 
+            // Reverse step 1: Un-scale by camera
+            float afterCameraScale_X = screenPos.X / ViewModel.CameraScale;
+            float afterCameraScale_Y = screenPos.Y / ViewModel.CameraScale;
+
+            // Reverse step 2: Un-translate camera offset
+            // Note: Camera offset is already divided by CameraScale in rendering
+            float afterCameraTranslate_X = afterCameraScale_X - (ViewModel.CameraOffset.X / ViewModel.CameraScale);
+            float afterCameraTranslate_Y = afterCameraScale_Y - (ViewModel.CameraOffset.Y / ViewModel.CameraScale);
+
+            // Reverse step 3: Un-translate sprite centering
+            float afterSpriteTranslate_X = afterCameraTranslate_X - offsetX;
+            float afterSpriteTranslate_Y = afterCameraTranslate_Y - offsetY;
+
+            // Reverse step 4: Un-scale sprite
             return new SKPoint(
-                (screenPos.X - offsetX) / scale,
-                (screenPos.Y - offsetY) / scale
+                afterSpriteTranslate_X / scale,
+                afterSpriteTranslate_Y / scale
             );
         }
 

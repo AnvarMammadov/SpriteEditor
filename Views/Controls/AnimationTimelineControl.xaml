@@ -82,7 +82,7 @@
 
                 <!-- Keyframe Count -->
                 <TextBlock VerticalAlignment="Center" Foreground="{StaticResource Brush.Text.Secondary}" Margin="10,0,0,0">
-                    <Run Text="{Binding CurrentClip.Keyframes.Count, FallbackValue=0}"/>
+                    <Run Text="{Binding CurrentClip.Keyframes.Count, Mode=OneWay, FallbackValue=0}"/>
                     <Run Text="keyframes"/>
                 </TextBlock>
             </StackPanel>

@@ -15,14 +15,18 @@ namespace SpriteEditor.Services.Rigging
     /// </summary>
     public class MeshGenerationService
     {
-        private const float POISSON_RADIUS = 15f; // Higher density for better deformation (Unity standard)
-        private const int POISSON_ATTEMPTS = 40; // More attempts for better coverage
-        private const float SIMPLIFICATION_EPSILON = 2.0f; // RDP epsilon (pixels)
+        // CRITICAL: Much denser vertex coverage to prevent mesh tearing
+        // Previous values were too sparse, leaving gaps in mesh
+        private const float POISSON_RADIUS_NEAR_JOINT = 4f;    // Very dense near joints (was 6f)
+        private const float POISSON_RADIUS_MEDIUM = 7f;        // Medium distance (was 10f)
+        private const float POISSON_RADIUS_FAR = 10f;          // Far from joints (was 15f)
+        private const int POISSON_ATTEMPTS = 50;               // More attempts for better coverage (was 40)
+        private const float SIMPLIFICATION_EPSILON = 1.5f;
 
         /// <summary>
         /// Generates a mesh (vertices and triangles) that fits the sprite contour.
         /// </summary>
-        public (List<VertexModel> Vertices, List<TriangleModel> Triangles) GenerateMesh(SKBitmap bitmap, int startId = 0)
+        public (List<VertexModel> Vertices, List<TriangleModel> Triangles) GenerateMesh(SKBitmap bitmap, int startId = 0, List<SKPoint> jointPositions = null)
         {
             if (bitmap == null)
                 throw new ArgumentNullException(nameof(bitmap));
@@ -67,9 +71,9 @@ namespace SpriteEditor.Services.Rigging
                 }
             }
 
-            // Step 3: Generate Interior Points
-            // We only generate points that are INSIDE the contours
-            var interiorPoints = PoissonDiskSampling(bitmap, boundaryPoints, POISSON_RADIUS, POISSON_ATTEMPTS);
+            // Step 3: Generate Interior Points with ADAPTIVE density
+            // Denser near joints (Spine 2D best practice)
+            var interiorPoints = AdaptivePoissonDiskSampling(bitmap, boundaryPoints, jointPositions, POISSON_ATTEMPTS);
             foreach (var p in interiorPoints)
             {
                 // Only add if not too close to boundary (Poisson handles this self-distance, but we check against boundary too)
@@ -111,7 +115,8 @@ namespace SpriteEditor.Services.Rigging
                         (v0.BindPosition.Y + v1.BindPosition.Y + v2.BindPosition.Y) / 3f
                     );
 
-                    if (IsPointInsideAnyContour(centroid, contours))
+                    // Quality check: reject poor-aspect-ratio triangles
+                    if (IsPointInsideAnyContour(centroid, contours) && IsGoodQualityTriangle(v0, v1, v2))
                     {
                         triangles.Add(new TriangleModel(v0, v1, v2));
                     }
@@ -370,7 +375,15 @@ namespace SpriteEditor.Services.Rigging
 
         #region Helpers
 
-        private List<SKPoint> PoissonDiskSampling(SKBitmap bitmap, HashSet<SKPoint> boundary, float radius, int attempts)
+        /// <summary>
+        /// Adaptive Poisson Disk Sampling - denser near joints, sparser elsewhere.
+        /// Based on Spine 2D best practice: "Concentrate vertices in areas experiencing deformation."
+        /// </summary>
+        private List<SKPoint> AdaptivePoissonDiskSampling(
+            SKBitmap bitmap,
+            HashSet<SKPoint> boundary,
+            List<SKPoint> jointPositions,
+            int attempts)
         {
             var points = new List<SKPoint>();
             var active = new List<SKPoint>();
@@ -386,6 +399,9 @@ namespace SpriteEditor.Services.Rigging
                 var point = active[index];
                 bool found = false;
 
+                // Get adaptive radius for this point
+                float radius = GetAdaptivePoissonRadius(point, jointPositions);
+
                 for (int i = 0; i < attempts; i++)
                 {
                     float angle = (float)(random.NextDouble() * Math.PI * 2);
@@ -395,7 +411,11 @@ namespace SpriteEditor.Services.Rigging
                         point.Y + distance * MathF.Sin(angle)
                     );
 
-                    if (IsInsideSprite(bitmap, newPoint) && !IsTooClose(points, newPoint, radius))
+                    // Check with adaptive radius for new point too
+                    float newRadius = GetAdaptivePoissonRadius(newPoint, jointPositions);
+                    float minRadius = Math.Min(radius, newRadius);
+
+                    if (IsInsideSprite(bitmap, newPoint) && !IsTooClose(points, newPoint, minRadius))
                     {
                         points.Add(newPoint);
                         active.Add(newPoint);
@@ -411,6 +431,59 @@ namespace SpriteEditor.Services.Rigging
             }
 
             return points;
+        }
+
+        /// <summary>
+        /// Calculate adaptive Poisson radius based on distance to nearest joint.
+        /// Spine 2D approach: dense near joints, sparse in static regions.
+        /// </summary>
+        private float GetAdaptivePoissonRadius(SKPoint point, List<SKPoint> jointPositions)
+        {
+            if (jointPositions == null || jointPositions.Count == 0)
+                return POISSON_RADIUS_FAR; // Default if no joints
+
+            float minDist = float.MaxValue;
+            foreach (var joint in jointPositions)
+            {
+                float dist = Distance(point, joint);
+                if (dist < minDist) minDist = dist;
+            }
+
+            // CRITICAL: Much tighter thresholds for denser coverage
+            if (minDist < 50f) return POISSON_RADIUS_NEAR_JOINT;  // Very close: 4px radius (very dense)
+            if (minDist < 100f) return POISSON_RADIUS_MEDIUM;     // Near: 7px radius (dense)
+            return POISSON_RADIUS_FAR;                             // Far: 10px radius (medium)
+        }
+
+        /// <summary>
+        /// Validate triangle quality to prevent mesh tearing.
+        /// Rejects triangles with aspect ratio > 4:1 (too thin/long).
+        /// </summary>
+        private bool IsGoodQualityTriangle(VertexModel v1, VertexModel v2, VertexModel v3)
+        {
+            // Calculate edge lengths
+            float a = Distance(v1.BindPosition, v2.BindPosition);
+            float b = Distance(v2.BindPosition, v3.BindPosition);
+            float c = Distance(v3.BindPosition, v1.BindPosition);
+
+            // Degenerate triangle check
+            if (a < 0.1f || b < 0.1f || c < 0.1f) return false;
+
+            // Semi-perimeter
+            float s = (a + b + c) / 2f;
+
+            // Area (Heron's formula)
+            float areaSquared = s * (s - a) * (s - b) * (s - c);
+            if (areaSquared <= 0) return false; // Degenerate
+
+            float area = MathF.Sqrt(areaSquared);
+
+            // Aspect ratio: longest edge / shortest altitude
+            float maxEdge = Math.Max(a, Math.Max(b, c));
+            float altitude = (2f * area) / maxEdge;
+
+            // Reject if too thin (aspect ratio > 4:1)
+            return (maxEdge / altitude) < 4f;
         }
 
         private bool IsInsideSprite(SKBitmap bitmap, SKPoint point)

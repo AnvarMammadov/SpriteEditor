@@ -260,7 +260,9 @@ namespace SpriteEditor.Services.Rigging
             try
             {
                 // 1. Generate Mesh (Vertices + Triangles) with Contour Constraints
-                var (rawVertices, rawTriangles) = _meshGenerationService.GenerateMesh(sprite);
+                // Pass joint positions for adaptive vertex density (Spine 2D approach)
+                var jointPositions = result.Joints.Select(j => j.BindPosition).ToList();
+                var (rawVertices, rawTriangles) = _meshGenerationService.GenerateMesh(sprite, 0, jointPositions);
                 
                 if (rawVertices.Count == 0) return;
 
@@ -310,7 +312,7 @@ namespace SpriteEditor.Services.Rigging
                 var obsJoints = new System.Collections.ObjectModel.ObservableCollection<JointModel>(result.Joints);
                 var obsTriangles = new System.Collections.ObjectModel.ObservableCollection<TriangleModel>(result.Triangles);
 
-                _autoWeightService.CalculateWeights(obsVertices, obsJoints, obsTriangles, template);
+                _autoWeightService.CalculateWeights(obsVertices, obsJoints, obsTriangles, template, sprite);
             }
             catch (Exception ex)
             {

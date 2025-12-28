@@ -217,36 +217,36 @@
                         </ItemsControl>
 
                         <Canvas x:Name="SlicerCanvas" SnapsToDevicePixels="True"
+                                MouseLeftButtonDown="OnGridCanvasMouseDown"
+                                MouseMove="OnGridCanvasMouseMove"
+                                MouseLeftButtonUp="OnGridCanvasMouseUp"
+                                Background="Transparent"
                                 Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.Grid}}">
-                            <Border Canvas.Left="{Binding SlicerX}" Canvas.Top="{Binding SlicerY}" Width="{Binding SlicerWidth}" Height="{Binding SlicerHeight}" BorderBrush="{StaticResource Brush.Accent.Green}" BorderThickness="2" Background="#2222C55E" IsHitTestVisible="False"/>
-                            <Thumb x:Name="ThumbMove" Canvas.Left="{Binding SlicerX}" Canvas.Top="{Binding SlicerY}" Width="{Binding SlicerWidth}" Height="{Binding SlicerHeight}" Cursor="SizeAll" Opacity="0" DragDelta="ThumbMove_DragDelta" />
-                            <Thumb x:Name="ThumbTopLeft" Cursor="SizeNWSE" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
-                            <Thumb x:Name="ThumbTopRight" Cursor="SizeNESW" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
-                            <Thumb x:Name="ThumbBottomRight" Cursor="SizeNWSE" Style="{StaticResource SlicerThumbStyle}" DragDelta="ThumbResize_DragDelta"/>
+                            <!-- Slicer rectangle visual -->
+                            <Border Canvas.Left="{Binding SlicerX}" Canvas.Top="{Binding SlicerY}" 
+                                    Width="{Binding SlicerWidth}" Height="{Binding SlicerHeight}" 
+                                    BorderBrush="{StaticResource Brush.Accent.Green}" 
+                                    BorderThickness="2" 
+                                    Background="#2222C55E" 
+                                    IsHitTestVisible="False"/>
+                            
+                            <!-- Grid lines -->
+                            <ItemsControl ItemsSource="{Binding GridLines}" IsHitTestVisible="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Line X1="{Binding X1}" Y1="{Binding Y1}" X2="{Binding X2}" Y2="{Binding Y2}" 
+                                              Stroke="{StaticResource Brush.Accent.Blue}" StrokeThickness="2"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </Canvas>
 
-                        <ItemsControl ItemsSource="{Binding GridLines}"
-                                      Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.Grid}}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <Canvas/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Thumb DragDelta="GridLine_DragDelta" Cursor="{Binding IsVertical, Converter={StaticResource BooleanToCursorConverter}}" Canvas.Left="0" Canvas.Top="0">
-                                        <Thumb.Template>
-                                            <ControlTemplate>
-                                                <Grid>
-                                                    <Line X1="{Binding X1}" Y1="{Binding Y1}" X2="{Binding X2}" Y2="{Binding Y2}" Stroke="{StaticResource Brush.Accent.Blue}" StrokeThickness="1"/>
-                                                    <Line X1="{Binding X1}" Y1="{Binding Y1}" X2="{Binding X2}" Y2="{Binding Y2}" Stroke="Transparent" StrokeThickness="15"/>
-                                                </Grid>
-                                            </ControlTemplate>
-                                        </Thumb.Template>
-                                    </Thumb>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+
 
                         <ItemsControl ItemsSource="{Binding ExtractedParts}" IsHitTestVisible="False"
                                       Visibility="{Binding CurrentMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter={x:Static vm:SpriteSlicerViewModel+SlicerMode.PolygonPen}}">

@@ -130,63 +130,70 @@ namespace SpriteEditor.Services.Rigging
         }
 
         /// <summary>
-        /// Analytical 2-bone IK solver (faster and more stable for arms/legs).
-        /// Uses law of cosines to directly calculate joint angles.
+        /// Analytical 2-bone IK solver with proper bend direction (FIXED).
+        /// User fix: Added bendPositive parameter to prevent reverse knee bending.
         /// </summary>
-        public void Solve2BoneIK(JointModel root, JointModel mid, JointModel end, SKPoint targetPos)
+        public void Solve2BoneIK(JointModel root, JointModel mid, JointModel end, SKPoint targetPos, bool bendPositive = true)
         {
-            if (root == null || mid == null || end == null)
-                return;
+            if (root == null || mid == null || end == null) return;
 
-            // Bone lengths
-            float len1 = Distance(root.Position, mid.Position); // Upper arm/thigh
-            float len2 = Distance(mid.Position, end.Position);  // Forearm/shin
+            // 1. Bone lengths
+            float a = Distance(root.Position, mid.Position); // Thigh/Upper arm
+            float b = Distance(mid.Position, end.Position);  // Shin/Forearm
+            
+            // 2. Distance and vector from root to target
+            float dx = targetPos.X - root.Position.X;
+            float dy = targetPos.Y - root.Position.Y;
+            float c = MathF.Sqrt(dx * dx + dy * dy);
 
-            // Distance from root to target
-            float targetDist = Distance(root.Position, targetPos);
-
-            // Check if target is reachable
-            float maxReach = len1 + len2;
-            if (targetDist > maxReach)
+            // 3. Maximum reach limit (prevent singularity)
+            float maxReach = (a + b) * 0.999f; 
+            if (c > maxReach) 
             {
-                // Target too far - stretch toward it
-                targetDist = maxReach * 0.99f; // Slight margin to avoid singularity
-                SKPoint direction = Normalize(new SKPoint(targetPos.X - root.Position.X, targetPos.Y - root.Position.Y));
-                targetPos = new SKPoint(
-                    root.Position.X + direction.X * targetDist,
-                    root.Position.Y + direction.Y * targetDist
-                );
+                c = maxReach;
+                // Scale target to max distance
+                float scale = maxReach / MathF.Sqrt(dx*dx + dy*dy);
+                dx *= scale;
+                dy *= scale;
             }
+            
+            // Minimum distance (prevent bones overlapping)
+            if (c < 0.1f) c = 0.1f;
 
-            // Law of cosines to find angles
-            float cosAngle = (len1 * len1 + targetDist * targetDist - len2 * len2) / (2f * len1 * targetDist);
-            cosAngle = Math.Clamp(cosAngle, -1f, 1f); // Prevent NaN from acos
+            // 4. Law of cosines to find angles
+            // Alpha: angle at root (thigh)
+            // Beta: angle at mid (knee)
+            
+            float alpha = MathF.Acos(Math.Clamp((a * a + c * c - b * b) / (2 * a * c), -1f, 1f));
+            float beta = MathF.Acos(Math.Clamp((a * a + b * b - c * c) / (2 * a * b), -1f, 1f));
 
-            float angle1 = MathF.Acos(cosAngle);
-            float angle0 = MathF.Atan2(targetPos.Y - root.Position.Y, targetPos.X - root.Position.X);
+            // Target vector's global angle
+            float targetAngle = MathF.Atan2(dy, dx);
 
-            // Set root joint rotation
-            float rootAngle = angle0 - angle1;
-            root.Rotation = rootAngle;
+            // 5. CRITICAL: Bend Direction
+            // bendPositive = true: knee bends forward (right leg)
+            // bendPositive = false: knee bends forward (left leg)
+            
+            float rootAngle = bendPositive ? (targetAngle - alpha) : (targetAngle + alpha);
+            float midAngle = bendPositive ? (MathF.PI - beta) : (beta - MathF.PI);
 
-            // Update mid joint position based on root rotation
+            // 6. Apply rotations  
+            root.Rotation = NormalizeAngle(rootAngle);
+            mid.Rotation = NormalizeAngle(root.Rotation + midAngle);
+
+            // 7. Update positions (Forward Kinematics)
             mid.Position = new SKPoint(
-                root.Position.X + len1 * MathF.Cos(rootAngle),
-                root.Position.Y + len1 * MathF.Sin(rootAngle)
+                root.Position.X + a * MathF.Cos(root.Rotation),
+                root.Position.Y + a * MathF.Sin(root.Rotation)
             );
-
-            // Set mid joint rotation to point to target
-            mid.Rotation = MathF.Atan2(targetPos.Y - mid.Position.Y, targetPos.X - mid.Position.X);
-
-            // Update end position
+            
             end.Position = new SKPoint(
-                mid.Position.X + len2 * MathF.Cos(mid.Rotation),
-                mid.Position.Y + len2 * MathF.Sin(mid.Rotation)
+                mid.Position.X + b * MathF.Cos(mid.Rotation),
+                mid.Position.Y + b * MathF.Sin(mid.Rotation)
             );
 
-            // Apply constraints
-            ApplyAngleConstraints(root);
-            ApplyAngleConstraints(mid);
+            // NOTE: ApplyAngleConstraints removed from here!
+            // User fix: Constraints after IK cause jitter. Apply to target instead.
         }
 
         /// <summary>

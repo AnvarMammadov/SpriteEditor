@@ -13,20 +13,23 @@ namespace SpriteEditor.Services.Rigging
     /// </summary>
     public class AutoWeightService
     {
+        // Sprite bitmap for alpha-based separation
+        private SKBitmap _spriteBitmap;
+
         // Auto-weight parameters (will be configurable)
         public float SigmaFactor { get; set; } = 0.20f;
         public float RadialPower { get; set; } = 1.0f;
-        public float LongitudinalPower { get; set; } = 0f; // CRITICAL: Was 0.5f, but that zeros weights at bone endpoints!
-        public float MinKeepThreshold { get; set; } = 0.02f;
+        public float LongitudinalPower { get; set; } = 0f;
+        public float MinKeepThreshold { get; set; } = 0.001f; // USER FIX: Was 0.02f - too aggressive, caused tearing
         public int TopK { get; set; } = 4;
         public float ParentBlend { get; set; } = 0.25f;
         public float AncestorDecay { get; set; } = 0.40f;
-        public int SmoothIterations { get; set; } = 3;
-        public float SmoothMu { get; set; } = 0.30f;
+        public int SmoothIterations { get; set; } = 30;   // USER FIX: Was 15 - increased for smoother weights
+        public float SmoothMu { get; set; } = 0.5f;        // USER FIX: Was 0.45 - more aggressive blending
 
         // CRITICAL: Region filtering and deformation boundaries to prevent cross-contamination
         public bool UseRegionFiltering { get; set; } = true;  // PHASE 4: Enable by default for natural deformation
-        public float MaxInfluenceRadius { get; set; } = 2.5f; // PHASE 4: Max radius as multiplier of bone length
+        public float MaxInfluenceRadius { get; set; } = 3.0f; // Increased from 2.5x to allow slightly more reach
         private Data.RigTemplate _currentTemplate;
 
         /// <summary>
@@ -37,9 +40,11 @@ namespace SpriteEditor.Services.Rigging
             ObservableCollection<VertexModel> vertices,
             ObservableCollection<JointModel> joints,
             ObservableCollection<TriangleModel> triangles,
-            Data.RigTemplate template = null)
+            Data.RigTemplate template = null,
+            SKBitmap spriteBitmap = null)
         {
             _currentTemplate = template;
+            _spriteBitmap = spriteBitmap;
             var bones = BuildBoneSegments(joints);
             
             System.Diagnostics.Debug.WriteLine($"=== AUTO WEIGHT: Bones={bones.Count}, Vertices={vertices.Count} ===");
@@ -67,6 +72,10 @@ namespace SpriteEditor.Services.Rigging
                 {
                     // Skip this bone if region filtering is active and bone not allowed
                     if (allowedBoneIds != null && !allowedBoneIds.Contains(bone.ChildId))
+                        continue;
+
+                    // Alpha-based separation: Skip if transparent barrier exists between vertex and bone
+                    if (_spriteBitmap != null && HasAlphaBarrier(vertex.BindPosition, bone.ParentPos, bone.ChildPos))
                         continue;
 
                     float t, distance;
@@ -142,6 +151,32 @@ namespace SpriteEditor.Services.Rigging
 
                 // Step 3: Prune and normalize
                 PruneAndNormalize(vertex.Weights, TopK, MinKeepThreshold);
+                
+                // CRITICAL FIX: Ensure vertex has at least ONE weight
+                // Prevents orphaned vertices that don't move with ANY bone
+                if (vertex.Weights.Count == 0)
+                {
+                    // Assign to closest bone as fallback
+                    int closestBoneId = -1;
+                    float closestDist = float.MaxValue;
+                    
+                    foreach (var bone in bones)
+                    {
+                        float t, dist;
+                        ProjectToSegment(vertex.BindPosition, bone.ParentPos, bone.ChildPos, out t, out dist);
+                        if (dist < closestDist)
+                        {
+                            closestDist = dist;
+                            closestBoneId = bone.ChildId;
+                        }
+                    }
+                    
+                    if (closestBoneId >= 0)
+                    {
+                        vertex.Weights[closestBoneId] = 1.0f; // 100% weight to closest bone
+                        System.Diagnostics.Debug.WriteLine($"WARNING: Vertex {vertexIndex} had no weights. Assigned to bone {closestBoneId} (dist={closestDist:F1})");
+                    }
+                }
                 
                 vertexIndex++;
             }
@@ -254,6 +289,73 @@ namespace SpriteEditor.Services.Rigging
             }
 
             return allowedIds;
+        }
+
+        /// <summary>
+        /// Checks if there's a transparent barrier (alpha==0 pixels) between vertex and bone.
+        /// Uses raycast to prevent weight assignment across separated body parts.
+        /// </summary>
+        private bool HasAlphaBarrier(SKPoint vertexPos, SKPoint boneStart, SKPoint boneEnd)
+        {
+            if (_spriteBitmap == null)
+                return false; // No alpha check if no bitmap provided
+
+            // Find closest point on bone segment to vertex
+            float t, dist;
+            ProjectToSegment(vertexPos, boneStart, boneEnd, out t, out dist);
+            SKPoint bonePoint = new SKPoint(
+                boneStart.X + t * (boneEnd.X - boneStart.X),
+                boneStart.Y + t * (boneEnd.Y - boneStart.Y)
+            );
+
+            // Sample pixels along line between vertex and bone using Bresenham algorithm
+            return LineHasTransparentPixels(vertexPos, bonePoint);
+        }
+
+        /// <summary>
+        /// Bresenham-style line traversal to check for alpha==0 pixels.
+        /// Returns true if any transparent pixel found along the path.
+        /// </summary>
+        private bool LineHasTransparentPixels(SKPoint start, SKPoint end)
+        {
+            int x0 = (int)start.X;
+            int y0 = (int)start.Y;
+            int x1 = (int)end.X;
+            int y1 = (int)end.Y;
+
+            int dx = Math.Abs(x1 - x0);
+            int dy = Math.Abs(y1 - y0);
+            int sx = x0 < x1 ? 1 : -1;
+            int sy = y0 < y1 ? 1 : -1;
+            int err = dx - dy;
+
+            while (true)
+            {
+                // Check if pixel is within bounds
+                if (x0 >= 0 && x0 < _spriteBitmap.Width &&
+                    y0 >= 0 && y0 < _spriteBitmap.Height)
+                {
+                    var pixel = _spriteBitmap.GetPixel(x0, y0);
+                    if (pixel.Alpha == 0)  // Transparent pixel found - barrier detected
+                        return true;
+                }
+
+                if (x0 == x1 && y0 == y1) break;
+
+                int e2 = 2 * err;
+                if (e2 > -dy)
+                {
+                    err -= dy;
+                    x0 += sx;
+                }
+                if (e2 < dx)
+                {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+
+            return false; // No transparent barrier found
         }
 
         private struct BoneSegment
@@ -386,6 +488,10 @@ namespace SpriteEditor.Services.Rigging
                 neighbors[b].Add(a);
         }
 
+        /// <summary>
+        /// Enhanced Laplacian smoothing with edge-aware weights.
+        /// Prevents discontinuities that cause mesh tearing.
+        /// </summary>
         private void SmoothWeightsOnce(
             ObservableCollection<VertexModel> vertices,
             Dictionary<VertexModel, List<VertexModel>> neighbors,
@@ -402,57 +508,61 @@ namespace SpriteEditor.Services.Rigging
                 if (neighbors.TryGetValue(vertex, out var neighborList) && neighborList.Count > 0)
                 {
                     var neighborAverage = new Dictionary<int, float>();
+                    float totalEdgeWeight = 0f;
                     
-                    // BUGFIX: Only average weights from neighbors in the SAME REGION
-                    // This prevents cross-contamination during smoothing
+                    // BUGFIX + ENHANCEMENT: Edge-aware smoothing
+                    // Weight neighbors by inverse distance (closer = more influence)
                     var vertexJointIds = new HashSet<int>(vertex.Weights.Keys);
                     
                     foreach (var neighbor in neighborList)
                     {
                         // Check if neighbor shares at LEAST one joint with current vertex
-                        // This indicates they're in the same region
                         var neighborJointIds = new HashSet<int>(neighbor.Weights.Keys);
                         bool sameRegion = vertexJointIds.Overlaps(neighborJointIds);
                         
                         if (sameRegion)
                         {
+                            // Edge-aware weight: closer neighbors have more influence
+                            float dist = Distance(vertex.BindPosition, neighbor.BindPosition);
+                            float edgeWeight = 1f / (1f + dist * 0.05f); // Normalize by small factor
+                            
                             foreach (var (jointId, weight) in neighbor.Weights)
                             {
-                                // Only include joints that are already in vertex's weights
-                                // This prevents new bones from "bleeding in" during smoothing
-                                if (vertexJointIds.Contains(jointId))
-                                {
-                                    AddWeight(neighborAverage, jointId, weight);
-                                }
+                                // Include all neighbor joints (not just shared ones)
+                                // This helps propagate weights smoothly
+                                if (!neighborAverage.ContainsKey(jointId))
+                                    neighborAverage[jointId] = 0f;
+                                neighborAverage[jointId] += weight * edgeWeight;
                             }
+                            
+                            totalEdgeWeight += edgeWeight;
                         }
                     }
 
-                    if (neighborAverage.Count > 0)
+                    if (neighborAverage.Count > 0 && totalEdgeWeight > 0.001f)
                     {
-                        // Average (count only neighbors that contributed)
-                        int contributingNeighbors = neighborList.Count(n => 
-                            vertexJointIds.Overlaps(new HashSet<int>(n.Weights.Keys)));
-                        
-                        if (contributingNeighbors > 0)
+                        // Average by total edge weight
+                        var keys = neighborAverage.Keys.ToList();
+                        foreach (var key in keys)
                         {
-                            var keys = neighborAverage.Keys.ToList();
-                            foreach (var key in keys)
-                            {
-                                neighborAverage[key] /= contributingNeighbors;
-                            }
-
-                            // Blend (only with joints already in smoothed weights)
-                            var blended = new Dictionary<int, float>();
-                            foreach (var jointId in smoothed.Keys)
-                            {
-                                float original = smoothed[jointId];
-                                float avg = neighborAverage.ContainsKey(jointId) ? neighborAverage[jointId] : original;
-                                blended[jointId] = (1f - mu) * original + mu * avg;
-                            }
-
-                            smoothed = blended;
+                            neighborAverage[key] /= totalEdgeWeight;
                         }
+
+                        // Blend: mu% average, (1-mu)% original
+                        var blended = new Dictionary<int, float>();
+                        
+                        // Combine all joints from both original and neighbor average
+                        var allJoints = new HashSet<int>(smoothed.Keys);
+                        foreach (var j in neighborAverage.Keys) allJoints.Add(j);
+                        
+                        foreach (var jointId in allJoints)
+                        {
+                            float original = smoothed.ContainsKey(jointId) ? smoothed[jointId] : 0f;
+                            float avg = neighborAverage.ContainsKey(jointId) ? neighborAverage[jointId] : 0f;
+                            blended[jointId] = (1f - mu) * original + mu * avg;
+                        }
+
+                        smoothed = blended;
                     }
                 }
 

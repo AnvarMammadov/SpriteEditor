@@ -111,12 +111,21 @@ namespace SpriteEditor.Data
         public string Name { get; set; }
 
         /// <summary>
-        /// List of joint names that can influence vertices in this region
+        /// Primary joints that define the CORE of this region.
+        /// Used for region determination - excludes attachment points (e.g., Chest, Root).
+        /// PHASE 4: This prevents torso vertices from being classified as arm region.
+        /// </summary>
+        public List<string> PrimaryJoints { get; set; }
+
+        /// <summary>
+        /// List of joint names that can influence vertices in this region.
+        /// Includes attachment points for proper blending.
         /// </summary>
         public List<string> AllowedJoints { get; set; }
 
         public BoneInfluenceRegion()
         {
+            PrimaryJoints = new List<string>();
             AllowedJoints = new List<string>();
         }
     }

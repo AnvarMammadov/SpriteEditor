@@ -323,6 +323,50 @@ namespace SpriteEditor.ViewModels
                 }
             }
             
+            // Apply runtime angle constraints for realistic joint behavior
+            // These override template defaults for common joints
+            foreach (var joint in Joints)
+            {
+                string name = joint.Name.ToLower();
+                
+                // Elbows: Only bend inward (0° to 150°)
+                // Prevents unnatural backward bending
+                if (name.Contains("elbow"))
+                {
+                    joint.MinAngle = 0f;
+                    joint.MaxAngle = 150f;
+                }
+                
+                // Knees: Only bend backward (for most humanoid rigs)
+                // May need adjustment based on coordinate system
+                else if (name.Contains("knee"))
+                {
+                    joint.MinAngle = -150f;
+                    joint.MaxAngle = 0f;
+                }
+                
+                // Spine/Neck/Head: Limited rotation for stability
+                else if (name.Contains("spine") || name.Contains("neck") || name.Contains("head"))
+                {
+                    joint.MinAngle = -30f;
+                    joint.MaxAngle = 30f;
+                }
+                
+                // Wrists: Moderate rotation
+                else if (name.Contains("wrist"))
+                {
+                    joint.MinAngle = -80f;
+                    joint.MaxAngle = 80f;
+                }
+                
+                // Hands: Limited rotation
+                else if (name.Contains("hand"))
+                {
+                    joint.MinAngle = -45f;
+                    joint.MaxAngle = 45f;
+                }
+            }
+            
             // DEBUG: Log first 3 vertices and their weights
             System.Diagnostics.Debug.WriteLine("=== VERTEX WEIGHTS (first 3) ===");
             for (int i = 0; i < Math.Min(3, Vertices.Count); i++)
@@ -359,7 +403,7 @@ namespace SpriteEditor.ViewModels
 
                 if (dialog.ShowDialog() == true)
                 {
-                    _templateService.SaveCustomTemplate(SelectedTemplate, OverlayJoints.ToList(), dialog.FileName);
+                    _templateService.SaveCustomTemplate(SelectedTemplate, OverlayJoints.ToList(), LoadedSprite, dialog.FileName);
                     CustomMessageBox.Show("Template saved successfully!", "Success", MessageBoxButton.OK, MsgImage.Success);
                 }
             }
@@ -608,12 +652,15 @@ namespace SpriteEditor.ViewModels
                     if (chain.Count >= 2)
                     {
                         // Use CCD solver for all chain lengths
-                        // Works well for 2-bone (simple), 3-bone (with wrist), and 4+ bone chains
                         System.Diagnostics.Debug.WriteLine($"  Solving IK to target: ({worldPos.X:F1}, {worldPos.Y:F1})");
                         _kinematicService.SolveCCD(chain, worldPos, maxIterations: 10, tolerance: 1f);
                         
+                        // CRITICAL: DO NOT call UpdateJointRotations() here!
+                        // It recalculates rotations from positions, overriding IK solver's work.
+                        // This creates circular dependency: IK sets rotation → UpdateJointRotations 
+                        // recalculates from position → skeleton breaks/stretches.
+                        
                         // Update mesh vertices after IK
-                        UpdateJointRotations();
                         UpdateMeshVertices();
                         System.Diagnostics.Debug.WriteLine($"  IK Solved. EndEffector now at: ({chain[0].Position.X:F1}, {chain[0].Position.Y:F1})");
                     }
@@ -627,7 +674,7 @@ namespace SpriteEditor.ViewModels
                     // Direct FK (Forward Kinematics) mode - just move the joint
                     System.Diagnostics.Debug.WriteLine($"FK DRAG: Joint={_draggedJoint.Name} to ({worldPos.X:F1}, {worldPos.Y:F1})");
                     _draggedJoint.Position = worldPos;
-                    UpdateJointRotations();
+                    UpdateJointRotations(); // FK needs rotation update from positions
                     UpdateMeshVertices();
                 }
                 

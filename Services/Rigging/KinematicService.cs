@@ -82,28 +82,49 @@ namespace SpriteEditor.Services.Rigging
                     // CRITICAL FIX: Update THIS joint's position based on its parent and new rotation
                     if (joint.Parent != null)
                     {
-                        // Ensure bone length is valid
+                        // USER FIX: Disable dynamic bone length calculation to prevent stretching
+                        // Only use pre-defined BoneLength
+                        /*
                         if (joint.BoneLength < 0.1f)
                         {
-                             float dx = joint.Position.X - joint.Parent.Position.X;
-                             float dy = joint.Position.Y - joint.Parent.Position.Y;
-                             float calculatedLen = MathF.Sqrt(dx * dx + dy * dy);
-                             if (calculatedLen > 0.1f) joint.BoneLength = calculatedLen;
+                            float dx = joint.Position.X - joint.Parent.Position.X;
+                            float dy = joint.Position.Y - joint.Parent.Position.Y;
+                            joint.BoneLength = MathF.Sqrt(dx * dx + dy * dy);
                         }
+                        */
+
+                        // Check for Chain Root locking
+                        // Since we use GetIKChain() which excludes the fixed base (e.g. Shoulder),
+                        // the chain root is the moving joint (e.g. Elbow). We MUST update its position.
+                        // So we do NOT skip position update for the chain root.
+                        // bool isChainRoot = (i == chain.Count - 1);
 
                         // Update Position strictly based on Parent + Rotation + Length
                         // This prevents bone stretching and drift
-                        if (joint.BoneLength >= 0.1f)
+                        if (joint.BoneLength >= 0.001f)
                         {
-                             joint.Position = new SKPoint(
-                                 joint.Parent.Position.X + joint.BoneLength * MathF.Cos(joint.Rotation),
-                                 joint.Parent.Position.Y + joint.BoneLength * MathF.Sin(joint.Rotation)
-                             );
+                            joint.Position = new SKPoint(
+                                joint.Parent.Position.X + joint.BoneLength * MathF.Cos(joint.Rotation),
+                                joint.Parent.Position.Y + joint.BoneLength * MathF.Sin(joint.Rotation)
+                            );
                         }
                     }
 
-                    // Forward kinematics: update all children positions AND rotations
-                    UpdateChildPositions(joint);
+                    // CRITICAL FIX: After rotating 'joint', update positions of all joints
+                    // FORWARD in the chain (toward end effector), not just children in hierarchy!
+                    // This prevents skeleton breakage when rotating proximal joints.
+                    for (int j = i - 1; j >= 0; j--)
+                    {
+                        var childJoint = chain[j];
+                        if (childJoint.Parent != null && childJoint.BoneLength >= 0.001f)
+                        {
+                            // Update position based on parent's new rotation
+                            childJoint.Position = new SKPoint(
+                                childJoint.Parent.Position.X + childJoint.BoneLength * MathF.Cos(childJoint.Rotation),
+                                childJoint.Parent.Position.Y + childJoint.BoneLength * MathF.Sin(childJoint.Rotation)
+                            );
+                        }
+                    }
                 }
             }
         }

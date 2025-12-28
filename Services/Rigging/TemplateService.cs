@@ -70,11 +70,12 @@ namespace SpriteEditor.Services.Rigging
 
         /// <summary>
         /// Save custom template with edited joint positions.
+        /// Normalizes positions relative to the SPRITE BOUNDS to ensure consistency with Load/Apply.
         /// </summary>
-        public void SaveCustomTemplate(RigTemplate baseTemplate, List<JointModel> editedJoints, string filePath)
+        public void SaveCustomTemplate(RigTemplate baseTemplate, List<JointModel> editedJoints, SKBitmap sprite, string filePath)
         {
-            if (baseTemplate == null || editedJoints == null || editedJoints.Count == 0)
-                throw new ArgumentException("Invalid template or joints");
+            if (baseTemplate == null || editedJoints == null || editedJoints.Count == 0 || sprite == null)
+                throw new ArgumentException("Invalid template, joints, or sprite");
 
             // Create a copy of the template with updated positions
             var customTemplate = new RigTemplate
@@ -86,14 +87,13 @@ namespace SpriteEditor.Services.Rigging
                 Regions = baseTemplate.Regions
             };
 
-            // Detect bounds from first and last joint (approximate)
-            float minX = editedJoints.Min(j => j.Position.X);
-            float maxX = editedJoints.Max(j => j.Position.X);
-            float minY = editedJoints.Min(j => j.Position.Y);
-            float maxY = editedJoints.Max(j => j.Position.Y);
-
-            float width = maxX - minX;
-            float height = maxY - minY;
+            // Detect bounds of the SPRITE (matches ApplyTemplate logic)
+            // This ensures coordinate space consistency between Save and Load
+            var bounds = DetectSpriteBounds(sprite);
+            float minX = bounds.Left;
+            float minY = bounds.Top;
+            float width = bounds.Width;
+            float height = bounds.Height;
 
             if (width < 1f) width = 100f;  // Fallback
             if (height < 1f) height = 100f;
@@ -116,7 +116,7 @@ namespace SpriteEditor.Services.Rigging
                     SymmetryPair = templateJoint.SymmetryPair,
                     MinAngle = templateJoint.MinAngle,
                     MaxAngle = templateJoint.MaxAngle,
-                    IKChainName = templateJoint.IKChainName
+                    IKChainName = templateJoint.IKChainName // Preserve IK chain setting
                 };
 
                 customTemplate.Joints.Add(newTemplateJoint);

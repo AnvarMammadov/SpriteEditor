@@ -24,8 +24,9 @@ namespace SpriteEditor.Services.Rigging
         public int SmoothIterations { get; set; } = 3;
         public float SmoothMu { get; set; } = 0.30f;
 
-        // CRITICAL: Region filtering to prevent cross-contamination
-        public bool UseRegionFiltering { get; set; } = false; // TEMP: Disabled for debug
+        // CRITICAL: Region filtering and deformation boundaries to prevent cross-contamination
+        public bool UseRegionFiltering { get; set; } = true;  // PHASE 4: Enable by default for natural deformation
+        public float MaxInfluenceRadius { get; set; } = 2.5f; // PHASE 4: Max radius as multiplier of bone length
         private Data.RigTemplate _currentTemplate;
 
         /// <summary>
@@ -71,8 +72,13 @@ namespace SpriteEditor.Services.Rigging
                     float t, distance;
                     ProjectToSegment(vertex.BindPosition, bone.ParentPos, bone.ChildPos, out t, out distance);
 
-                    // Calculate radial falloff (Gaussian)
+                    // PHASE 4: Hard limit on influence radius to prevent far-away bones affecting vertices
                     float boneLength = Distance(bone.ParentPos, bone.ChildPos);
+                    float maxRadius = boneLength * MaxInfluenceRadius;
+                    if (distance > maxRadius)
+                        continue; // Skip bones that are too far away
+
+                    // Calculate radial falloff (Gaussian)
                     float sigma = MathF.Max(1e-3f, boneLength * SigmaFactor);
                     float radialFalloff = 1.0f / (1.0f + (distance / sigma) * (distance / sigma));
                     radialFalloff = MathF.Pow(radialFalloff, RadialPower);
@@ -157,7 +163,7 @@ namespace SpriteEditor.Services.Rigging
 
         /// <summary>
         /// Determines which bones can influence a vertex based on template regions.
-        /// Prevents cross-contamination (e.g., left leg won't affect right leg).
+        /// PHASE 4 FIX: Uses PrimaryJoints for region determination to prevent cross-contamination.
         /// </summary>
         private List<int> GetAllowedBonesForVertex(
             VertexModel vertex,
@@ -167,39 +173,78 @@ namespace SpriteEditor.Services.Rigging
             if (_currentTemplate == null || _currentTemplate.Regions == null)
                 return bones.Select(b => b.ChildId).ToList(); // Allow all if no template
 
-            // Find closest bone to determine vertex's region
+            // PHASE 4 BUGFIX: Determine region based on PRIMARY bones only
+            // This prevents torso vertices from being classified as arm region
+            string vertexRegion = null;
             float closestDist = float.MaxValue;
-            int closestBoneId = -1;
 
-            foreach (var bone in bones)
+            foreach (var region in _currentTemplate.Regions)
             {
-                float t, dist;
-                ProjectToSegment(vertex.BindPosition, bone.ParentPos, bone.ChildPos, out t, out dist);
-                if (dist < closestDist)
+                // Skip if no primary joints defined (fallback to old behavior)
+                if (region.PrimaryJoints == null || region.PrimaryJoints.Count == 0)
+                    continue;
+
+                // Find closest bone among this region's PRIMARY joints
+                foreach (var bone in bones)
                 {
-                    closestDist = dist;
-                    closestBoneId = bone.ChildId;
+                    var joint = joints.FirstOrDefault(j => j.Id == bone.ChildId);
+                    if (joint == null)
+                        continue;
+
+                    // Check if this bone is a PRIMARY joint of this region
+                    if (!region.PrimaryJoints.Contains(joint.Name))
+                        continue;
+
+                    float t, dist;
+                    ProjectToSegment(vertex.BindPosition, bone.ParentPos, bone.ChildPos, out t, out dist);
+
+                    if (dist < closestDist)
+                    {
+                        closestDist = dist;
+                        vertexRegion = region.Name;
+                    }
                 }
             }
 
-            // Find closest joint's region in template
-            var closestJoint = joints.FirstOrDefault(j => j.Id == closestBoneId);
-            if (closestJoint == null)
-                return bones.Select(b => b.ChildId).ToList();
+            // Fallback: If no region found with primary joints, use old closest bone method
+            if (string.IsNullOrEmpty(vertexRegion))
+            {
+                float fallbackClosestDist = float.MaxValue;
+                int closestBoneId = -1;
 
-            string closestJointName = closestJoint.Name;
-            var templateJoint = _currentTemplate.Joints.FirstOrDefault(tj => tj.Name == closestJointName);
-            if (templateJoint == null || string.IsNullOrEmpty(templateJoint.RegionName))
-                return bones.Select(b => b.ChildId).ToList();
+                foreach (var bone in bones)
+                {
+                    float t, dist;
+                    ProjectToSegment(vertex.BindPosition, bone.ParentPos, bone.ChildPos, out t, out dist);
+                    if (dist < fallbackClosestDist)
+                    {
+                        fallbackClosestDist = dist;
+                        closestBoneId = bone.ChildId;
+                    }
+                }
+
+                var closestJoint = joints.FirstOrDefault(j => j.Id == closestBoneId);
+                if (closestJoint != null)
+                {
+                    var templateJoint = _currentTemplate.Joints.FirstOrDefault(tj => tj.Name == closestJoint.Name);
+                    if (templateJoint != null && !string.IsNullOrEmpty(templateJoint.RegionName))
+                    {
+                        vertexRegion = templateJoint.RegionName;
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(vertexRegion))
+                return bones.Select(b => b.ChildId).ToList(); // Final fallback
 
             // Find region and get allowed joint names
-            var region = _currentTemplate.Regions.FirstOrDefault(r => r.Name == templateJoint.RegionName);
-            if (region == null || region.AllowedJoints == null)
+            var targetRegion = _currentTemplate.Regions.FirstOrDefault(r => r.Name == vertexRegion);
+            if (targetRegion == null || targetRegion.AllowedJoints == null)
                 return bones.Select(b => b.ChildId).ToList();
 
             // Convert allowed joint names to IDs
             var allowedIds = new List<int>();
-            foreach (var allowedName in region.AllowedJoints)
+            foreach (var allowedName in targetRegion.AllowedJoints)
             {
                 var joint = joints.FirstOrDefault(j => j.Name == allowedName);
                 if (joint != null)

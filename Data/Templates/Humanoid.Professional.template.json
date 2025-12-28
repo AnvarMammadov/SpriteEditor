@@ -131,8 +131,8 @@
             },
             "parentName": "RightShoulder",
             "regionName": "RightArm",
-            "minAngle": -150,
-            "maxAngle": 0,
+            "minAngle": 0,
+            "maxAngle": 150,
             "ikChainName": "RightArm"
         },
         {
@@ -179,8 +179,8 @@
             },
             "parentName": "LeftHip",
             "regionName": "LeftLeg",
-            "minAngle": -150,
-            "maxAngle": 0,
+            "minAngle": 0,
+            "maxAngle": 150,
             "ikChainName": "LeftLeg"
         },
         {
@@ -227,8 +227,8 @@
             },
             "parentName": "RightHip",
             "regionName": "RightLeg",
-            "minAngle": -150,
-            "maxAngle": 0,
+            "minAngle": 0,
+            "maxAngle": 150,
             "ikChainName": "RightLeg"
         },
         {
@@ -259,6 +259,10 @@
     "regions": [
         {
             "name": "Head",
+            "primaryJoints": [
+                "Neck",
+                "Head"
+            ],
             "allowedJoints": [
                 "Neck",
                 "Head"
@@ -266,6 +270,11 @@
         },
         {
             "name": "Torso",
+            "primaryJoints": [
+                "Root",
+                "Spine",
+                "Chest"
+            ],
             "allowedJoints": [
                 "Root",
                 "Spine",
@@ -274,6 +283,12 @@
         },
         {
             "name": "LeftArm",
+            "primaryJoints": [
+                "LeftShoulder",
+                "LeftElbow",
+                "LeftWrist",
+                "LeftHand"
+            ],
             "allowedJoints": [
                 "LeftShoulder",
                 "LeftElbow",
@@ -284,6 +299,12 @@
         },
         {
             "name": "RightArm",
+            "primaryJoints": [
+                "RightShoulder",
+                "RightElbow",
+                "RightWrist",
+                "RightHand"
+            ],
             "allowedJoints": [
                 "RightShoulder",
                 "RightElbow",
@@ -294,6 +315,12 @@
         },
         {
             "name": "LeftLeg",
+            "primaryJoints": [
+                "LeftHip",
+                "LeftKnee",
+                "LeftAnkle",
+                "LeftFoot"
+            ],
             "allowedJoints": [
                 "LeftHip",
                 "LeftKnee",
@@ -304,6 +331,12 @@
         },
         {
             "name": "RightLeg",
+            "primaryJoints": [
+                "RightHip",
+                "RightKnee",
+                "RightAnkle",
+                "RightFoot"
+            ],
             "allowedJoints": [
                 "RightHip",
                 "RightKnee",

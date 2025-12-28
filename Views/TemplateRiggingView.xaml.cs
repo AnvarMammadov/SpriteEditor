@@ -131,11 +131,10 @@ namespace SpriteEditor.Views
                 }
             }
 
-            // Draw joints
+            // Draw joints (all use same paint - no anchor distinction in IK system)
             foreach (var joint in ViewModel.Joints)
             {
-                var paint = joint.IsAnchored ? _anchorPaint : _jointPaint;
-                canvas.DrawCircle(joint.Position, 5 / scale, paint);
+                canvas.DrawCircle(joint.Position, 5 / scale, _jointPaint);
             }
         }
 

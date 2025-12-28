@@ -11,71 +11,167 @@ namespace SpriteEditor.ViewModels
 {
     /// <summary>
     /// Bir sümük (Bone) iki oynaq (Joint) arasında çəkilən xətdir.
-    /// Biz sadəlik üçün sümükləri elə oynaqlardan ibarət zəncir kimi saxlayacağıq.
+    /// Hierarchical structure: Parent-Child relationships for IK and FK.
     /// </summary>
-
-    // === DƏYİŞİKLİK (PLAN 2): ObservableObject-dən miras alırıq ===
     public partial class JointModel : ObservableObject
     {
         public int Id { get; set; }
         public SKPoint Position { get; set; }
-        public JointModel Parent { get; set; }  // Hansı oynağa bağlıdır (Root üçün null)
-
+        public JointModel Parent { get; set; }  // Parent joint (null for root)
 
         /// <summary>
-        /// Bu oynağı valideyninə bağlayan sümüyün uzunluğu.
-        /// Valideyn yoxdursa (root), bu dəyər 0 ola bilər.
+        /// Child joints connected to this joint.
+        /// </summary>
+        public List<JointModel> Children { get; set; } = new List<JointModel>();
+
+        /// <summary>
+        /// Length of the bone connecting this joint to its parent.
+        /// Fixed after binding to prevent stretching.
         /// </summary>
         public float BoneLength { get; set; }
 
         /// <summary>
-        /// Sümüyün mütləq (dünya) fırlanma bucağı (radianda).
+        /// Absolute (world) rotation angle in radians.
         /// </summary>
         public float Rotation { get; set; }
 
-        // === YENİ XASSƏ (PLAN 2) ===
         [ObservableProperty]
         private string _name;
-        // ===========================
 
         /// <summary>
-        /// Oynaq yaradılanda (bind olunan anda) olan mövqeyi.
-        /// Skinning hesablamaları üçün lazımdır.
+        /// Bind pose position (position when skeleton was bound to mesh).
+        /// Used for skinning calculations.
         /// </summary>
         public SKPoint BindPosition { get; set; }
 
         /// <summary>
-        /// Oynaq yaradılanda (bind olunan anda) olan fırlanma bucağı.
-        /// Skinning hesablamaları üçün lazımdır.
+        /// Bind pose rotation (rotation when skeleton was bound to mesh).
+        /// Used for skinning calculations.
         /// </summary>
         public float BindRotation { get; set; }
 
-        // === PHYSICS PROPERTIES (for ragdoll simulation) ===
-        public SKPoint PreviousPosition { get; set; }  // For Verlet integration
-        public float Mass { get; set; } = 1.0f;
-        public bool IsAnchored { get; set; } = false;
+        // === IK AND CONSTRAINT PROPERTIES ===
+        /// <summary>
+        /// Minimum rotation angle (degrees) relative to bind pose.
+        /// Prevents unrealistic joint bending.
+        /// </summary>
         public float MinAngle { get; set; } = -180f;
+
+        /// <summary>
+        /// Maximum rotation angle (degrees) relative to bind pose.
+        /// Prevents unrealistic joint bending.
+        /// </summary>
         public float MaxAngle { get; set; } = 180f;
-        public float Stiffness { get; set; } = 0.5f;
+
+        /// <summary>
+        /// IK chain name (e.g., "LeftArm", "RightLeg").
+        /// Joints with the same chain name form an IK chain.
+        /// </summary>
         public string IKChainName { get; set; }
-        // ===================================================
+        // ====================================
 
         public JointModel(int id, SKPoint position, JointModel parent = null)
         {
             Id = id;
             Position = position;
             Parent = parent;
+            Children = new List<JointModel>();
+
+            // If parent exists, add this joint to parent's children
+            if (parent != null)
+            {
+                parent.Children.Add(this);
+            }
 
             BoneLength = 0;
             Rotation = 0;
-            // Başlanğıcda adı ID-yə görə təyin edək
             _name = $"Joint_{id}";
-            
-            // Initialize physics properties
-            PreviousPosition = position;  // For Verlet integration
         }
 
-        // Adı TextBox-da göstərmək üçün (istəyə bağlı, amma faydalıdır)
+        /// <summary>
+        /// Get all descendant joints (recursive).
+        /// </summary>
+        public List<JointModel> GetAllChildren()
+        {
+            var result = new List<JointModel>();
+            foreach (var child in Children)
+            {
+                result.Add(child);
+                result.AddRange(child.GetAllChildren());
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Get the root joint (top of hierarchy).
+        /// </summary>
+        public JointModel GetRoot()
+        {
+            var current = this;
+            while (current.Parent != null)
+            {
+                current = current.Parent;
+            }
+            return current;
+        }
+
+        /// <summary>
+        /// Get depth in hierarchy (root = 0).
+        /// </summary>
+        public int GetDepth()
+        {
+            int depth = 0;
+            var current = this;
+            while (current.Parent != null)
+            {
+                depth++;
+                current = current.Parent;
+            }
+            return depth;
+        }
+
+        /// <summary>
+        /// Get chain from this joint to root (used for IK).
+        /// Returns list with this joint first, root last.
+        /// </summary>
+        public List<JointModel> GetChainToRoot()
+        {
+            var chain = new List<JointModel>();
+            var current = this;
+            while (current != null)
+            {
+                chain.Add(current);
+                current = current.Parent;
+            }
+            return chain;
+        }
+
+        /// <summary>
+        /// Gets the IK chain for this joint based on IKChainName identity.
+        /// Stops when parent has a different ChainName or null.
+        /// Essential for isolating limbs from torso.
+        /// </summary>
+        public List<JointModel> GetIKChain()
+        {
+            var chain = new List<JointModel>();
+            
+            if (string.IsNullOrEmpty(IKChainName))
+                return chain;
+
+            var current = this;
+            while (current != null)
+            {
+                // Stop if current joint doesn't belong to the same chain
+                // (Unless it's the very first joint we clicked - though that case implies mismatch)
+                if (current.IKChainName != this.IKChainName)
+                    break;
+
+                chain.Add(current);
+                current = current.Parent;
+            }
+            return chain;
+        }
+
         public override string ToString()
         {
             return Name;

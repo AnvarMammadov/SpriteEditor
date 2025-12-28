@@ -12,11 +12,8 @@
             "parentName": null,
             "regionName": "Torso",
             "symmetryPair": null,
-            "mass": 3.0,
-            "isAnchored": true,
             "minAngle": -180,
             "maxAngle": 180,
-            "stiffness": 0.9,
             "ikChainName": null
         },
         {
@@ -28,11 +25,8 @@
             "parentName": "Root",
             "regionName": "Torso",
             "symmetryPair": null,
-            "mass": 2.5,
-            "isAnchored": false,
             "minAngle": -30,
             "maxAngle": 30,
-            "stiffness": 0.8,
             "ikChainName": null
         },
         {
@@ -44,11 +38,8 @@
             "parentName": "Spine",
             "regionName": "Torso",
             "symmetryPair": null,
-            "mass": 2.0,
-            "isAnchored": false,
             "minAngle": -20,
             "maxAngle": 20,
-            "stiffness": 0.7,
             "ikChainName": null
         },
         {
@@ -60,11 +51,8 @@
             "parentName": "Chest",
             "regionName": "Head",
             "symmetryPair": null,
-            "mass": 0.8,
-            "isAnchored": false,
             "minAngle": -45,
             "maxAngle": 45,
-            "stiffness": 0.6,
             "ikChainName": null
         },
         {
@@ -76,11 +64,8 @@
             "parentName": "Neck",
             "regionName": "Head",
             "symmetryPair": null,
-            "mass": 2.0,
-            "isAnchored": false,
             "minAngle": -60,
             "maxAngle": 60,
-            "stiffness": 0.5,
             "ikChainName": null
         },
         {
@@ -92,12 +77,9 @@
             "parentName": "Chest",
             "regionName": "LeftArm",
             "symmetryPair": "RightShoulder",
-            "mass": 1.0,
-            "isAnchored": false,
             "minAngle": -180,
             "maxAngle": 180,
-            "stiffness": 0.4,
-            "ikChainName": "LeftArm"
+            "ikChainName": null
         },
         {
             "name": "LeftElbow",
@@ -108,11 +90,8 @@
             "parentName": "LeftShoulder",
             "regionName": "LeftArm",
             "symmetryPair": "RightElbow",
-            "mass": 0.7,
-            "isAnchored": false,
             "minAngle": 0,
             "maxAngle": 160,
-            "stiffness": 0.3,
             "ikChainName": "LeftArm"
         },
         {
@@ -124,11 +103,8 @@
             "parentName": "LeftElbow",
             "regionName": "LeftArm",
             "symmetryPair": "RightHand",
-            "mass": 0.5,
-            "isAnchored": false,
             "minAngle": -90,
             "maxAngle": 90,
-            "stiffness": 0.2,
             "ikChainName": "LeftArm"
         },
         {
@@ -140,12 +116,9 @@
             "parentName": "Chest",
             "regionName": "RightArm",
             "symmetryPair": "LeftShoulder",
-            "mass": 1.0,
-            "isAnchored": false,
             "minAngle": -180,
             "maxAngle": 180,
-            "stiffness": 0.4,
-            "ikChainName": "RightArm"
+            "ikChainName": null
         },
         {
             "name": "RightElbow",
@@ -156,11 +129,8 @@
             "parentName": "RightShoulder",
             "regionName": "RightArm",
             "symmetryPair": "LeftElbow",
-            "mass": 0.7,
-            "isAnchored": false,
             "minAngle": 0,
             "maxAngle": 160,
-            "stiffness": 0.3,
             "ikChainName": "RightArm"
         },
         {
@@ -172,11 +142,8 @@
             "parentName": "RightElbow",
             "regionName": "RightArm",
             "symmetryPair": "LeftHand",
-            "mass": 0.5,
-            "isAnchored": false,
             "minAngle": -90,
             "maxAngle": 90,
-            "stiffness": 0.2,
             "ikChainName": "RightArm"
         },
         {
@@ -188,12 +155,9 @@
             "parentName": "Root",
             "regionName": "LeftLeg",
             "symmetryPair": "RightHip",
-            "mass": 1.5,
-            "isAnchored": false,
             "minAngle": -120,
             "maxAngle": 60,
-            "stiffness": 0.6,
-            "ikChainName": "LeftLeg"
+            "ikChainName": null
         },
         {
             "name": "LeftKnee",
@@ -204,11 +168,8 @@
             "parentName": "LeftHip",
             "regionName": "LeftLeg",
             "symmetryPair": "RightKnee",
-            "mass": 1.2,
-            "isAnchored": false,
             "minAngle": 0,
             "maxAngle": 160,
-            "stiffness": 0.4,
             "ikChainName": "LeftLeg"
         },
         {
@@ -220,11 +181,8 @@
             "parentName": "LeftKnee",
             "regionName": "LeftLeg",
             "symmetryPair": "RightFoot",
-            "mass": 0.8,
-            "isAnchored": true,
             "minAngle": -45,
             "maxAngle": 45,
-            "stiffness": 0.5,
             "ikChainName": "LeftLeg"
         },
         {
@@ -236,12 +194,9 @@
             "parentName": "Root",
             "regionName": "RightLeg",
             "symmetryPair": "LeftHip",
-            "mass": 1.5,
-            "isAnchored": false,
             "minAngle": -120,
             "maxAngle": 60,
-            "stiffness": 0.6,
-            "ikChainName": "RightLeg"
+            "ikChainName": null
         },
         {
             "name": "RightKnee",
@@ -252,11 +207,8 @@
             "parentName": "RightHip",
             "regionName": "RightLeg",
             "symmetryPair": "LeftKnee",
-            "mass": 1.2,
-            "isAnchored": false,
             "minAngle": 0,
             "maxAngle": 160,
-            "stiffness": 0.4,
             "ikChainName": "RightLeg"
         },
         {
@@ -268,11 +220,8 @@
             "parentName": "RightKnee",
             "regionName": "RightLeg",
             "symmetryPair": "LeftFoot",
-            "mass": 0.8,
-            "isAnchored": true,
             "minAngle": -45,
             "maxAngle": 45,
-            "stiffness": 0.5,
             "ikChainName": "RightLeg"
         }
     ],

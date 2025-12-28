@@ -137,25 +137,6 @@
 
                                 <Border Style="{StaticResource ToolCardStyle}">
                                     <Border.InputBindings>
-                                        <MouseBinding MouseAction="LeftClick" Command="{Binding DataContext.GoToRiggingCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                                    </Border.InputBindings>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Border Background="#1AEAB308" Width="40" Height="40" CornerRadius="8">
-                                            <Path Data="{StaticResource Icon.Bone}" Fill="{StaticResource Brush.Accent.Primary}" Width="20" Height="20" Stretch="Uniform"/>
-                                        </Border>
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0">
-                                            <TextBlock Text="Rigging Studio" FontWeight="Bold" Foreground="{StaticResource Brush.Text.Primary}"/>
-                                            <TextBlock Text="{DynamicResource Str_DescRigging}" FontSize="11" Foreground="{StaticResource Brush.Text.Secondary}" TextTrimming="CharacterEllipsis" Opacity="0.7"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-
-                                <Border Style="{StaticResource ToolCardStyle}">
-                                    <Border.InputBindings>
                                         <MouseBinding MouseAction="LeftClick" Command="{Binding DataContext.GoToFormatConverterCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                     </Border.InputBindings>
                                     <Grid>

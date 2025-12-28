@@ -73,7 +73,7 @@
             "regionName": "LeftArm",
             "minAngle": -170,
             "maxAngle": 170,
-            "ikChainName": null
+            "ikChainName": "LeftArm"
         },
         {
             "name": "LeftElbow",
@@ -121,7 +121,7 @@
             "regionName": "RightArm",
             "minAngle": -170,
             "maxAngle": 170,
-            "ikChainName": null
+            "ikChainName": "RightArm"
         },
         {
             "name": "RightElbow",
@@ -169,7 +169,7 @@
             "regionName": "LeftLeg",
             "minAngle": -120,
             "maxAngle": 80,
-            "ikChainName": null
+            "ikChainName": "LeftLeg"
         },
         {
             "name": "LeftKnee",
@@ -217,7 +217,7 @@
             "regionName": "RightLeg",
             "minAngle": -120,
             "maxAngle": 80,
-            "ikChainName": null
+            "ikChainName": "RightLeg"
         },
         {
             "name": "RightKnee",

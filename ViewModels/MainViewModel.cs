@@ -24,7 +24,6 @@ namespace SpriteEditor.ViewModels
         // Gələcəkdə: private readonly ManualCropViewModel _manualCropViewModel;
         private readonly BackgroundEraserViewModel _backgroundEraserViewModel;
 
-        private readonly RiggingViewModel _riggingViewModel;
 
         private readonly FormatConverterViewModel _formatConverterViewModel;
 
@@ -41,7 +40,6 @@ namespace SpriteEditor.ViewModels
             _homeViewModel = new HomeViewModel();
             _spriteSlicerViewModel = new SpriteSlicerViewModel();
             _backgroundEraserViewModel = new BackgroundEraserViewModel();
-            _riggingViewModel = new RiggingViewModel();
             _formatConverterViewModel = new FormatConverterViewModel();
             _frameAnimatorViewModel = new FrameAnimatorViewModel();
             _texturePackerViewModel = new TexturePackerViewModel();
@@ -78,11 +76,6 @@ namespace SpriteEditor.ViewModels
             CurrentViewModel = _backgroundEraserViewModel;
         }
 
-        [RelayCommand]
-        private void GoToRigging()
-        {
-            CurrentViewModel = _riggingViewModel;
-        }
 
         [RelayCommand]
         private void GoToFormatConverter()

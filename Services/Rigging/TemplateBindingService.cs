@@ -52,11 +52,8 @@ namespace SpriteEditor.Services.Rigging
                 var joint = new JointModel(jointIdCounter++, worldPos)
                 {
                     Name = templateJoint.Name,
-                    Mass = templateJoint.Mass,
-                    IsAnchored = templateJoint.IsAnchored,
                     MinAngle = templateJoint.MinAngle,
                     MaxAngle = templateJoint.MaxAngle,
-                    Stiffness = templateJoint.Stiffness,
                     IKChainName = templateJoint.IKChainName
                 };
 
@@ -203,11 +200,8 @@ namespace SpriteEditor.Services.Rigging
                 var joint = new JointModel(jointIdCounter++, editedJoint.Position)
                 {
                     Name = editedJoint.Name,
-                    Mass = editedJoint.Mass,
-                    IsAnchored = editedJoint.IsAnchored,
                     MinAngle = editedJoint.MinAngle,
                     MaxAngle = editedJoint.MaxAngle,
-                    Stiffness = editedJoint.Stiffness,
                     IKChainName = editedJoint.IKChainName
                 };
 

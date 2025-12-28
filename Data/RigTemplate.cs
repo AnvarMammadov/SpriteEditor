@@ -75,46 +75,26 @@ namespace SpriteEditor.Data
         /// </summary>
         public string SymmetryPair { get; set; }
 
-        // === PHYSICS PROPERTIES (for ragdoll simulation) ===
+        // === CONSTRAINT AND IK PROPERTIES ===
 
         /// <summary>
-        /// Mass of this limb (affects gravity and inertia)
-        /// Default: 1.0
-        /// </summary>
-        public float Mass { get; set; } = 1.0f;
-
-        /// <summary>
-        /// Whether this joint is anchored (fixed in space)
-        /// E.g., feet touching ground
-        /// Default: false
-        /// </summary>
-        public bool IsAnchored { get; set; } = false;
-
-        /// <summary>
-        /// Minimum rotation angle (degrees)
-        /// Prevents unrealistic joint bending
+        /// Minimum rotation angle (degrees) relative to bind pose.
+        /// Prevents unrealistic joint bending (e.g., knee bending backwards).
         /// Default: -180 (no limit)
         /// </summary>
         public float MinAngle { get; set; } = -180f;
 
         /// <summary>
-        /// Maximum rotation angle (degrees)
-        /// Prevents unrealistic joint bending
+        /// Maximum rotation angle (degrees) relative to bind pose.
+        /// Prevents unrealistic joint bending.
         /// Default: 180 (no limit)
         /// </summary>
         public float MaxAngle { get; set; } = 180f;
 
         /// <summary>
-        /// Joint stiffness (0.0 to 1.0)
-        /// Higher values resist bending more
-        /// Default: 0.5
-        /// </summary>
-        public float Stiffness { get; set; } = 0.5f;
-
-        /// <summary>
-        /// IK chain name (e.g., "LeftArm", "RightLeg")
-        /// Joints with same chain name form an IK chain
-        /// Null if not part of IK chain
+        /// IK chain name (e.g., "LeftArm", "RightLeg").
+        /// Joints with same chain name form an IK chain.
+        /// Null if not part of IK chain.
         /// </summary>
         public string IKChainName { get; set; }
     }

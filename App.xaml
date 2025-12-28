@@ -432,9 +432,6 @@
             <DataTemplate DataType="{x:Type viewmodels:BackgroundEraserViewModel}">
                 <views:BackgroundEraserView />
             </DataTemplate>
-            <DataTemplate DataType="{x:Type viewmodels:RiggingViewModel}">
-                <views:RiggingView />
-            </DataTemplate>
             <DataTemplate DataType="{x:Type viewmodels:FormatConverterViewModel}">
                 <views:FormatConverterView />
             </DataTemplate>

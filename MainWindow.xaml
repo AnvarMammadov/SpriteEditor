@@ -273,25 +273,6 @@
                                                Visibility="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                 </Grid>
                             </Button>
-
-                            <!-- RIGGING -->
-                            <Button Command="{Binding GoToRiggingCommand}" Style="{StaticResource SidebarButtonStyle}" ToolTip="{DynamicResource Str_Rigging}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="60"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <Path Grid.Column="0" Data="{StaticResource Icon.Bone}" 
-                                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
-                                          Width="18" Height="18" Stretch="Uniform"
-                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
-                                    <TextBlock Grid.Column="1" Text="{DynamicResource Str_Rigging}" VerticalAlignment="Center"
-                                               Visibility="{Binding DataContext.IsMenuExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                </Grid>
-                            </Button>
-
                             <!-- TEMPLATE RIGGING (NEW!) -->
                             <Button Command="{Binding GoToTemplateRiggingCommand}" Style="{StaticResource SidebarButtonStyle}" ToolTip="Template Rigging (Zero-Config)">
                                 <Grid>

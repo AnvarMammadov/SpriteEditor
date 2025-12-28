@@ -69,6 +69,65 @@ namespace SpriteEditor.Services.Rigging
         }
 
         /// <summary>
+        /// Save custom template with edited joint positions.
+        /// </summary>
+        public void SaveCustomTemplate(RigTemplate baseTemplate, List<JointModel> editedJoints, string filePath)
+        {
+            if (baseTemplate == null || editedJoints == null || editedJoints.Count == 0)
+                throw new ArgumentException("Invalid template or joints");
+
+            // Create a copy of the template with updated positions
+            var customTemplate = new RigTemplate
+            {
+                Name = baseTemplate.Name + " (Custom)",
+                Category = baseTemplate.Category,
+                Description = "Custom edited template with adjusted joint positions",
+                Joints = new List<TemplateJoint>(),
+                Regions = baseTemplate.Regions
+            };
+
+            // Detect bounds from first and last joint (approximate)
+            float minX = editedJoints.Min(j => j.Position.X);
+            float maxX = editedJoints.Max(j => j.Position.X);
+            float minY = editedJoints.Min(j => j.Position.Y);
+            float maxY = editedJoints.Max(j => j.Position.Y);
+
+            float width = maxX - minX;
+            float height = maxY - minY;
+
+            if (width < 1f) width = 100f;  // Fallback
+            if (height < 1f) height = 100f;
+
+            // Convert edited joints back to normalized coordinates
+            foreach (var joint in editedJoints)
+            {
+                var templateJoint = baseTemplate.Joints.FirstOrDefault(tj => tj.Name == joint.Name);
+                if (templateJoint == null) continue;
+
+                var newTemplateJoint = new TemplateJoint
+                {
+                    Name = joint.Name,
+                    NormalizedPosition = new SKPoint(
+                        (joint.Position.X - minX) / width,
+                        (joint.Position.Y - minY) / height
+                    ),
+                    ParentName = templateJoint.ParentName,
+                    RegionName = templateJoint.RegionName,
+                    SymmetryPair = templateJoint.SymmetryPair,
+                    MinAngle = templateJoint.MinAngle,
+                    MaxAngle = templateJoint.MaxAngle,
+                    IKChainName = templateJoint.IKChainName
+                };
+
+                customTemplate.Joints.Add(newTemplateJoint);
+            }
+
+            // Serialize to JSON
+            string json = JsonSerializer.Serialize(customTemplate, _jsonOptions);
+            File.WriteAllText(filePath, json);
+        }
+
+        /// <summary>
         /// Applies a template to create joints for a sprite.
         /// Maps normalized template coordinates to actual pixel coordinates.
         /// </summary>
@@ -106,14 +165,9 @@ namespace SpriteEditor.Services.Rigging
                 var joint = new JointModel(jointIdCounter++, new SKPoint(pixelX, pixelY))
                 {
                     Name = templateJoint.Name,
-                    // === NEW: Copy physics properties from template ===
-                    Mass = templateJoint.Mass,
-                    IsAnchored = templateJoint.IsAnchored,
                     MinAngle = templateJoint.MinAngle,
                     MaxAngle = templateJoint.MaxAngle,
-                    Stiffness = templateJoint.Stiffness,
                     IKChainName = templateJoint.IKChainName
-                    // ==================================================
                 };
 
                 joints.Add(joint);
@@ -145,11 +199,7 @@ namespace SpriteEditor.Services.Rigging
                 // Set BindPosition for all joints
                 joint.BindPosition = joint.Position;
 
-                // Anchor the ROOT (Head/Hips) by default so it doesn't fall
-                if (joint.Parent == null)
-                {
-                    joint.IsAnchored = true;
-                }
+                // Root joint - no special handling needed for IK system
             }
         }
 

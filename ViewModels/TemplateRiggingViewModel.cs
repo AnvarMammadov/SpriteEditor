@@ -23,8 +23,8 @@ namespace SpriteEditor.ViewModels
         // === SERVICES ===
         private readonly TemplateService _templateService = new TemplateService();
         private readonly TemplateBindingService _bindingService = new TemplateBindingService();
-        private readonly PhysicsService _physicsService = new PhysicsService();
         private readonly TemplateOverlayInteractionService _overlayInteractionService = new TemplateOverlayInteractionService();
+        private readonly KinematicService _kinematicService = new KinematicService();
         private readonly Services.Animation.AnimationRecorderService _animationRecorderService = new Services.Animation.AnimationRecorderService();
         
         // PERFORMANCE: Cache joint lookup dictionary to avoid LINQ in hot path
@@ -55,7 +55,6 @@ namespace SpriteEditor.ViewModels
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(BindTemplateCommand))]
         [NotifyCanExecuteChangedFor(nameof(SelectTemplateCommand))]
-        [NotifyCanExecuteChangedFor(nameof(StartPhysicsCommand))]
         private bool _isTemplateBound;
 
         // === OVERLAY (Fitting Phase) ===
@@ -99,17 +98,10 @@ namespace SpriteEditor.ViewModels
         public ObservableCollection<VertexModel> Vertices { get; } = new ObservableCollection<VertexModel>();
         public ObservableCollection<TriangleModel> Triangles { get; } = new ObservableCollection<TriangleModel>();
 
-        // === PHYSICS ===
+        // === INTERACTION & IK ===
         [ObservableProperty]
-        private bool _isPhysicsActive;
-
-        [ObservableProperty]
-        private float _gravity = 500f;
-
-        [ObservableProperty]
-        private float _damping = 0.98f;
-
-        private DispatcherTimer _physicsTimer;
+        private bool _isIKMode = true; // IK mode enabled by default for intuitive posing
+        
         private JointModel _draggedJoint;
 
         // === ANIMATION RECORDING ===
@@ -132,11 +124,6 @@ namespace SpriteEditor.ViewModels
         {
             // Load available templates
             LoadAvailableTemplates();
-
-            // Setup physics timer
-            _physicsTimer = new DispatcherTimer();
-            _physicsTimer.Interval = TimeSpan.FromMilliseconds(16); // 60 FPS
-            _physicsTimer.Tick += PhysicsTimer_Tick;
             
             // Setup animation system
             AnimationVM = new AnimationViewModel(_animationRecorderService, () => Joints);
@@ -294,7 +281,7 @@ namespace SpriteEditor.ViewModels
                     $"• {Joints.Count} joints\n" +
                     $"• {Vertices.Count} vertices\n" +
                     $"• {Triangles.Count} triangles\n\n" +
-                    $"Ready for Physics Pose!",
+                    $"Ready for posing!",
                     "Success",
                     MessageBoxButton.OK,
                     MsgImage.Success
@@ -302,7 +289,6 @@ namespace SpriteEditor.ViewModels
 
                 SelectTemplateCommand.NotifyCanExecuteChanged();
                 BindTemplateCommand.NotifyCanExecuteChanged();
-                StartPhysicsCommand.NotifyCanExecuteChanged();
                 RequestRedraw?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
@@ -354,6 +340,70 @@ namespace SpriteEditor.ViewModels
         private bool CanBindTemplate() => LoadedSprite != null && SelectedTemplate != null && !IsTemplateBound;
 
         [RelayCommand]
+        private void SaveCustomTemplate()
+        {
+            try
+            {
+                if (OverlayJoints.Count == 0 || SelectedTemplate == null)
+                {
+                    CustomMessageBox.Show("No template loaded to save", "Warning", MessageBoxButton.OK, MsgImage.Warning);
+                    return;
+                }
+
+                var dialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "Template Files (*.template.json)|*.template.json",
+                    Title = "Save Custom Template",
+                    FileName = $"{SelectedTemplate.Name}.Custom.template.json"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    _templateService.SaveCustomTemplate(SelectedTemplate, OverlayJoints.ToList(), dialog.FileName);
+                    CustomMessageBox.Show("Template saved successfully!", "Success", MessageBoxButton.OK, MsgImage.Success);
+                }
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show($"Failed to save template:\n{ex.Message}", "Error", MessageBoxButton.OK, MsgImage.Error);
+            }
+        }
+
+        [RelayCommand]
+        private void LoadCustomTemplate()
+        {
+            try
+            {
+                var dialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Filter = "Template Files (*.template.json)|*.template.json|All Files (*.*)|*.*",
+                    Title = "Load Custom Template"
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    SelectedTemplate = _templateService.LoadTemplate(dialog.FileName);
+                    IsOverlayVisible = true;
+
+                    if (LoadedSprite != null)
+                    {
+                        OverlayPosition = new SKPoint(LoadedSprite.Width / 2f, LoadedSprite.Height / 2f);
+                        OverlayScale = 1.0f;
+                        OverlayRotation = 0f;
+                    }
+
+                    CreateOverlayJoints();
+                    CustomMessageBox.Show("Custom template loaded!", "Success", MessageBoxButton.OK, MsgImage.Success);
+                    RequestRedraw?.Invoke(this, EventArgs.Empty);
+                }
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show($"Failed to load template:\n{ex.Message}", "Error", MessageBoxButton.OK, MsgImage.Error);
+            }
+        }
+
+        [RelayCommand]
         private void Reset()
         {
             ResetWorkflow();
@@ -361,55 +411,9 @@ namespace SpriteEditor.ViewModels
         }
 
         // ========================================
-        // === PHYSICS COMMANDS ===
+        // === POSING (Forward Kinematics) ===
         // ========================================
-
-        [RelayCommand(CanExecute = nameof(CanStartPhysics))]
-        private void StartPhysics()
-        {
-            if (IsPhysicsActive) return;
-            
-            // Exit recording mode when entering physics mode
-            if (AnimationVM.IsRecordingMode)
-            {
-                AnimationVM.IsRecordingMode = false;
-            }
-
-            _physicsService.Initialize(Joints);
-            _physicsService.Gravity = Gravity;
-            _physicsService.Damping = Damping;
-
-            _physicsTimer.Start();
-            IsPhysicsActive = true;
-        }
-
-        private bool CanStartPhysics() => IsTemplateBound && !IsPhysicsActive;
-
-        [RelayCommand(CanExecute = nameof(CanStopPhysics))]
-        private void StopPhysics()
-        {
-            if (!IsPhysicsActive) return;
-
-            _physicsTimer.Stop();
-            IsPhysicsActive = false;
-            _draggedJoint = null;
-            _physicsService.StopDragging();
-        }
-
-        private bool CanStopPhysics() => IsPhysicsActive;
-
-        private void PhysicsTimer_Tick(object sender, EventArgs e)
-        {
-            _physicsService.VerletStep(deltaTime: 0.016f);
-            
-            // 1. Update Joint Rotations based on new positions
-            UpdateJointRotations();
-
-            // 2. CRITICAL: Update mesh vertices to follow skeleton (skinning)
-            UpdateMeshVertices();
-            
-            RequestRedraw?.Invoke(this, EventArgs.Empty);
-        }
+        // Note: IK (Inverse Kinematics) will be added in Phase 5
 
         private void UpdateJointRotations()
         {
@@ -513,7 +517,6 @@ namespace SpriteEditor.ViewModels
 
         private void ResetWorkflow()
         {
-            StopPhysics();
             Joints.Clear();
             Vertices.Clear();
             Triangles.Clear();
@@ -526,8 +529,6 @@ namespace SpriteEditor.ViewModels
 
             SelectTemplateCommand?.NotifyCanExecuteChanged();
             BindTemplateCommand?.NotifyCanExecuteChanged();
-            StartPhysicsCommand?.NotifyCanExecuteChanged();
-            StopPhysicsCommand?.NotifyCanExecuteChanged();
         }
 
         // ========================================
@@ -536,19 +537,21 @@ namespace SpriteEditor.ViewModels
 
         public void OnCanvasLeftClicked(SKPoint worldPos)
         {
-            if (IsPhysicsActive)
+            // Priority 1: Bound skeleton joint dragging (for posing)
+            if (IsTemplateBound && Joints.Count > 0)
             {
-                // Find closest joint and start dragging (physics mode)
                 var closestJoint = FindClosestJoint(worldPos);
                 if (closestJoint != null)
                 {
                     _draggedJoint = closestJoint;
-                    _physicsService.StartDragging(closestJoint, worldPos);
+                    return;
                 }
             }
-            else if (IsOverlayVisible && SelectedTemplate != null)
+            
+            // Priority 2: Overlay joint adjustment (before binding)
+            if (IsOverlayVisible && SelectedTemplate != null)
             {
-                // Priority 1: Check if clicking on overlay joint (fine-tuning)
+                // Check if clicking on overlay joint (fine-tuning)
                 var clickedJoint = FindClosestOverlayJoint(worldPos, 15f);
                 if (clickedJoint != null)
                 {
@@ -558,7 +561,7 @@ namespace SpriteEditor.ViewModels
                     return;
                 }
                 
-                // Priority 2: Overlay transform handles (drag/scale/rotate)
+                // Overlay transform handles (drag/scale/rotate)
                 var bounds = LoadedSprite != null 
                     ? new SKRect(0, 0, LoadedSprite.Width, LoadedSprite.Height)
                     : SKRect.Empty;
@@ -577,17 +580,57 @@ namespace SpriteEditor.ViewModels
 
         public void OnCanvasMouseMoved(SKPoint worldPos)
         {
-            if (IsPhysicsActive && _draggedJoint != null)
+            if (_isDraggingOverlayJoint && SelectedOverlayJoint != null)
             {
-                _physicsService.UpdateDragTarget(worldPos);
-            }
-            else if (_isDraggingOverlayJoint && SelectedOverlayJoint != null)
-            {
-                // Dragging individual overlay joint (fine-tuning)
+                // Dragging individual overlay joint (fine-tuning before binding)
                 SelectedOverlayJoint.Position = new SKPoint(
                     worldPos.X + _overlayJointDragOffset.X,
                     worldPos.Y + _overlayJointDragOffset.Y
                 );
+                RequestRedraw?.Invoke(this, EventArgs.Empty);
+            }
+            else if (_draggedJoint != null && IsTemplateBound)
+            {
+                // Dragging bound joint - use IK if mode enabled and joint has a chain
+                if (IsIKMode && !string.IsNullOrEmpty(_draggedJoint.IKChainName))
+                {
+                    // Build IK chain from dragged joint to root
+                    // OLD: var chain = _draggedJoint.GetChainToRoot();
+                    // NEW: Only get the relevant limb chain
+                    var chain = _draggedJoint.GetIKChain();
+                    
+                    System.Diagnostics.Debug.WriteLine($"IK DRAG: Joint={_draggedJoint.Name}, ChainName={_draggedJoint.IKChainName}, ChainLength={chain.Count}");
+                    if (chain.Count > 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"  Chain: {string.Join(" -> ", chain.Select(j => j.Name))}");
+                    }
+                    
+                    if (chain.Count >= 2)
+                    {
+                        // Use CCD solver for all chain lengths
+                        // Works well for 2-bone (simple), 3-bone (with wrist), and 4+ bone chains
+                        System.Diagnostics.Debug.WriteLine($"  Solving IK to target: ({worldPos.X:F1}, {worldPos.Y:F1})");
+                        _kinematicService.SolveCCD(chain, worldPos, maxIterations: 10, tolerance: 1f);
+                        
+                        // Update mesh vertices after IK
+                        UpdateJointRotations();
+                        UpdateMeshVertices();
+                        System.Diagnostics.Debug.WriteLine($"  IK Solved. EndEffector now at: ({chain[0].Position.X:F1}, {chain[0].Position.Y:F1})");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"  ERROR: Chain too short ({chain.Count} joints)");
+                    }
+                }
+                else
+                {
+                    // Direct FK (Forward Kinematics) mode - just move the joint
+                    System.Diagnostics.Debug.WriteLine($"FK DRAG: Joint={_draggedJoint.Name} to ({worldPos.X:F1}, {worldPos.Y:F1})");
+                    _draggedJoint.Position = worldPos;
+                    UpdateJointRotations();
+                    UpdateMeshVertices();
+                }
+                
                 RequestRedraw?.Invoke(this, EventArgs.Empty);
             }
             else if (_isInteractingWithOverlay && IsOverlayVisible)
@@ -613,9 +656,9 @@ namespace SpriteEditor.ViewModels
 
         public void OnCanvasLeftReleased()
         {
+            // Release dragged joint
             if (_draggedJoint != null)
             {
-                _physicsService.StopDragging();
                 _draggedJoint = null;
             }
             else if (_isDraggingOverlayJoint)
@@ -652,7 +695,16 @@ namespace SpriteEditor.ViewModels
                 }
             }
 
-            return (minDist < 400) ? closest : null; // 20px radius
+            // Increased hit radius for easier clicking (40px radius = 1600px²)
+            float hitRadius = 40f;
+            bool withinRange = (minDist < (hitRadius * hitRadius));
+            
+            if (withinRange && closest != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"Joint clicked: {closest.Name} at ({closest.Position.X:F1}, {closest.Position.Y:F1})");
+            }
+            
+            return withinRange ? closest : null;
         }
 
         // ========================================
@@ -720,9 +772,9 @@ namespace SpriteEditor.ViewModels
                 var joint = new JointModel(idCounter++, new SKPoint(pixelX, pixelY))
                 {
                     Name = templateJoint.Name,
-                    Mass = templateJoint.Mass,
-                    IsAnchored = templateJoint.IsAnchored,
-                    Stiffness = templateJoint.Stiffness
+                    MinAngle = templateJoint.MinAngle,
+                    MaxAngle = templateJoint.MaxAngle,
+                    IKChainName = templateJoint.IKChainName
                 };
 
                 OverlayJoints.Add(joint);
@@ -861,12 +913,7 @@ namespace SpriteEditor.ViewModels
             
             if (AnimationVM.IsRecordingMode)
             {
-                // Stop physics when entering record mode
-                if (IsPhysicsActive)
-                {
-                    StopPhysics();
-                }
-                
+                // Info message about recording mode
                 CustomMessageBox.Show(
                     "Recording Mode Enabled\n\n" +
                     "• Use Physics to pose your character\n" +
